@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { supabase } from "./lib/supabaseClient.js";
 
-// Single-user sign-in gate. The user account was created ahead of time in
-// the Supabase dashboard (Authentication → Users) — this screen only signs
-// in, it never signs up, since BOXGO isn't meant to onboard new accounts.
+const CONTACT_EMAIL = "thaianh.dng@gmail.com";
+const CONTACT_PHONE = "(+84) 969 609 379";
+
+// Invite-only sign-in gate. Accounts are created ahead of time in the
+// Supabase dashboard (Authentication → Users → Invite) — this screen only
+// signs in, it never signs up.
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +46,10 @@ export default function Login() {
           gap: 14,
         }}
       >
-        <div style={{ color: "#eee", fontSize: 18, fontWeight: 600, marginBottom: 8 }}>BOXGO</div>
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ color: "#eee", fontSize: 18, fontWeight: 600 }}>BOXGO</div>
+          <div style={{ color: "#888", fontSize: 11.5, letterSpacing: 0.3, textTransform: "uppercase" }}>Equipment List Composer</div>
+        </div>
         <input
           type="email"
           placeholder="Email"
@@ -66,6 +72,11 @@ export default function Login() {
         <button type="submit" disabled={loading} style={buttonStyle}>
           {loading ? "Signing in…" : "Sign in"}
         </button>
+        <div style={{ borderTop: "1px solid #333", marginTop: 6, paddingTop: 12, fontSize: 11.5, color: "#888", lineHeight: 1.6 }}>
+          BOXGO is currently invitation-only. Need access? Contact{" "}
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FFB020" }}>{CONTACT_EMAIL}</a>
+          {" "}or {CONTACT_PHONE}.
+        </div>
       </form>
     </div>
   );
