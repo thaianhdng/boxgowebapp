@@ -1439,27 +1439,17 @@ export default function EquipmentManifest({ session }) {
       const nameSlug = userName.trim() ? `_${slug(userName)}` : "";
       const finalName = withTimeStamp(`${mmdd}_boxgo-backup${nameSlug}.json`);
 
-      // A plain anchor-triggered download is inert on a published claude.ai
-      // artifact — route it through the platform's downloads capability
-      // instead, same as the PDF and master catalog exports.
-      const downloads = window.claude ? await window.claude.use("downloads") : null;
-      if (downloads) {
-        await downloads.save({ filename: finalName, data: blob });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = finalName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = finalName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (err) {
-      if (err?.code !== "declined") {
-        console.error("Backup export failed:", err);
-        setBackupError(`Backup couldn't be saved: ${err?.message || err}`);
-      }
+      console.error("Backup export failed:", err);
+      setBackupError(`Backup couldn't be saved: ${err?.message || err}`);
     }
   }
 
@@ -2177,31 +2167,12 @@ document.getElementById("dlBtn").addEventListener("click", downloadPdf);
       const { blob } = await buildPdfBlob();
       const finalName = withTimeStamp(name.endsWith(".pdf") ? name : `${name}.pdf`);
 
-      // Published claude.ai artifacts can't trigger a plain browser download
-      // directly — saves have to go through the platform's own "downloads"
-      // capability, which shows the viewer a confirmation before anything
-      // is written to their device.
-      const downloads = window.claude ? await window.claude.use("downloads") : null;
-      if (downloads) {
-        try {
-          await downloads.save({ filename: finalName, data: blob });
-        } catch (err) {
-          if (err?.code !== "declined") {
-            console.error("Downloads capability error:", err);
-            alert("Sorry, the PDF couldn't be saved. Please try again.");
-          }
-        }
-      } else {
-        // Fallback for when this page is opened outside the claude.ai
-        // artifact viewer (e.g. a self-hosted copy), where a plain
-        // anchor-triggered download works normally.
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = finalName;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = finalName;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (err) {
       console.error("PDF export failed:", err);
       alert("Sorry, the PDF couldn't be generated. Please try again.");
