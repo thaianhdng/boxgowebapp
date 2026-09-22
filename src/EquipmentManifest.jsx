@@ -228,9 +228,25 @@ const FONT_CHOICES = [
 const uid = () => Math.random().toString(36).slice(2, 10);
 // Project ids double as the Supabase `projects.id` primary key (a real
 // uuid column), unlike every other id in this file which just lives
-// inside a jsonb blob — so projects need a real UUID, not uid()'s
-// short base36 string.
-const newProjectId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : uid());
+// inside a jsonb blob — so projects need a real UUID, not uid()'s short
+// base36 string. crypto.randomUUID() isn't available in every browser
+// context, so this falls back to building a v4 UUID by hand rather than
+// silently handing Supabase something it'll reject.
+function newProjectId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0"));
+    return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10, 16).join("")}`;
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 const relabelDays = (arr) => arr.map((d, i) => ({ ...d, label: `Day ${i + 1}` }));
 
 function loadColor(dept) {
