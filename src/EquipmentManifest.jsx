@@ -1469,7 +1469,16 @@ export default function EquipmentManifest({ session }) {
   }
 
   function applyRestore(data) {
-    setProjectsState(data.projects || []);
+    // A backup made before project ids were switched to real UUIDs (or one
+    // hand-edited outside the app) can carry an id Supabase's projects.id
+    // column will reject — and since every project upserts in one batch,
+    // a single bad id fails the whole save silently. Reissue any id that
+    // isn't a valid UUID rather than let that happen again.
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const restoredProjects = (data.projects || []).map((p) =>
+      typeof p.id === "string" && uuidPattern.test(p.id) ? p : { ...p, id: newProjectId() }
+    );
+    setProjectsState(restoredProjects);
     setDepartments(data.departments || DEFAULT_DEPARTMENTS);
     setCatalog(data.catalog || []);
     setProjectTags(data.projectTags || DEFAULT_PROJECT_TAGS);
@@ -2325,9 +2334,10 @@ document.getElementById("dlBtn").addEventListener("click", downloadPdf);
                 )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <div style={{ fontSize: 11, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
+                <div style={{ fontSize: 11, color: saveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
                   {saveState === "saving" && <><Loader2 size={12} className="spin" /> saving</>}
                   {saveState === "saved" && <><Check size={12} /> saved</>}
+                  {saveState === "error" && <><X size={12} /> couldn't save — check your connection</>}
                 </div>
                 {view === "manifest" && (
                   <button
