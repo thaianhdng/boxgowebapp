@@ -51,6 +51,7 @@ const Share2 = (p) => <Icon {...p}><circle cx="18" cy="5" r="3"/><circle cx="6" 
 const BookmarkPlus = (p) => <Icon {...p}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/><line x1="12" x2="12" y1="7" y2="13"/><line x1="9" x2="15" y1="10" y2="10"/></Icon>;
 const Sun = (p) => <Icon {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></Icon>;
 const Moon = (p) => <Icon {...p}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></Icon>;
+const Monitor = (p) => <Icon {...p}><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></Icon>;
 const Settings = (p) => <Icon {...p}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Icon>;
 
 const DEPT_COLORS = {
@@ -479,7 +480,22 @@ export default function EquipmentManifest({ session }) {
   const [includeUsernameInPdf, setIncludeUsernameInPdf] = useState(true);
   const [includeEmailInPdf, setIncludeEmailInPdf] = useState(false);
   const [includePhoneInPdf, setIncludePhoneInPdf] = useState(false);
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState("dark"); // "light" | "dark" | "system"
+  // Tracks the OS/browser color-scheme preference live, so "system" mode
+  // follows it without needing a page reload when it changes.
+  const [systemPrefersDark, setSystemPrefersDark] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+      : true
+  );
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e) => setSystemPrefersDark(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+  const resolvedTheme = theme === "system" ? (systemPrefersDark ? "dark" : "light") : theme;
   const [accentId, setAccentId] = useState("amber");
   const [fontId, setFontId] = useState("jetbrains");
   const [rentalHouses, setRentalHouses] = useState([]);
@@ -2186,7 +2202,7 @@ document.getElementById("dlBtn").addEventListener("click", downloadPdf);
   const selectedFont = FONT_CHOICES.find((f) => f.id === fontId) || FONT_CHOICES[0];
 
   return (
-    <div data-theme={theme} className="app-root" style={{
+    <div data-theme={resolvedTheme} className="app-root" style={{
       fontFamily: selectedFont.stack,
       background: "var(--bg)",
       color: "var(--text)",
@@ -2780,6 +2796,7 @@ document.getElementById("dlBtn").addEventListener("click", downloadPdf);
           includePhoneInPdf={includePhoneInPdf}
           onSetIncludePhoneInPdf={setIncludePhoneInPdf}
           theme={theme}
+          resolvedTheme={resolvedTheme}
           onSetTheme={setTheme}
           accentId={accentId}
           onSetAccentId={setAccentId}
@@ -3936,7 +3953,7 @@ function AttributesManagerModal({
   templates, onDeleteTemplate,
   userName, onSetUserName, userEmail, onSetUserEmail, userPhone, onSetUserPhone,
   includeUsernameInPdf, onSetIncludeUsernameInPdf, includeEmailInPdf, onSetIncludeEmailInPdf, includePhoneInPdf, onSetIncludePhoneInPdf,
-  theme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId,
+  theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId,
   onOpenCatalog, onExportBackup, onRestoreFileSelect, backupError, onClose, onSignOut,
 }) {
   const restoreInputRef = useRef(null);
@@ -4043,6 +4060,13 @@ function AttributesManagerModal({
             >
               <Moon size={14} /> Dark
             </button>
+            <button
+              className="btn btn-ghost"
+              style={{ flex: 1, justifyContent: "center", background: theme === "system" ? "var(--text)" : "transparent", color: theme === "system" ? "var(--bg)" : "var(--text)" }}
+              onClick={() => onSetTheme("system")}
+            >
+              <Monitor size={14} /> System
+            </button>
           </div>
 
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
@@ -4053,7 +4077,7 @@ function AttributesManagerModal({
                 title={a.name}
                 style={{
                   width: 26, height: 26, borderRadius: "50%", cursor: "pointer",
-                  background: theme === "dark" ? a.dark : a.light,
+                  background: resolvedTheme === "dark" ? a.dark : a.light,
                   border: accentId === a.id ? "2px solid var(--text)" : "2px solid transparent",
                   boxShadow: accentId === a.id ? "0 0 0 2px var(--surface)" : "none",
                   padding: 0,
