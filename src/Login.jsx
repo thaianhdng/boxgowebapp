@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "./lib/supabaseClient.js";
 
 const CONTACT_EMAIL = "thaianh.dng@gmail.com";
-const CONTACT_PHONE = "(+84) 969 609 379";
+const CONTACT_PHONE = "(+84)969609379";
 
 // Invite-only sign-in gate. Accounts are created ahead of time in the
 // Supabase dashboard (Authentication → Users → Invite) — this screen only
@@ -46,9 +46,9 @@ export default function Login() {
           gap: 14,
         }}
       >
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ color: "#eee", fontSize: 18, fontWeight: 600 }}>BOXGO</div>
-          <div style={{ color: "#888", fontSize: 11.5, letterSpacing: 0.3, textTransform: "uppercase" }}>Equipment List Composer</div>
+        <div style={{ marginBottom: 8, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ color: "#eee", fontSize: 18, fontWeight: 600 }}>BOXGO</span>
+          <span style={{ color: "#888", fontSize: 10.5, letterSpacing: 0.3, textTransform: "uppercase" }}>Equipment List Composer</span>
         </div>
         <input
           type="email"
