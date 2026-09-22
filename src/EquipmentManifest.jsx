@@ -364,7 +364,7 @@ function formatTime24(d) {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
 // Inserts `_HHMMSS` right before the file extension — the one place every
-// export filename gets its save-time stamp, so PDF/xlsx/json all do it
+// export filename gets its save-time stamp, so PDF/json all do it
 // identically.
 function withTimeStamp(nameWithExt) {
   const dot = nameWithExt.lastIndexOf(".");
@@ -470,6 +470,7 @@ export default function EquipmentManifest({ session }) {
   const [showTagManager, setShowTagManager] = useState(false);
   const [pendingRestore, setPendingRestore] = useState(null);
   const [backupError, setBackupError] = useState("");
+  const [catalogCopyState, setCatalogCopyState] = useState("idle"); // "idle" | "copied"
   const [undoState, setUndoState] = useState(null);
   const undoTimerRef = useRef(null);
   const [saveState, setSaveState] = useState("idle");
@@ -1306,27 +1307,26 @@ export default function EquipmentManifest({ session }) {
   }
 
 
-  // Exports the master catalog grouped into one block per department: a
-  // Exports the master catalog as one row per item, with Department and
-  // Subcategory repeated on every row. This is deliberately a flat, fully
-  // explicit table (no header rows, no blank separators) so it can be
-  // reliably parsed back — for backup, transfer, and bulk re-import.
-  // Departments and subcategories are ordered to match your manual "Manage"
-  // order, and items within each group keep your manual drag order too —
-  // nothing here is re-sorted alphabetically.
-  async function exportCatalogExcel(filename) {
-    // Loaded on demand rather than imported at the top of the file — xlsx
-    // is a sizeable library and most visits never touch this export.
-    const XLSX = await import("xlsx");
+  // Copies the master catalog as JSON, shaped exactly like the DEFAULT_CATALOG
+  // array at the top of this file — the point isn't spreadsheet editing, it's
+  // getting a modified catalog back out so it can be baked into the app's
+  // source as the new default (what a fresh account starts with). Ordered to
+  // match your manual "Manage" department/subcategory order, items within
+  // each group keeping your manual drag order too — nothing re-sorted
+  // alphabetically. Falls back to a plain .json download if the clipboard
+  // API is unavailable or the user declines permission.
+  async function copyCatalogJson() {
     const rows = [];
     const pushed = new Set();
     const pushItem = (c) => {
       rows.push({
-        Category: c.department,
-        Subcategory: c.subcategory || "",
-        Brand: c.brand || "",
-        Model: c.model || "",
-        Note: c.note || "",
+        id: c.id,
+        name: c.name,
+        brand: c.brand || "",
+        model: c.model || "",
+        department: c.department,
+        subcategory: c.subcategory || "",
+        note: c.note || "",
       });
       pushed.add(c.id);
     };
@@ -1340,37 +1340,18 @@ export default function EquipmentManifest({ session }) {
     });
     // safety net: any item whose department no longer matches the current list
     catalog.forEach((c) => { if (!pushed.has(c.id)) pushItem(c); });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 22 }, { wch: 34 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Master Catalog");
-    const mmdd = exportDateStr();
-    const nameSlug = userName.trim() ? `_${slug(userName)}` : "";
-    const name = (filename && filename.trim()) || `${mmdd}_master-catalog${nameSlug}`;
-    const finalName = withTimeStamp(`${name}.xlsx`);
+    const json = JSON.stringify(rows, null, 2);
 
-    // XLSX.writeFile() triggers a plain browser download internally, which
-    // is inert on a published claude.ai artifact (the same restriction that
-    // affected PDF export) — route it through the platform's downloads
-    // capability instead, same as the PDF and backup exports.
-    const arrayBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([arrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-
-    const downloads = window.claude ? await window.claude.use("downloads") : null;
-    if (downloads) {
-      try {
-        await downloads.save({ filename: finalName, data: blob });
-      } catch (err) {
-        if (err?.code !== "declined") {
-          console.error("Downloads capability error:", err);
-          alert("Sorry, the file couldn't be saved. Please try again.");
-        }
-      }
-    } else {
+    try {
+      await navigator.clipboard.writeText(json);
+      setCatalogCopyState("copied");
+      setTimeout(() => setCatalogCopyState("idle"), 2000);
+    } catch (err) {
+      const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = finalName;
+      a.download = withTimeStamp(`${exportDateStr()}_master-catalog.json`);
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     }
@@ -2328,8 +2309,8 @@ document.getElementById("dlBtn").addEventListener("click", downloadPdf);
                 )}
                 {view === "catalog" && (
                   <>
-                    <button className="btn btn-ghost" onClick={() => exportCatalogExcel()}>
-                      <FileSpreadsheet size={14} /> Export
+                    <button className="btn btn-ghost" onClick={copyCatalogJson}>
+                      <Copy size={14} /> {catalogCopyState === "copied" ? "Copied!" : "Copy Catalog"}
                     </button>
                     <button className="btn btn-ghost" onClick={() => setShowDeptManager(true)}>
                       <ListFilter size={14} /> Manage
