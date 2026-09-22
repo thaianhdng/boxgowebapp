@@ -7,20 +7,30 @@ import {
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient.js";
 
-// The embedded PDF font (~300KB as base64) is loaded on demand by
-// loadJbmFont() below rather than imported here — most visits never
-// generate a PDF, so there's no reason to ship it in the main bundle.
-// buildPdfBlob() and buildShareSnapshotHtml() both read it off window
-// afterwards (the latter because the standalone HTML it generates reads
-// window.__JBM_*_B64 from its own copy of window at that file's open
-// time). On claude.ai these used to be injected by the host platform;
-// here we supply them ourselves from the bundled font.
-async function loadJbmFont() {
-  if (typeof window === "undefined") return;
-  if (window.__JBM_REGULAR_B64) return; // already loaded
-  const { JBM_REGULAR_B64, JBM_BOLD_B64 } = await import("./assets/fonts/jetbrainsMonoBase64.js");
-  window.__JBM_REGULAR_B64 = JBM_REGULAR_B64;
-  window.__JBM_BOLD_B64 = JBM_BOLD_B64;
+import jbmRegularUrl from "./assets/fonts/JetBrainsMono-Regular.ttf?url";
+import jbmBoldUrl from "./assets/fonts/JetBrainsMono-Bold.ttf?url";
+
+// JetBrains Mono (full Vietnamese coverage) embedded into generated PDFs.
+// Served as static .ttf files and only fetched the first time a PDF or
+// share snapshot is built; jsPDF's addFileToVFS wants base64, so convert
+// once and cache.
+function arrayBufferToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
+let jbmFontPromise = null;
+function loadJbmFont() {
+  if (!jbmFontPromise) {
+    const fetchB64 = (url) => fetch(url).then((r) => r.arrayBuffer()).then(arrayBufferToBase64);
+    jbmFontPromise = Promise.all([fetchB64(jbmRegularUrl), fetchB64(jbmBoldUrl)])
+      .then(([regular, bold]) => ({ regular, bold }))
+      .catch((err) => { jbmFontPromise = null; throw err; });
+  }
+  return jbmFontPromise;
 }
 
 
@@ -1493,15 +1503,15 @@ export default function EquipmentManifest({ session }) {
   // jsPDF is loaded on demand (it's a sizeable library, and most visits
   // never export a PDF) rather than imported at the top of the file.
   async function buildPdfBlob() {
-    const [{ jsPDF }] = await Promise.all([import("jspdf"), loadJbmFont()]);
+    const [{ jsPDF }, font] = await Promise.all([import("jspdf"), loadJbmFont()]);
     const doc = new jsPDF({ unit: "pt", format: "a4" });
 
       // Embed JetBrains Mono directly (regular + bold) so Vietnamese
       // diacritics render as real, selectable text rather than a flattened
       // screenshot image.
-      doc.addFileToVFS("JetBrainsMono-Regular.ttf", window.__JBM_REGULAR_B64);
+      doc.addFileToVFS("JetBrainsMono-Regular.ttf", font.regular);
       doc.addFont("JetBrainsMono-Regular.ttf", "JetBrainsMono", "normal");
-      doc.addFileToVFS("JetBrainsMono-Bold.ttf", window.__JBM_BOLD_B64);
+      doc.addFileToVFS("JetBrainsMono-Bold.ttf", font.bold);
       doc.addFont("JetBrainsMono-Bold.ttf", "JetBrainsMono", "bold");
       doc.setFont("JetBrainsMono", "normal");
 
@@ -1824,7 +1834,7 @@ export default function EquipmentManifest({ session }) {
   // caller (exportShareSnapshot) uploads it to Supabase Storage rather
   // than making the user save and send the file themselves.
   async function buildShareSnapshotHtml(project) {
-    await loadJbmFont();
+    const font = await loadJbmFont();
     const visibleGrouped = computeVisibleGrouped(manifestGrouped, itemData);
     const perDayQty = !!project?.perDayQty;
     const groups = orderedKeys(visibleGrouped, Object.keys(departments)).map((dept) => ({
@@ -1870,8 +1880,8 @@ export default function EquipmentManifest({ session }) {
     const dataJson = JSON.stringify(data);
     // The main app's header already loaded these as globals — reuse the
     // exact same font bytes here rather than re-embedding a separate copy.
-    const jbmRegular = window.__JBM_REGULAR_B64 || "";
-    const jbmBold = window.__JBM_BOLD_B64 || "";
+    const jbmRegular = font.regular;
+    const jbmBold = font.bold;
 
     return `<!DOCTYPE html>
 <html lang="en">
