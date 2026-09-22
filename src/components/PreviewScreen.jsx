@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Printer, ChevronRight, Loader2, Share2,
+  Printer, ChevronRight, Loader2, Share2, Radio,
 } from "lucide-react";
 import { defaultExportFilename } from "../lib/utils.js";
 
@@ -11,7 +11,7 @@ import { defaultExportFilename } from "../lib/utils.js";
 // preview and the downloaded file are structurally guaranteed to match,
 // and because it's the real PDF (not a rasterized screenshot of it), the
 // text stays selectable and copyable straight out of the preview.
-export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDownload, pdfGenerating, onShare, shareGenerating }) {
+export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDownload, pdfGenerating, onShareSnapshot, onShareLive, hasLiveLink, shareGenerating }) {
   const [filename, setFilename] = useState(() => defaultExportFilename(project, userName));
   const [pdfUrl, setPdfUrl] = useState(null);
   const [totalPages, setTotalPages] = useState(0);
@@ -55,15 +55,26 @@ export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBac
             {project.name || "Equipment List"}
           </div>
         </div>
-        {onShare && (
+        {onShareLive && (
           <button
             className="btn btn-ghost"
-            onClick={() => onShare(project)}
+            onClick={() => onShareLive(project)}
             disabled={shareGenerating}
-            title="Get a shareable link to a read-only snapshot of this list, frozen at today's quantities — viewable by anyone, no account needed."
+            title="A link that always shows this list as it currently is — updates as you edit. For crew."
             style={{ padding: "6px 12px", fontSize: 12 }}
           >
-            <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Share snapshot"}
+            <Radio size={14} /> {hasLiveLink ? "Live link (on)" : "Live link"}
+          </button>
+        )}
+        {onShareSnapshot && (
+          <button
+            className="btn btn-ghost"
+            onClick={() => onShareSnapshot(project)}
+            disabled={shareGenerating}
+            title="A permanent link to this list exactly as it is now — it won't change when you edit later. For rental houses."
+            style={{ padding: "6px 12px", fontSize: 12 }}
+          >
+            <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Send snapshot"}
           </button>
         )}
         <button

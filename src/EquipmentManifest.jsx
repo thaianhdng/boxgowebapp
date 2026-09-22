@@ -14,7 +14,7 @@ import { ProjectListView } from "./components/ProjectListView.jsx";
 import { SideItem } from "./components/SideItem.jsx";
 import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
-import { buildShareSnapshotHtml } from "./lib/shareSnapshot.js";
+import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
 import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDMY, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename } from "./lib/utils.js";
 
 
@@ -147,6 +147,7 @@ export default function EquipmentManifest({ session }) {
         }
         if (projectRows) {
           setProjectsState(projectRows.map((r) => ({ ...r.data, id: r.id })));
+          setLiveShareTokens(Object.fromEntries(projectRows.filter((r) => r.share_token).map((r) => [r.id, r.share_token])));
         }
       } catch (e) {
         console.error("Failed to load BOXGO data from Supabase:", e);
@@ -1067,8 +1068,11 @@ export default function EquipmentManifest({ session }) {
 
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [shareGenerating, setShareGenerating] = useState(false);
-  const [shareUrl, setShareUrl] = useState(null);
+  const [shareResult, setShareResult] = useState(null); // { kind: "live" | "snapshot", url, projectId }
   const [shareError, setShareError] = useState("");
+  // Live-link tokens live in their own projects.share_token column, not in
+  // the project's saved data, so they're tracked separately here.
+  const [liveShareTokens, setLiveShareTokens] = useState({});
 
   const pdfInputs = (project) => ({
     project,
@@ -1084,41 +1088,63 @@ export default function EquipmentManifest({ session }) {
   const buildPdfBlob = () => buildPdf(pdfInputs(activeProject));
 
 
-  // Uploads the self-contained snapshot straight to Supabase Storage and
-  // hands back a public URL, instead of making the user save a .html file
-  // and send it themselves. Re-sharing the same project overwrites its
-  // existing file at the same path rather than piling up new ones, so the
-  // link someone was already given keeps working and just shows the
-  // latest snapshot next time you share again.
-  async function exportShareSnapshot(project) {
+  async function runShare(fn) {
     setShareGenerating(true);
     setShareError("");
     try {
-      const html = await buildShareSnapshotHtml(pdfInputs(project));
-      const blob = new Blob([html], { type: "text/html" });
-      const path = `${session.user.id}/${project.id}.html`;
-      const { error: uploadErr } = await supabase.storage.from("shares").upload(path, blob, {
-        contentType: "text/html",
-        upsert: true,
-      });
-      if (uploadErr) throw uploadErr;
-      const { data } = supabase.storage.from("shares").getPublicUrl(path);
-      setShareUrl(data.publicUrl);
-      try {
-        await navigator.clipboard.writeText(data.publicUrl);
-      } catch {
-        // clipboard permission denied or unavailable — the link is still
-        // shown on screen for the user to copy by hand
-      }
+      const result = await fn();
+      setShareResult(result);
+      navigator.clipboard?.writeText(result.url).catch(() => {});
     } catch (err) {
-      console.error("Share upload failed:", err);
+      console.error("Share failed:", err);
       setShareError(
-        err?.message?.includes("Bucket not found")
-          ? "The \"shares\" storage bucket hasn't been set up in Supabase yet."
-          : "Sorry, the shareable link couldn't be created. Please try again."
+        /shared_snapshots|share_token|get_shared_list|schema cache/.test(err?.message || "")
+          ? "Sharing hasn't been set up in Supabase yet (the share SQL needs to be run once)."
+          : "Sorry, the link couldn't be created. Please try again."
       );
     } finally {
       setShareGenerating(false);
+    }
+  }
+
+  // Frozen copy with its own permanent link — for rental houses, where
+  // what they priced must stay what they see.
+  function shareSnapshot(project) {
+    return runShare(async () => {
+      const token = await createSnapshot({
+        userId: session.user.id,
+        project,
+        catalog,
+        departments,
+        accentId,
+        preparedBy: pdfInputs(project).preparedBy,
+      });
+      return { kind: "snapshot", url: shareUrlFor(token), projectId: project.id };
+    });
+  }
+
+  // Always-current link — for crew. Reuses the project's existing token if
+  // it already has one, so a link already handed out keeps working.
+  function shareLive(project) {
+    return runShare(async () => {
+      const token = await enableLiveLink({ userId: session.user.id, project, existingToken: liveShareTokens[project.id] });
+      setLiveShareTokens((prev) => ({ ...prev, [project.id]: token }));
+      return { kind: "live", url: shareUrlFor(token), projectId: project.id };
+    });
+  }
+
+  async function stopLiveLink(projectId) {
+    try {
+      await disableLiveLink(projectId);
+      setLiveShareTokens((prev) => {
+        const next = { ...prev };
+        delete next[projectId];
+        return next;
+      });
+      setShareResult(null);
+    } catch (err) {
+      console.error("Couldn't turn off live link:", err);
+      setShareError("Couldn't turn off the live link. Please try again.");
     }
   }
 
@@ -1646,7 +1672,9 @@ export default function EquipmentManifest({ session }) {
             onBack={exitPreview}
             onDownload={exportToPdf}
             pdfGenerating={pdfGenerating}
-            onShare={exportShareSnapshot}
+            onShareSnapshot={shareSnapshot}
+            onShareLive={shareLive}
+            hasLiveLink={Boolean(liveShareTokens[activeProject.id])}
             shareGenerating={shareGenerating}
           />
         ) : (
@@ -1790,33 +1818,42 @@ export default function EquipmentManifest({ session }) {
         </div>
       )}
 
-      {(shareUrl || shareError) && (
+      {(shareResult || shareError) && (
         <div className="no-print" style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
           alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
         }}>
-          <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 420, padding: 22, border: "1px solid var(--border2)" }}>
-            <div className="stencil" style={{ fontSize: 14, marginBottom: 10 }}>Share Snapshot</div>
+          <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 440, padding: 22, border: "1px solid var(--border2)" }}>
+            <div className="stencil" style={{ fontSize: 14, marginBottom: 10 }}>
+              {shareResult?.kind === "live" ? "Live Link" : "Snapshot Link"}
+            </div>
             {shareError ? (
               <div style={{ fontSize: 13, color: "#AA0000", marginBottom: 16 }}>{shareError}</div>
             ) : (
               <>
                 <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
-                  Anyone with this link can view a read-only snapshot of this list, frozen at today's quantities — no account needed. It's already copied to your clipboard.
+                  {shareResult.kind === "live"
+                    ? "Anyone with this link can view this list as it is right now, and it keeps updating as you edit. No account needed. Copied to your clipboard."
+                    : "Anyone with this link can view this list exactly as it is right now. It won't change when you edit the project later, and sending another snapshot makes a new link. No account needed. Copied to your clipboard."}
                 </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                  <input readOnly value={shareUrl} onFocus={(e) => e.target.select()} style={{ flex: 1, fontSize: 12.5 }} />
+                  <input readOnly value={shareResult.url} onFocus={(e) => e.target.select()} style={{ flex: 1, fontSize: 12.5 }} />
                   <button
                     className="btn btn-ghost"
-                    onClick={() => navigator.clipboard.writeText(shareUrl).catch(() => {})}
+                    onClick={() => navigator.clipboard?.writeText(shareResult.url).catch(() => {})}
                   >
                     <Copy size={14} /> Copy
                   </button>
                 </div>
               </>
             )}
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button className="btn btn-primary" onClick={() => { setShareUrl(null); setShareError(""); }}>Done</button>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+              {shareResult?.kind === "live" ? (
+                <button className="btn btn-ghost" style={{ color: "#AA0000" }} onClick={() => stopLiveLink(shareResult.projectId)}>
+                  Turn off live link
+                </button>
+              ) : <span />}
+              <button className="btn btn-primary" onClick={() => { setShareResult(null); setShareError(""); }}>Done</button>
             </div>
           </div>
         </div>
