@@ -1,15 +1,18 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { jsPDF } from "jspdf";
-import * as XLSX from "xlsx";
-import { JBM_REGULAR_B64, JBM_BOLD_B64 } from "./assets/fonts/jetbrainsMonoBase64.js";
 import { supabase } from "./lib/supabaseClient.js";
 
-// buildPdfBlob() (the live app's PDF export) reads these two globals; the
-// standalone share-link HTML this app generates also reads them, from its
-// own copy of window at that file's open time — see buildShareSnapshotHtml
-// below. On claude.ai these used to be injected by the host platform; here
-// we supply them ourselves from the bundled font.
-if (typeof window !== "undefined") {
+// The embedded PDF font (~300KB as base64) is loaded on demand by
+// loadJbmFont() below rather than imported here — most visits never
+// generate a PDF, so there's no reason to ship it in the main bundle.
+// buildPdfBlob() and buildShareSnapshotHtml() both read it off window
+// afterwards (the latter because the standalone HTML it generates reads
+// window.__JBM_*_B64 from its own copy of window at that file's open
+// time). On claude.ai these used to be injected by the host platform;
+// here we supply them ourselves from the bundled font.
+async function loadJbmFont() {
+  if (typeof window === "undefined") return;
+  if (window.__JBM_REGULAR_B64) return; // already loaded
+  const { JBM_REGULAR_B64, JBM_BOLD_B64 } = await import("./assets/fonts/jetbrainsMonoBase64.js");
   window.__JBM_REGULAR_B64 = JBM_REGULAR_B64;
   window.__JBM_BOLD_B64 = JBM_BOLD_B64;
 }
@@ -1312,6 +1315,9 @@ export default function EquipmentManifest({ session }) {
   // order, and items within each group keep your manual drag order too —
   // nothing here is re-sorted alphabetically.
   async function exportCatalogExcel(filename) {
+    // Loaded on demand rather than imported at the top of the file — xlsx
+    // is a sizeable library and most visits never touch this export.
+    const XLSX = await import("xlsx");
     const rows = [];
     const pushed = new Set();
     const pushItem = (c) => {
@@ -1486,7 +1492,10 @@ export default function EquipmentManifest({ session }) {
   // Builds the actual PDF and returns it as a Blob — no side effects, no
   // download. Used both by the real download button and by the preview
   // screen, so the preview is never anything other than this exact file.
-  function buildPdfBlob() {
+  // jsPDF is loaded on demand (it's a sizeable library, and most visits
+  // never export a PDF) rather than imported at the top of the file.
+  async function buildPdfBlob() {
+    const [{ jsPDF }] = await Promise.all([import("jspdf"), loadJbmFont()]);
     const doc = new jsPDF({ unit: "pt", format: "a4" });
 
       // Embed JetBrains Mono directly (regular + bold) so Vietnamese
@@ -1814,7 +1823,8 @@ export default function EquipmentManifest({ session }) {
   // for correct Vietnamese rendering) is embedded directly in the file, so
   // it opens correctly for anyone, offline, with no claude.ai account and
   // no connection back to this project. Returns the HTML as a string.
-  function buildShareSnapshotHtml(project) {
+  async function buildShareSnapshotHtml(project) {
+    await loadJbmFont();
     const visibleGrouped = computeVisibleGrouped(manifestGrouped, itemData);
     const perDayQty = !!project?.perDayQty;
     const groups = orderedKeys(visibleGrouped, Object.keys(departments)).map((dept) => ({
@@ -2085,7 +2095,7 @@ document.getElementById("dlBtn").addEventListener("click", downloadPdf);
   async function exportShareSnapshot(project) {
     setShareGenerating(true);
     try {
-      const html = buildShareSnapshotHtml(project);
+      const html = await buildShareSnapshotHtml(project);
       const blob = new Blob([html], { type: "text/html" });
       const mmdd = exportDateStr();
       const finalName = withTimeStamp(`${mmdd}_${slug(project?.name) || "equipment-list"}_share.html`);
@@ -2116,7 +2126,7 @@ document.getElementById("dlBtn").addEventListener("click", downloadPdf);
     const name = (filename && filename.trim()) || defaultExportFilename(activeProject, userName);
     setPdfGenerating(true);
     try {
-      const { blob } = buildPdfBlob();
+      const { blob } = await buildPdfBlob();
       const finalName = withTimeStamp(name.endsWith(".pdf") ? name : `${name}.pdf`);
 
       // Published claude.ai artifacts can't trigger a plain browser download
@@ -4486,7 +4496,7 @@ function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDo
     setUseFallback(false);
     (async () => {
       try {
-        const { blob, totalPages: pages } = buildPdfBlob();
+        const { blob, totalPages: pages } = await buildPdfBlob();
         url = URL.createObjectURL(blob);
         if (cancelled) return;
         setPdfUrl(url);
