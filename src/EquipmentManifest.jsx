@@ -1518,6 +1518,8 @@ export default function EquipmentManifest({ session }) {
 
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [shareGenerating, setShareGenerating] = useState(false);
+  const [shareUrl, setShareUrl] = useState(null);
+  const [shareError, setShareError] = useState("");
 
   // Rasterizes the visible preview screen and slices it into a real
   // multi-page PDF file that downloads directly. This avoids the browser's
@@ -1857,8 +1859,10 @@ export default function EquipmentManifest({ session }) {
   // current manifest — a frozen copy, not a live view. Everything the page
   // needs (data, styling, the PDF-drawing routine, the JetBrains Mono font
   // for correct Vietnamese rendering) is embedded directly in the file, so
-  // it opens correctly for anyone, offline, with no claude.ai account and
-  // no connection back to this project. Returns the HTML as a string.
+  // it opens correctly for anyone, offline, with no BOXGO account and no
+  // connection back to this project. Returns the HTML as a string; the
+  // caller (exportShareSnapshot) uploads it to Supabase Storage rather
+  // than making the user save and send the file themselves.
   async function buildShareSnapshotHtml(project) {
     await loadJbmFont();
     const visibleGrouped = computeVisibleGrouped(manifestGrouped, itemData);
@@ -2128,31 +2132,39 @@ document.getElementById("dlBtn").addEventListener("click", downloadPdf);
 </html>`;
   }
 
+  // Uploads the self-contained snapshot straight to Supabase Storage and
+  // hands back a public URL, instead of making the user save a .html file
+  // and send it themselves. Re-sharing the same project overwrites its
+  // existing file at the same path rather than piling up new ones, so the
+  // link someone was already given keeps working and just shows the
+  // latest snapshot next time you share again.
   async function exportShareSnapshot(project) {
     setShareGenerating(true);
+    setShareError("");
     try {
       const html = await buildShareSnapshotHtml(project);
       const blob = new Blob([html], { type: "text/html" });
-      const mmdd = exportDateStr();
-      const finalName = withTimeStamp(`${mmdd}_${slug(project?.name) || "equipment-list"}_share.html`);
-      const downloads = window.claude ? await window.claude.use("downloads") : null;
-      if (downloads) {
-        try {
-          await downloads.save({ filename: finalName, data: blob });
-        } catch (err) {
-          if (err?.code !== "declined") {
-            console.error("Downloads capability error:", err);
-            alert("Sorry, the shared file couldn't be saved. Please try again.");
-          }
-        }
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = finalName;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      const path = `${session.user.id}/${project.id}.html`;
+      const { error: uploadErr } = await supabase.storage.from("shares").upload(path, blob, {
+        contentType: "text/html",
+        upsert: true,
+      });
+      if (uploadErr) throw uploadErr;
+      const { data } = supabase.storage.from("shares").getPublicUrl(path);
+      setShareUrl(data.publicUrl);
+      try {
+        await navigator.clipboard.writeText(data.publicUrl);
+      } catch {
+        // clipboard permission denied or unavailable — the link is still
+        // shown on screen for the user to copy by hand
       }
+    } catch (err) {
+      console.error("Share upload failed:", err);
+      setShareError(
+        err?.message?.includes("Bucket not found")
+          ? "The \"shares\" storage bucket hasn't been set up in Supabase yet."
+          : "Sorry, the shareable link couldn't be created. Please try again."
+      );
     } finally {
       setShareGenerating(false);
     }
@@ -2840,6 +2852,38 @@ document.getElementById("dlBtn").addEventListener("click", downloadPdf);
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button className="btn btn-ghost" onClick={() => setPendingRestore(null)}>Cancel</button>
               <button className="btn btn-primary" onClick={() => applyRestore(pendingRestore)}>Restore</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(shareUrl || shareError) && (
+        <div className="no-print" style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
+          alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
+        }}>
+          <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 420, padding: 22, border: "1px solid var(--border2)" }}>
+            <div className="stencil" style={{ fontSize: 14, marginBottom: 10 }}>Share Snapshot</div>
+            {shareError ? (
+              <div style={{ fontSize: 13, color: "#AA0000", marginBottom: 16 }}>{shareError}</div>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
+                  Anyone with this link can view a read-only snapshot of this list, frozen at today's quantities — no account needed. It's already copied to your clipboard.
+                </div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  <input readOnly value={shareUrl} onFocus={(e) => e.target.select()} style={{ flex: 1, fontSize: 12.5 }} />
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => navigator.clipboard.writeText(shareUrl).catch(() => {})}
+                  >
+                    <Copy size={14} /> Copy
+                  </button>
+                </div>
+              </>
+            )}
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button className="btn btn-primary" onClick={() => { setShareUrl(null); setShareError(""); }}>Done</button>
             </div>
           </div>
         </div>
@@ -4511,34 +4555,21 @@ function DepartmentManagerModal({
 }
 
 // Renders the preview screen. Builds the actual PDF and displays those
-// exact bytes — there is no separate layout to keep in sync, so the
-// preview and the downloaded file are structurally guaranteed to match.
-//
-// Preferred path: draw each page onto a plain <canvas>, sized to fit the
-// screen width, then stack them in a normal scrollable <div>. Because
-// these are ordinary DOM elements (not an embedded PDF viewer plugin),
-// scrolling and scaling behave exactly like any other web page — no
-// zoomed-in native viewer, no page-drag instead of scroll.
-//
-// This depends on the pdf.js library loading from a CDN at startup. If
-// that failed for any reason (network hiccup, CDN issue), window.pdfjsLib
-// won't exist and __PDFJS_LOAD_FAILED is set — in that case this falls
-// back to the one-iframe-per-page view (native viewer, imperfect scaling,
-// but functional), so a CDN problem degrades the preview rather than
-// breaking it.
+// exact bytes in the browser's own native PDF viewer (an <iframe> pointed
+// at the real file) — there is no separate layout to keep in sync, so the
+// preview and the downloaded file are structurally guaranteed to match,
+// and because it's the real PDF (not a rasterized screenshot of it), the
+// text stays selectable and copyable straight out of the preview.
 function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDownload, pdfGenerating, onShare, shareGenerating }) {
   const [filename, setFilename] = useState(() => defaultExportFilename(project, userName));
   const [pdfUrl, setPdfUrl] = useState(null);
   const [totalPages, setTotalPages] = useState(0);
-  const [pageImages, setPageImages] = useState(null); // array of data URLs once canvas-rendered
-  const [useFallback, setUseFallback] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     let url = null;
-    setPageImages(null);
-    setUseFallback(false);
+    setPdfUrl(null);
     (async () => {
       try {
         const { blob, totalPages: pages } = await buildPdfBlob();
@@ -4547,35 +4578,6 @@ function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDo
         setPdfUrl(url);
         setTotalPages(pages);
         setError(false);
-
-        if (!window.pdfjsLib || window.__PDFJS_LOAD_FAILED) {
-          setUseFallback(true);
-          return;
-        }
-
-        try {
-          const arrayBuffer = await blob.arrayBuffer();
-          const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-          const targetWidth = Math.min(900, window.innerWidth - 32);
-          const dpr = Math.min(window.devicePixelRatio || 1, 2);
-          const images = [];
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const unscaled = page.getViewport({ scale: 1 });
-            const scale = (targetWidth * dpr) / unscaled.width;
-            const viewport = page.getViewport({ scale });
-            const canvas = document.createElement("canvas");
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            const ctx = canvas.getContext("2d");
-            await page.render({ canvasContext: ctx, viewport }).promise;
-            images.push(canvas.toDataURL("image/png"));
-          }
-          if (!cancelled) setPageImages(images);
-        } catch (err) {
-          console.error("Canvas PDF render failed, falling back to native viewer:", err);
-          if (!cancelled) setUseFallback(true);
-        }
       } catch (err) {
         console.error("Preview generation failed:", err);
         if (!cancelled) setError(true);
@@ -4584,8 +4586,6 @@ function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDo
     return () => { cancelled = true; if (url) URL.revokeObjectURL(url); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
-
-  const stillLoadingCanvas = !error && pdfUrl && !useFallback && !pageImages;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--surface2)", display: "flex", flexDirection: "column" }}>
@@ -4609,7 +4609,7 @@ function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDo
             className="btn btn-ghost"
             onClick={() => onShare(project)}
             disabled={shareGenerating}
-            title="Save a read-only snapshot of this list as a shareable webpage — frozen at today's quantities, viewable by anyone without a claude.ai account."
+            title="Get a shareable link to a read-only snapshot of this list, frozen at today's quantities — viewable by anyone, no account needed."
             style={{ padding: "6px 12px", fontSize: 12 }}
           >
             <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Share snapshot"}
@@ -4631,42 +4631,27 @@ function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDo
             <div className="stencil" style={{ fontSize: 13, color: "var(--muted)" }}>Couldn't generate the preview.</div>
           </div>
         )}
-        {(!error && !pdfUrl) || stillLoadingCanvas ? (
+        {!error && !pdfUrl ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 10 }}>
             <Loader2 size={18} className="spin" style={{ color: "var(--accent)" }} />
             <span className="stencil" style={{ fontSize: 12, color: "var(--muted)" }}>Generating preview…</span>
           </div>
         ) : null}
-        {!error && pdfUrl && pageImages && (
+        {!error && pdfUrl && (
           <div style={{ maxWidth: 900, margin: "0 auto" }}>
-            {pageImages.map((src, i) => (
-              <img
-                key={i}
-                src={src}
-                alt={`Page ${i + 1} of ${totalPages}`}
-                style={{ width: "100%", display: "block", marginBottom: 16, border: "1px solid var(--border)", borderRadius: 4 }}
-              />
-            ))}
-          </div>
-        )}
-        {!error && pdfUrl && useFallback && (
-          <div style={{ maxWidth: 900, margin: "0 auto" }}>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <iframe
-                key={p}
-                src={`${pdfUrl}#page=${p}&toolbar=0&navpanes=0&statusbar=0&view=FitH`}
-                title={`PDF preview — page ${p} of ${totalPages}`}
-                style={{
-                  width: "100%",
-                  aspectRatio: "595 / 842",
-                  border: "1px solid var(--border)",
-                  borderRadius: 4,
-                  background: "#fff",
-                  display: "block",
-                  marginBottom: 16,
-                }}
-              />
-            ))}
+            <iframe
+              src={`${pdfUrl}#toolbar=0&navpanes=0&statusbar=0&view=FitH`}
+              title={`PDF preview — ${totalPages} page${totalPages !== 1 ? "s" : ""}`}
+              style={{
+                width: "100%",
+                height: "calc(100vh - 140px)",
+                minHeight: 500,
+                border: "1px solid var(--border)",
+                borderRadius: 4,
+                background: "#fff",
+                display: "block",
+              }}
+            />
           </div>
         )}
       </div>
