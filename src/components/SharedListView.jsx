@@ -4,7 +4,7 @@ import { ACCENT_CHOICES } from "../constants.js";
 import { buildPdf } from "../lib/pdf.js";
 import { fetchSharedList } from "../lib/share.js";
 import { renderPdfPages } from "../lib/pdfPreview.js";
-import { defaultExportFilename, fmtDate, formatDMY, orderDepartments, withTimeStamp } from "../lib/utils.js";
+import { defaultExportFilename, fmtDate, formatDMY, orderDepartments, saveFile, withTimeStamp } from "../lib/utils.js";
 
 // Public, read-only page behind /share/:token — no account needed. Serves
 // both live links (always current) and frozen snapshots; the SQL function
@@ -88,12 +88,7 @@ export function SharedListView({ token }) {
         project, catalog, preparedBy, accentHex,
         departments: orderDepartments(shared.departments || {}, shared.departmentOrder),
       })).blob;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = withTimeStamp(`${defaultExportFilename(project, preparedBy.name) || "equipment-list"}.pdf`);
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      saveFile(blob, withTimeStamp(`${defaultExportFilename(project, preparedBy.name) || "equipment-list"}.pdf`));
     } catch (err) {
       console.error("PDF download failed:", err);
       alert("Sorry, the PDF couldn't be generated. Please try again.");

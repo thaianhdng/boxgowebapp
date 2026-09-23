@@ -17,7 +17,7 @@ import { SideItem } from "./components/SideItem.jsx";
 import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
-import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments } from "./lib/utils.js";
+import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
 
 
 // Gives every day an explicit number for every item that has any. A day
@@ -1138,12 +1138,7 @@ export default function EquipmentManifest({ session }) {
       setTimeout(() => setCatalogCopyState("idle"), 2000);
     } catch (err) {
       const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = withTimeStamp(`${exportDateStr()}_master-catalog.json`);
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      saveFile(blob, withTimeStamp(`${exportDateStr()}_master-catalog.json`));
     }
   }
 
@@ -1183,14 +1178,7 @@ export default function EquipmentManifest({ session }) {
       const nameSlug = userName.trim() ? `_${slug(userName)}` : "";
       const finalName = withTimeStamp(`${mmdd}_boxgo-backup${nameSlug}.json`);
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = finalName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      saveFile(blob, finalName);
     } catch (err) {
       console.error("Backup export failed:", err);
       setBackupError(`Backup couldn't be saved: ${err?.message || err}`);
@@ -1357,12 +1345,7 @@ export default function EquipmentManifest({ session }) {
       const { blob } = await buildPdfBlob();
       const finalName = withTimeStamp(name.endsWith(".pdf") ? name : `${name}.pdf`);
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = finalName;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      saveFile(blob, finalName);
     } catch (err) {
       console.error("PDF export failed:", err);
       alert("Sorry, the PDF couldn't be generated. Please try again.");

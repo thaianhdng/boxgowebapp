@@ -249,3 +249,22 @@ export function orderDepartments(departments, order) {
   for (const [name, subs] of Object.entries(departments)) if (!(name in result)) result[name] = subs;
   return result;
 }
+
+// Saves a file under the given name. iPhone/iPad Safari opens anything it
+// can display (like a PDF) in its own viewer instead of saving it, and
+// sharing or printing from there loses the filename — so there the file is
+// handed over as a generic download, which Safari saves to Downloads under
+// this name, the same way it treats a backup .json.
+export function saveFile(blob, filename) {
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const file = isIOS ? new Blob([blob], { type: "application/octet-stream" }) : blob;
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
