@@ -1481,6 +1481,9 @@ export default function EquipmentManifest({ session }) {
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .spin { animation: spin 0.9s linear infinite; }
         .row:hover { background: var(--surface2); }
+        /* Items inside pop-up menus (quantity list, day copy, card ⋮ menu). */
+        .pop-item { background: transparent; }
+        .pop-item:hover { background: var(--surface2); }
         .new-project-row-btn { display: none; }
         .back-to-top-btn { display: none !important; }
         .category-fab { display: none !important; }

@@ -247,10 +247,11 @@ function MenuItem({ icon, label, onClick, danger }) {
   return (
     <button
       onClick={onClick}
+      className="pop-item"
       style={{
         display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px",
-        background: "none", border: "none", borderRadius: 3, cursor: "pointer", textAlign: "left",
-        fontFamily: "inherit", fontSize: 13, fontWeight: 600, color: danger ? "var(--danger)" : "var(--text)",
+        border: "none", borderRadius: 3, cursor: "pointer", textAlign: "left",
+        fontFamily: "inherit", fontSize: 13, color: danger ? "var(--danger)" : "var(--text)",
       }}
     >
       {icon} {label}

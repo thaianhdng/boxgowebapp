@@ -69,13 +69,14 @@ export function ManifestDeptSection({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 4, padding: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", padding: "0 4px 0 2px" }}>Copy</span>
+            <span style={{ fontSize: 13, color: "var(--muted)", padding: "0 4px 0 2px" }}>Copy</span>
             {days.map((d, i) => i === copyMenu.index ? null : (
               <button
                 key={d.id}
                 onClick={() => { onCopyDay(i, copyMenu.index); setCopyMenu(null); }}
                 title={`Copy ${dayShort(d)} into ${dayShort(days[copyMenu.index])}`}
-                style={{ minWidth: 40, padding: "6px 8px", background: "var(--surface2)", border: "1px solid var(--border2)", borderRadius: 3, color: "var(--text)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+                className="pop-item"
+                style={{ minWidth: 40, padding: "6px 8px", border: "1px solid var(--border2)", borderRadius: 3, color: "var(--text)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
               >
                 {dayShort(d)}
               </button>
