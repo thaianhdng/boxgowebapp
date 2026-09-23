@@ -20,6 +20,8 @@ import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, f
 
 export default function EquipmentManifest({ session }) {
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [projects, setProjectsState] = useState([]);
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG);
@@ -153,13 +155,16 @@ export default function EquipmentManifest({ session }) {
           setProjectsState(projectRows.map((r) => ({ ...r.data, id: r.id })));
           setLiveShareTokens(Object.fromEntries(projectRows.filter((r) => r.share_token).map((r) => [r.id, r.share_token])));
         }
+        if (!cancelled) setLoaded(true);
       } catch (e) {
+        // Never fall through to "loaded" here: the defaults still in state
+        // would then autosave over this user's real catalog and settings.
         console.error("Failed to load BOXGO data from Supabase:", e);
+        if (!cancelled) setLoadError(true);
       }
-      if (!cancelled) setLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, [session]);
+  }, [session, loadAttempt]);
 
   // Support shareable preview links: ?project=<id> in the URL jumps straight
   // to that project's read-only preview once data has loaded, so someone
@@ -1175,6 +1180,30 @@ export default function EquipmentManifest({ session }) {
 
   const selectedAccent = ACCENT_CHOICES.find((a) => a.id === accentId) || ACCENT_CHOICES[0];
   const selectedFont = FONT_CHOICES.find((f) => f.id === fontId) || FONT_CHOICES[0];
+
+  // Until this user's own data has loaded, show nothing editable: the state
+  // still holds the built-in defaults, which are only meant for a brand-new
+  // account with no saved data.
+  if (!loaded) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12, background: "#111", color: "#aaa", fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace", fontSize: 13, padding: 16, textAlign: "center" }}>
+        <style>{"@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 0.9s linear infinite; }"}</style>
+        {loadError ? (
+          <>
+            <div>Couldn't load your data. Check your connection and try again.</div>
+            <button
+              onClick={() => { setLoadError(false); setLoadAttempt((n) => n + 1); }}
+              style={{ padding: "8px 16px", background: "#FFB020", color: "#111", border: "none", borderRadius: 4, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }}
+            >
+              Retry
+            </button>
+          </>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Loader2 size={16} className="spin" /> Loading…</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div data-theme={resolvedTheme} className="app-root" style={{
