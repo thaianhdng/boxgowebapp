@@ -1597,12 +1597,6 @@ export default function EquipmentManifest({ session }) {
                     <button className="btn btn-ghost" onClick={() => setShowDeptManager(true)}>
                       <ListFilter size={14} /> Manage
                     </button>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => { setEditingCatalogId(null); setShowCatalogForm(true); }}
-                    >
-                      <Plus size={14} /> Create New
-                    </button>
                   </>
                 )}
                 <button className="btn btn-ghost" onClick={() => setShowTagManager(true)}>
@@ -1796,15 +1790,22 @@ export default function EquipmentManifest({ session }) {
               })()}
               {view === "catalog" && (
                 <>
-                  <div style={{ position: "relative", marginBottom: 16 }}>
-                    <Search size={14} style={{ position: "absolute", left: 9, top: 10, color: "var(--muted)" }} />
+                  <div style={{ position: "relative", marginBottom: 12 }}>
+                    <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
                     <input
                       placeholder="Search catalog…"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      style={{ paddingLeft: 30, width: "100%", maxWidth: 320 }}
+                      style={{ paddingLeft: 30, width: "100%", fontSize: 13 }}
                     />
                   </div>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => { setEditingCatalogId(null); setShowCatalogForm(true); }}
+                    style={{ width: "100%", justifyContent: "center", marginBottom: 16 }}
+                  >
+                    <Plus size={14} /> Create New Item
+                  </button>
                   {catalog.length === 0 && (
                     <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)" }}>
                       <div style={{ fontSize: 14 }}>Catalog is empty — it fills up automatically as you add shoot items, or add entries directly.</div>
