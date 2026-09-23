@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./lib/supabaseClient.js";
+import { Logo } from "./components/Logo.jsx";
 
 const CONTACT_EMAIL = "thaianh.dng@gmail.com";
 const CONTACT_PHONE = "(+84)969609379";
@@ -31,13 +32,17 @@ export default function Login() {
         justifyContent: "center",
         background: "#111",
         fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
+        padding: 16,
+        boxSizing: "border-box",
       }}
     >
       <form
         onSubmit={handleSubmit}
         style={{
-          width: 320,
-          padding: 32,
+          width: "100%",
+          maxWidth: 360,
+          boxSizing: "border-box",
+          padding: 28,
           background: "#1a1a1a",
           border: "1px solid #333",
           borderRadius: 8,
@@ -46,9 +51,15 @@ export default function Login() {
           gap: 14,
         }}
       >
-        <div style={{ marginBottom: 8, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <Logo size={26} style={{ color: "#eee" }} />
           <span style={{ color: "#eee", fontSize: 18, fontWeight: 600 }}>BOXGO</span>
           <span style={{ color: "#888", fontSize: 10.5, letterSpacing: 0.3, textTransform: "uppercase" }}>Equipment List Composer</span>
+        </div>
+        <div style={{ color: "#aaa", fontSize: 12, lineHeight: 1.6, marginBottom: 8 }}>
+          Build camera, lens, grip and lighting lists from your own gear catalog,
+          set quantities per shoot day, then export a clean PDF or share a link
+          with your crew and rental house.
         </div>
         <input
           type="email"
@@ -73,7 +84,7 @@ export default function Login() {
           {loading ? "Signing in…" : "Sign in"}
         </button>
         <div style={{ borderTop: "1px solid #333", marginTop: 6, paddingTop: 12, fontSize: 11.5, color: "#888", lineHeight: 1.6 }}>
-          BOXGO is currently invitation-only. Need access? Contact{" "}
+          A personal project, available by invitation only. Need access? Contact{" "}
           <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FFB020" }}>{CONTACT_EMAIL}</a>
           {" "}or {CONTACT_PHONE}.
         </div>
