@@ -137,13 +137,13 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               </button>
               {menuId === p.id && (
                 <div style={{
-                  position: "absolute", top: "100%", right: 0, zIndex: 30, minWidth: 170, padding: 4,
+                  position: "absolute", top: "100%", right: 0, zIndex: 30, minWidth: 150, padding: 4,
                   background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
                 }}>
-                  <MenuItem icon={<Pencil size={14} />} label="Edit project" onClick={() => { setMenuId(null); onEdit(p); }} />
-                  <MenuItem icon={<Printer size={14} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
-                  <MenuItem icon={<Copy size={14} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
-                  <MenuItem icon={<Trash2 size={14} />} label="Delete" danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
+                  <MenuItem icon={<Pencil size={13} />} label="Edit project" onClick={() => { setMenuId(null); onEdit(p); }} />
+                  <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
+                  <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
+                  <MenuItem icon={<Trash2 size={13} />} label="Delete" danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
                 </div>
               )}
             </div>
@@ -249,9 +249,9 @@ function MenuItem({ icon, label, onClick, danger }) {
       onClick={onClick}
       className="pop-item"
       style={{
-        display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px",
+        display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "7px 10px",
         border: "none", borderRadius: 3, cursor: "pointer", textAlign: "left",
-        fontFamily: "inherit", fontSize: 13, color: danger ? "var(--danger)" : "var(--text)",
+        fontFamily: "inherit", fontSize: 12, color: danger ? "var(--danger)" : "var(--text)",
       }}
     >
       {icon} {label}

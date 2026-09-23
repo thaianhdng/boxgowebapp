@@ -32,7 +32,7 @@ export function Combobox({ value, onChange, options, placeholder, style, inputSt
               key={o}
               onMouseDown={(e) => { e.preventDefault(); onChange(o); setOpen(false); }}
               className="row"
-              style={{ padding: "7px 10px", fontSize: 13, cursor: "pointer" }}
+              style={{ padding: "7px 10px", fontSize: 12, cursor: "pointer" }}
             >
               {o}
             </div>

@@ -93,7 +93,7 @@ export function QtyDropdown({ value, onChange }) {
               onMouseDown={(e) => { e.preventDefault(); commit(n); setOpen(false); }}
               className="pop-item"
               style={{
-                padding: "4px 0", lineHeight: "16px", textAlign: "center", fontSize: 13, cursor: "pointer",
+                padding: "4px 0", lineHeight: "16px", textAlign: "center", fontSize: 12, cursor: "pointer",
                 ...(n === value ? { background: "var(--surface2)" } : {}),
                 color: n === value ? "var(--accent)" : "var(--text)",
                 fontWeight: n === value ? 700 : 400,
