@@ -28,6 +28,7 @@ export async function createSnapshot({ userId, project, catalog, departments, ac
     project: publicProject(project),
     catalog: catalog.filter((c) => usedIds.has(c.id)),
     departments,
+    departmentOrder: Object.keys(departments),
     accentId,
     preparedBy,
   };

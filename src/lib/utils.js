@@ -233,3 +233,14 @@ export function groupCatalog(catalog) {
   }
   return g;
 }
+
+// Supabase stores departments as jsonb, which doesn't keep key order (it
+// sorts keys by length), so the order set in Manage is saved separately as
+// an array. Rebuild the object in that order; any department missing from
+// the list keeps its place after the ordered ones.
+export function orderDepartments(departments, order) {
+  const result = {};
+  for (const name of order || []) if (departments[name]) result[name] = departments[name];
+  for (const [name, subs] of Object.entries(departments)) if (!(name in result)) result[name] = subs;
+  return result;
+}

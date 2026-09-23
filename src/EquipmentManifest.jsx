@@ -15,7 +15,7 @@ import { SideItem } from "./components/SideItem.jsx";
 import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
-import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDMY, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename } from "./lib/utils.js";
+import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDMY, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments } from "./lib/utils.js";
 
 
 export default function EquipmentManifest({ session }) {
@@ -129,7 +129,7 @@ export default function EquipmentManifest({ session }) {
         if (stateRow) {
           if (stateRow.catalog) setCatalog(stateRow.catalog);
           if (stateRow.departments) {
-            const withDefaults = { ...stateRow.departments };
+            const withDefaults = orderDepartments(stateRow.departments, stateRow.settings?.departmentOrder);
             if (!withDefaults.Subrent) withDefaults.Subrent = [];
             setDepartments(withDefaults);
           }
@@ -218,7 +218,7 @@ export default function EquipmentManifest({ session }) {
     saveTimer.current = setTimeout(async () => {
       try {
         const userId = session.user.id;
-        const settings = { userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId };
+        const settings = { userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId, departmentOrder: Object.keys(departments) };
         const { error: stateErr } = await supabase.from("app_state").upsert({
           user_id: userId,
           catalog,

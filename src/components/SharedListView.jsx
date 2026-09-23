@@ -5,7 +5,7 @@ import { buildPdf } from "../lib/pdf.js";
 import { fetchSharedList } from "../lib/share.js";
 import {
   computeVisibleGrouped, defaultExportFilename, fmtDate, formatDMY, formatShootDateRange,
-  formatTime24, groupCatalog, orderedKeys, withTimeStamp,
+  formatTime24, groupCatalog, orderDepartments, orderedKeys, withTimeStamp,
 } from "../lib/utils.js";
 
 // Public, read-only page behind /share/:token — no account needed. Serves
@@ -51,7 +51,8 @@ export function SharedListView({ token }) {
     );
   }
 
-  const { project, catalog, departments, preparedBy = {} } = shared;
+  const { project, catalog, preparedBy = {} } = shared;
+  const departments = orderDepartments(shared.departments || {}, shared.departmentOrder);
   const accentHex = (ACCENT_CHOICES.find((a) => a.id === shared.accentId) || ACCENT_CHOICES[0]).light;
   const days = project.days || [];
   const itemData = project.itemData || {};
