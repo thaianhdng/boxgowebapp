@@ -65,7 +65,7 @@ export function ManifestDeptSection({
           ref={copyMenuRef}
           style={{
             position: "fixed", top: copyMenu.top, left: copyMenu.left, transform: "translateX(-50%)", zIndex: 200,
-            background: "var(--surface)", border: "1px solid var(--text)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
+            background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 4, padding: 6 }}>

@@ -23,7 +23,7 @@ export function Combobox({ value, onChange, options, placeholder, style, inputSt
       {open && filtered.length > 0 && (
         <div style={{
           position: "absolute", top: "calc(100% - 1px)", left: 0, right: 0, zIndex: 30,
-          background: "var(--surface)", border: "1px solid var(--text)", borderTop: "none",
+          background: "var(--surface)", border: "1px solid var(--border2)", borderTop: "none",
           borderRadius: "0 0 3px 3px", maxHeight: 160, overflowY: "auto",
           boxShadow: "0 4px 10px rgba(27,27,24,0.12)",
         }}>

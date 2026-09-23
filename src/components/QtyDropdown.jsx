@@ -82,7 +82,7 @@ export function QtyDropdown({ value, onChange }) {
           ref={menuRef}
           style={{
             position: "fixed", top: pos.top, left: pos.left, zIndex: 200,
-            background: "var(--surface)", border: "1px solid var(--text)", borderRadius: 4,
+            background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4,
             width: pos.width, maxHeight: 132, overflowY: "auto",
             boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
           }}

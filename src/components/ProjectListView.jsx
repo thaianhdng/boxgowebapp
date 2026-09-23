@@ -138,7 +138,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               {menuId === p.id && (
                 <div style={{
                   position: "absolute", top: "100%", right: 0, zIndex: 30, minWidth: 170, padding: 4,
-                  background: "var(--surface)", border: "1px solid var(--text)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
+                  background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
                 }}>
                   <MenuItem icon={<Pencil size={14} />} label="Edit project" onClick={() => { setMenuId(null); onEdit(p); }} />
                   <MenuItem icon={<Printer size={14} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
