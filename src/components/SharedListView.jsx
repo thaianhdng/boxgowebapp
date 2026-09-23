@@ -25,6 +25,10 @@ export function SharedListView({ token }) {
   }, [token]);
 
   useEffect(() => {
+    document.body.style.background = "#fff";
+  }, []);
+
+  useEffect(() => {
     if (shared?.project?.name) document.title = `${shared.project.name} — BOXGO`;
   }, [shared]);
 

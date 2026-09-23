@@ -55,6 +55,10 @@ export default function EquipmentManifest({ session }) {
     return () => mql.removeEventListener("change", handler);
   }, []);
   const resolvedTheme = theme === "system" ? (systemPrefersDark ? "dark" : "light") : theme;
+  // Keep the page behind the app (seen on over-scroll) the same color as the app.
+  useEffect(() => {
+    document.body.style.background = resolvedTheme === "dark" ? "#0D0D0D" : "#FAFAF8";
+  }, [resolvedTheme]);
   const [accentId, setAccentId] = useState("amber");
   const [fontId, setFontId] = useState("jetbrains");
   const [rentalHouses, setRentalHouses] = useState([]);
