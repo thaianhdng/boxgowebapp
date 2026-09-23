@@ -1338,8 +1338,13 @@ export default function EquipmentManifest({ session }) {
     }
   }
 
-  async function exportToPdf(filename) {
+  // `ready` is the PDF the preview already built, when there is one.
+  async function exportToPdf(filename, ready) {
     const name = (filename && filename.trim()) || defaultExportFilename(activeProject, userName);
+    if (ready) {
+      saveFile(ready, withTimeStamp(name.endsWith(".pdf") ? name : `${name}.pdf`));
+      return;
+    }
     setPdfGenerating(true);
     try {
       const { blob } = await buildPdfBlob();

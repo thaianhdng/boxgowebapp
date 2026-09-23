@@ -250,15 +250,30 @@ export function orderDepartments(departments, order) {
   return result;
 }
 
-// Saves a file under the given name. iPhone/iPad Safari opens anything it
-// can display (like a PDF) in its own viewer instead of saving it, and
-// sharing or printing from there loses the filename — so there the file is
-// handed over as a generic download, which Safari saves to Downloads under
-// this name, the same way it treats a backup .json.
+// Saves a file under the given name. On iPhone/iPad this opens the Share
+// menu with the named file (Save to Files, AirDrop, Mail, Zalo…): Safari
+// otherwise opens a PDF in its viewer, and a home-screen web app only ever
+// shows a throwaway preview, with no file kept. Must be called straight
+// from a tap (iOS only allows the Share menu then), so callers pass a
+// file that's already built. Elsewhere it's a normal download.
 export function saveFile(blob, filename) {
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const file = isIOS ? new Blob([blob], { type: "application/octet-stream" }) : blob;
+  if (isIOS && typeof File !== "undefined") {
+    const file = new File([blob], filename, { type: blob.type || "application/octet-stream" });
+    if (navigator.canShare?.({ files: [file] })) {
+      navigator.share({ files: [file] }).catch((err) => {
+        if (err?.name !== "AbortError") download(blob, filename, true);
+      });
+      return;
+    }
+  }
+  download(blob, filename, isIOS);
+}
+
+function download(blob, filename, asGeneric) {
+  // iOS: a generic type makes Safari save the file rather than display it.
+  const file = asGeneric ? new Blob([blob], { type: "application/octet-stream" }) : blob;
   const url = URL.createObjectURL(file);
   const a = document.createElement("a");
   a.href = url;

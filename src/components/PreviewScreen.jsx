@@ -14,15 +14,20 @@ export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBac
   const [filename, setFilename] = useState(() => defaultExportFilename(project, userName));
   const [status, setStatus] = useState("loading"); // "loading" | "ready" | "error"
   const pagesRef = useRef(null);
+  // The PDF already built for the preview, reused by Download so the file
+  // is ready the instant it's tapped (iOS only opens its Share menu then).
+  const blobRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
     let cancelRender = null;
     setStatus("loading");
+    blobRef.current = null;
     const fail = (err) => { console.error("Preview generation failed:", err); if (!cancelled) setStatus("error"); };
     buildPdfBlob()
       .then(({ blob }) => {
         if (cancelled) return;
+        blobRef.current = blob;
         cancelRender = renderPdfPages(pagesRef.current, blob, {
           onDone: () => { if (!cancelled) setStatus("ready"); },
           onError: fail,
@@ -75,7 +80,7 @@ export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBac
           )}
           <button
             className="btn btn-primary"
-            onClick={() => onDownload(filename)}
+            onClick={() => onDownload(filename, blobRef.current)}
             disabled={pdfGenerating}
             style={{ padding: "6px 12px", fontSize: 12 }}
           >
