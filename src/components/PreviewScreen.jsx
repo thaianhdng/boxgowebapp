@@ -55,36 +55,38 @@ export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBac
             {project.name || "Equipment List"}
           </div>
         </div>
-        {onShareLive && (
+        <div style={{ marginLeft: "auto", display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 10 }}>
+          {onShareLive && (
+            <button
+              className="btn btn-ghost"
+              onClick={() => onShareLive(project)}
+              disabled={shareGenerating}
+              title="A link that always shows this list as it currently is — updates as you edit. For crew."
+              style={{ padding: "6px 12px", fontSize: 12 }}
+            >
+              <Radio size={14} /> {hasLiveLink ? "Live link (on)" : "Live link"}
+            </button>
+          )}
+          {onShareSnapshot && (
+            <button
+              className="btn btn-ghost"
+              onClick={() => onShareSnapshot(project)}
+              disabled={shareGenerating}
+              title="A permanent link to this list exactly as it is now — it won't change when you edit later. For rental houses."
+              style={{ padding: "6px 12px", fontSize: 12 }}
+            >
+              <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Send snapshot"}
+            </button>
+          )}
           <button
-            className="btn btn-ghost"
-            onClick={() => onShareLive(project)}
-            disabled={shareGenerating}
-            title="A link that always shows this list as it currently is — updates as you edit. For crew."
+            className="btn btn-primary"
+            onClick={() => onDownload(filename)}
+            disabled={pdfGenerating}
             style={{ padding: "6px 12px", fontSize: 12 }}
           >
-            <Radio size={14} /> {hasLiveLink ? "Live link (on)" : "Live link"}
+            <Printer size={14} /> Download PDF
           </button>
-        )}
-        {onShareSnapshot && (
-          <button
-            className="btn btn-ghost"
-            onClick={() => onShareSnapshot(project)}
-            disabled={shareGenerating}
-            title="A permanent link to this list exactly as it is now — it won't change when you edit later. For rental houses."
-            style={{ padding: "6px 12px", fontSize: 12 }}
-          >
-            <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Send snapshot"}
-          </button>
-        )}
-        <button
-          className="btn btn-primary"
-          onClick={() => onDownload(filename)}
-          disabled={pdfGenerating}
-          style={{ padding: "6px 12px", fontSize: 12 }}
-        >
-          <Printer size={14} /> Download PDF
-        </button>
+        </div>
       </div>
 
       <div style={{ flex: 1, padding: 16 }}>
