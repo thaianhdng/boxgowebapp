@@ -115,7 +115,7 @@ export function ManifestDeptSection({
                     </div>
                   )}
                   {days.length === 1 ? (
-                    <div style={{ ...dayHeadStyle, cursor: "default" }}>{dayShort(days[0])}</div>
+                    <div style={{ ...dayHeadStyle, fontSize: 10.5, cursor: "default" }}>Qty</div>
                   ) : days.map((d, i) => (
                     // Tapping a day heading offers "copy from" any other
                     // day. The dot is positioned below the label so it
