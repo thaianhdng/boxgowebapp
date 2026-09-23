@@ -75,7 +75,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       }
       if (perDayQty) {
         days.forEach((d, i) => {
-          doc.text(d.label.replace("Day ", "D"), rowX + nameColW + maxColW + i * dayColW + dayColW / 2, y, { align: "center" });
+          doc.text(days.length === 1 ? "QTY" : d.label.replace("Day ", "D"), rowX + nameColW + maxColW + i * dayColW + dayColW / 2, y, { align: "center" });
         });
       } else {
         doc.text("QTY", rowX + nameColW + maxColW + singleQtyColW / 2, y, { align: "center" });
