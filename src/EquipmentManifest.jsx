@@ -1572,7 +1572,8 @@ export default function EquipmentManifest({ session }) {
                   </>
                 )}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {/* Always hugs the right edge, even when it wraps onto its own line. */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginLeft: "auto" }}>
                 <div style={{ fontSize: 11, color: saveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
                   {saveState === "saving" && <><Loader2 size={12} className="spin" /> saving</>}
                   {saveState === "saved" && <><Check size={12} /> saved</>}
