@@ -1433,8 +1433,10 @@ export default function EquipmentManifest({ session }) {
            strip pinned above it, with the headers stopping just below, makes
            Safari pick the background instead. iOS only (see index.html). */
         .top-tint { display: none; }
-        .ios .top-tint { display: block; position: fixed; top: 0; left: 0; right: 0; height: 4px; background: var(--bg); z-index: 100; pointer-events: none; }
-        .ios .sticky-top { top: 4px !important; }
+        /* No pointer-events: none — Safari finds that element by hit-testing
+           the top edge, and an element taps pass through is skipped. */
+        .ios .top-tint { display: block; position: fixed; top: 0; left: 0; right: 0; height: 6px; background: var(--bg); z-index: 100; }
+        .ios .sticky-top { top: 6px !important; }
         .btn {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 5px 10px; border-radius: 3px; border: 1px solid var(--text);
