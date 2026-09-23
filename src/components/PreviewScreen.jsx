@@ -34,7 +34,7 @@ export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBac
   }, [project]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--surface2)", display: "flex", flexDirection: "column" }}>
+    <div style={{ flex: 1, background: "var(--surface2)", display: "flex", flexDirection: "column" }}>
       <div style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "var(--surface)", borderBottom: "2px solid var(--border)",

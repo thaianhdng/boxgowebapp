@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { QTY_OPTIONS } from "../constants.js";
+import { fixedScale } from "../lib/fixedPos.js";
 
 
 export function QtyDropdown({ value, onChange }) {
@@ -15,8 +16,9 @@ export function QtyDropdown({ value, onChange }) {
 
   function openMenu() {
     const r = btnRef.current?.getBoundingClientRect();
+    const k = fixedScale(btnRef.current);
     const menuWidth = 44;
-    if (r) setPos({ top: r.bottom + 2, left: r.left - (menuWidth - r.width) / 2, width: menuWidth });
+    if (r) setPos({ top: r.bottom / k + 2, left: (r.left + r.width / 2) / k - menuWidth / 2, width: menuWidth });
     setOpen(true);
   }
 

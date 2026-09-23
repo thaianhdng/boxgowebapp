@@ -204,6 +204,14 @@ export const ACCENT_CHOICES = [
 
 
 // 5 curated fonts, all with solid Vietnamese diacritic support.
+// App-wide size, chosen per device (saved in that browser, not the account).
+// Scales the whole app — text, buttons, icons — never the PDF or share page.
+export const UI_SIZES = [
+  { id: "small", name: "Small", zoom: 0.9 },
+  { id: "normal", name: "Normal", zoom: 1 },
+  { id: "large", name: "Large", zoom: 1.15 },
+];
+
 export const FONT_CHOICES = [
   { id: "jetbrains", name: "JetBrains Mono", stack: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace", googleFamily: "JetBrains+Mono:wght@400;500;600;700" },
   { id: "plex", name: "IBM Plex Mono", stack: "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace", googleFamily: "IBM+Plex+Mono:wght@400;500;600;700" },

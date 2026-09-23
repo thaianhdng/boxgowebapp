@@ -3,6 +3,7 @@ import {
   Plus, Copy, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { Combobox } from "./Combobox.jsx";
+import { fixedScale } from "../lib/fixedPos.js";
 import { ManifestItemRow } from "./ManifestItemRow.jsx";
 
 
@@ -28,7 +29,8 @@ export function ManifestDeptSection({
   const dayShort = (d) => d.label.replace("Day ", "D");
   function openCopyMenu(e, index) {
     const r = e.currentTarget.getBoundingClientRect();
-    setCopyMenu((m) => (m?.index === index ? null : { index, top: r.bottom + 6, left: r.left + r.width / 2 }));
+    const k = fixedScale(e.currentTarget);
+    setCopyMenu((m) => (m?.index === index ? null : { index, top: r.bottom / k + 6, left: (r.left + r.width / 2) / k }));
   }
   useEffect(() => {
     if (!copyMenu) return;

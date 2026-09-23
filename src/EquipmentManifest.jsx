@@ -13,7 +13,7 @@ import { PreviewScreen } from "./components/PreviewScreen.jsx";
 import { ProjectFormModal } from "./components/ProjectFormModal.jsx";
 import { ProjectListView } from "./components/ProjectListView.jsx";
 import { SideItem } from "./components/SideItem.jsx";
-import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES } from "./constants.js";
+import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
 import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments } from "./lib/utils.js";
@@ -57,6 +57,7 @@ function buildAppStatePayload(v) {
 }
 
 const CATALOG_OWNER_EMAIL = "thaianh.dng@gmail.com";
+const UI_SIZE_KEY = "boxgo-ui-size";
 
 export default function EquipmentManifest({ session }) {
   // Copy Catalog only matters to whoever maintains the default catalog new
@@ -106,6 +107,13 @@ export default function EquipmentManifest({ session }) {
   }, [resolvedTheme]);
   const [accentId, setAccentId] = useState("amber");
   const [fontId, setFontId] = useState("jetbrains");
+  // Per device, so it lives in this browser's storage rather than app_state.
+  const [uiSize, setUiSize] = useState(() => {
+    try { return localStorage.getItem(UI_SIZE_KEY) || "normal"; } catch { return "normal"; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(UI_SIZE_KEY, uiSize); } catch { /* storage blocked — size just won't persist */ }
+  }, [uiSize]);
   const [rentalHouses, setRentalHouses] = useState([]);
   const [projectFilter, setProjectFilter] = useState(null); // { field, value }
 
@@ -1352,6 +1360,7 @@ export default function EquipmentManifest({ session }) {
 
   const selectedAccent = ACCENT_CHOICES.find((a) => a.id === accentId) || ACCENT_CHOICES[0];
   const selectedFont = FONT_CHOICES.find((f) => f.id === fontId) || FONT_CHOICES[0];
+  const uiZoom = (UI_SIZES.find((sz) => sz.id === uiSize) || UI_SIZES[1]).zoom;
 
   // Until this user's own data has loaded, show nothing editable: the state
   // still holds the built-in defaults, which are only meant for a brand-new
@@ -1382,7 +1391,9 @@ export default function EquipmentManifest({ session }) {
       fontFamily: selectedFont.stack,
       background: "var(--bg)",
       color: "var(--text)",
-      minHeight: "100vh",
+      // CSS zoom scales everything inside, including 100vh, so divide it back.
+      zoom: uiZoom,
+      minHeight: `calc(100vh / ${uiZoom})`,
       display: "flex",
       flexDirection: "column",
     }}>
@@ -1989,6 +2000,8 @@ export default function EquipmentManifest({ session }) {
           onSetAccentId={setAccentId}
           fontId={fontId}
           onSetFontId={setFontId}
+          uiSize={uiSize}
+          onSetUiSize={setUiSize}
           onOpenCatalog={() => { setShowTagManager(false); setView("catalog"); }}
           onExportBackup={exportFullBackup}
           onRestoreFileSelect={handleBackupFileSelect}

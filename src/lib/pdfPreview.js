@@ -55,7 +55,10 @@ export function renderPdfPages(container, blob, { maxWidth = 900, onDone, onErro
       if (cancelled) return;
       container.replaceChildren();
       const width = Math.min(maxWidth, container.clientWidth || maxWidth);
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // The app's size setting (CSS zoom) stretches the canvas on screen, so
+      // draw it with that many more pixels to keep it sharp.
+      const zoom = (container.offsetWidth && container.getBoundingClientRect().width / container.offsetWidth) || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2) * Math.max(zoom, 1);
       for (let n = 1; n <= doc.numPages; n++) {
         const page = await doc.getPage(n);
         if (cancelled) return;

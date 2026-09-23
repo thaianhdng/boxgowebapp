@@ -3,7 +3,7 @@ import {
   Trash2, FileSpreadsheet, X, Package, ClipboardPaste, Sun, Moon, Monitor,
 } from "lucide-react";
 import { EditableAttrSection } from "./EditableAttrSection.jsx";
-import { ACCENT_CHOICES, FONT_CHOICES } from "../constants.js";
+import { ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "../constants.js";
 
 
 // The selected Light/Dark/System button uses the accent, so picking a
@@ -17,7 +17,7 @@ export function AttributesManagerModal({
   templates, onDeleteTemplate,
   userName, onSetUserName, userEmail, onSetUserEmail, userPhone, onSetUserPhone,
   includeUsernameInPdf, onSetIncludeUsernameInPdf, includeEmailInPdf, onSetIncludeEmailInPdf, includePhoneInPdf, onSetIncludePhoneInPdf,
-  theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId,
+  theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId, uiSize, onSetUiSize,
   onOpenCatalog, onExportBackup, onRestoreFileSelect, backupError, onClose, onSignOut,
 }) {
   const restoreInputRef = useRef(null);
@@ -159,6 +159,22 @@ export function AttributesManagerModal({
               <option key={f.id} value={f.id}>{f.name}</option>
             ))}
           </select>
+
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            {UI_SIZES.map((sz) => (
+              <button
+                key={sz.id}
+                className="btn btn-ghost"
+                style={{ flex: 1, justifyContent: "center", ...(uiSize === sz.id ? selectedModeStyle : {}) }}
+                onClick={() => onSetUiSize(sz.id)}
+              >
+                {sz.name}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
+            Size applies to this device only.
+          </div>
         </div>
 
         <EditableAttrSection
