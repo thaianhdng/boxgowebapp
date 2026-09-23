@@ -61,7 +61,7 @@ export function AttributesManagerModal({
             <div style={{ fontSize: 11.5, color: "#AA0000", marginBottom: 12 }}>{backupError}</div>
           )}
           <div style={{ fontSize: 11, color: "var(--muted)" }}>
-            Backup saves every project, tag, house, and the master catalog to one file. Restore replaces everything currently in the app with that file's contents.
+            Backup saves every project, tag, house, and the master catalog to one file. Restore lets you pick which parts of that file to bring back.
           </div>
         </div>
 

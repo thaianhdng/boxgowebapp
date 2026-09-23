@@ -6,6 +6,7 @@ import { supabase } from "./lib/supabaseClient.js";
 import { AttributesManagerModal } from "./components/AttributesManagerModal.jsx";
 import { CatalogDeptSection } from "./components/CatalogDeptSection.jsx";
 import { CatalogItemFormModal } from "./components/CatalogItemFormModal.jsx";
+import { RestoreModal } from "./components/RestoreModal.jsx";
 import { DepartmentManagerModal } from "./components/DepartmentManagerModal.jsx";
 import { ManifestDeptSection } from "./components/ManifestDeptSection.jsx";
 import { PreviewScreen } from "./components/PreviewScreen.jsx";
@@ -15,7 +16,7 @@ import { SideItem } from "./components/SideItem.jsx";
 import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
-import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDMY, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments } from "./lib/utils.js";
+import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments } from "./lib/utils.js";
 
 
 // Gives every day an explicit number for every item that has any. A day
@@ -1196,33 +1197,51 @@ export default function EquipmentManifest({ session }) {
     reader.readAsText(file);
   }
 
-  function applyRestore(data) {
-    // A backup made before project ids were switched to real UUIDs (or one
-    // hand-edited outside the app) can carry an id Supabase's projects.id
-    // column will reject — and since every project upserts in one batch,
-    // a single bad id fails the whole save silently. Reissue any id that
-    // isn't a valid UUID rather than let that happen again.
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const restoredProjects = (data.projects || []).map((p) =>
-      typeof p.id === "string" && uuidPattern.test(p.id) ? p : { ...p, id: newProjectId() }
-    );
-    setProjectsState(restoredProjects);
-    setDepartments(data.departments || DEFAULT_DEPARTMENTS);
-    setCatalog(data.catalog || []);
-    setProjectTags(data.projectTags || DEFAULT_PROJECT_TAGS);
-    setProductionHouses(data.productionHouses || []);
-    setRentalHouses(data.rentalHouses || []);
-    setBrands(data.brands || []);
-    if (data.userName) setUserName(data.userName);
-    if (data.userEmail) setUserEmail(data.userEmail);
-    if (data.userPhone) setUserPhone(data.userPhone);
-    if (typeof data.includeUsernameInPdf === "boolean") setIncludeUsernameInPdf(data.includeUsernameInPdf);
-    if (typeof data.includeEmailInPdf === "boolean") setIncludeEmailInPdf(data.includeEmailInPdf);
-    if (typeof data.includePhoneInPdf === "boolean") setIncludePhoneInPdf(data.includePhoneInPdf);
-    if (data.templates) setTemplates(data.templates);
-    if (data.theme) setTheme(data.theme);
-    if (data.accentId) setAccentId(data.accentId);
-    if (data.fontId) setFontId(data.fontId);
+  // `sel` comes from RestoreModal: `projects` is a Set of indexes into
+  // data.projects; every other key is a section the user ticked. Ticked
+  // sections replace what's in the app; ticked projects are added (or
+  // overwrite the current project with the same id) and every other current
+  // project is kept — nothing is deleted.
+  function applyRestore(data, sel) {
+    const picked = (data.projects || []).filter((_, i) => sel.projects.has(i));
+    if (picked.length > 0) {
+      // A backup made before project ids were switched to real UUIDs (or one
+      // hand-edited outside the app) can carry an id Supabase's projects.id
+      // column will reject — and since every project upserts in one batch,
+      // a single bad id fails the whole save silently. Reissue any id that
+      // isn't a valid UUID rather than let that happen again.
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const restoredProjects = picked.map((p) =>
+        typeof p.id === "string" && uuidPattern.test(p.id) ? p : { ...p, id: newProjectId() }
+      );
+      const byId = new Map(restoredProjects.map((p) => [p.id, p]));
+      setProjectsState((prev) => [
+        ...restoredProjects,
+        ...prev.filter((p) => !byId.has(p.id)),
+      ]);
+    }
+    if (sel.catalog) {
+      setDepartments(data.departments || DEFAULT_DEPARTMENTS);
+      setCatalog(data.catalog || []);
+    }
+    if (sel.brands) setBrands(data.brands || []);
+    if (sel.projectTags) setProjectTags(data.projectTags || DEFAULT_PROJECT_TAGS);
+    if (sel.productionHouses) setProductionHouses(data.productionHouses || []);
+    if (sel.rentalHouses) setRentalHouses(data.rentalHouses || []);
+    if (sel.templates && data.templates) setTemplates(data.templates);
+    if (sel.profile) {
+      if (data.userName) setUserName(data.userName);
+      if (data.userEmail) setUserEmail(data.userEmail);
+      if (data.userPhone) setUserPhone(data.userPhone);
+      if (typeof data.includeUsernameInPdf === "boolean") setIncludeUsernameInPdf(data.includeUsernameInPdf);
+      if (typeof data.includeEmailInPdf === "boolean") setIncludeEmailInPdf(data.includeEmailInPdf);
+      if (typeof data.includePhoneInPdf === "boolean") setIncludePhoneInPdf(data.includePhoneInPdf);
+    }
+    if (sel.appearance) {
+      if (data.theme) setTheme(data.theme);
+      if (data.accentId) setAccentId(data.accentId);
+      if (data.fontId) setFontId(data.fontId);
+    }
     setActiveProjectId(null);
     setView("projects");
     setPendingRestore(null);
@@ -1980,37 +1999,12 @@ export default function EquipmentManifest({ session }) {
       )}
 
       {pendingRestore && (
-        <div className="no-print" style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
-          alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
-        }}>
-          <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 380, padding: 22, border: "1px solid var(--border2)" }}>
-            <div className="stencil" style={{ fontSize: 14, marginBottom: 10 }}>Restore Backup</div>
-            {pendingRestore.userName && (
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
-                Backed up by {pendingRestore.userName}
-              </div>
-            )}
-            <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10 }}>
-              This backup was made {pendingRestore.exportedAt ? formatDMY(pendingRestore.exportedAt.slice(0, 10)) : "at an unknown time"} and contains:
-            </div>
-            <ul style={{ fontSize: 13, color: "var(--text)", margin: "0 0 16px", paddingLeft: 18 }}>
-              <li>{(pendingRestore.projects || []).length} project{(pendingRestore.projects || []).length !== 1 ? "s" : ""}</li>
-              <li>{(pendingRestore.catalog || []).length} catalog item{(pendingRestore.catalog || []).length !== 1 ? "s" : ""}</li>
-              <li>{(pendingRestore.projectTags || []).length} tag{(pendingRestore.projectTags || []).length !== 1 ? "s" : ""}, {(pendingRestore.productionHouses || []).length} production house{(pendingRestore.productionHouses || []).length !== 1 ? "s" : ""}, {(pendingRestore.rentalHouses || []).length} rental house{(pendingRestore.rentalHouses || []).length !== 1 ? "s" : ""}</li>
-              {(pendingRestore.templates || []).length > 0 && (
-                <li>{pendingRestore.templates.length} template{pendingRestore.templates.length !== 1 ? "s" : ""}</li>
-              )}
-            </ul>
-            <div style={{ fontSize: 12, color: "#AA0000", marginBottom: 20 }}>
-              This replaces everything currently in the app. This can't be undone.
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button className="btn btn-ghost" onClick={() => setPendingRestore(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={() => applyRestore(pendingRestore)}>Restore</button>
-            </div>
-          </div>
-        </div>
+        <RestoreModal
+          data={pendingRestore}
+          currentProjectIds={new Set(projects.map((p) => p.id))}
+          onCancel={() => setPendingRestore(null)}
+          onRestore={(sel) => applyRestore(pendingRestore, sel)}
+        />
       )}
 
       {(shareResult || shareError) && (
