@@ -1073,8 +1073,8 @@ export default function EquipmentManifest({ session }) {
   }
 
 
-  // Copies the master catalog as JSON — { departments, catalog }, shaped like
-  // DEFAULT_DEPARTMENTS and DEFAULT_CATALOG in constants.js — the point isn't spreadsheet editing, it's
+  // Copies the master catalog as JSON — { departments, brands, catalog }, shaped like
+  // DEFAULT_DEPARTMENTS, DEFAULT_BRANDS and DEFAULT_CATALOG in constants.js — the point isn't spreadsheet editing, it's
   // getting a modified catalog back out so it can be baked into the app's
   // source as the new default (what a fresh account starts with). Ordered to
   // match your manual "Manage" department/subcategory order, items within
@@ -1108,7 +1108,7 @@ export default function EquipmentManifest({ session }) {
     catalog.forEach((c) => { if (!pushed.has(c.id)) pushItem(c); });
     // Categories come along too — as an ordered object (category order, and
     // each category's sub-category order), shaped like DEFAULT_DEPARTMENTS.
-    const json = JSON.stringify({ departments, catalog: rows }, null, 2);
+    const json = JSON.stringify({ departments, brands, catalog: rows }, null, 2);
 
     try {
       await navigator.clipboard.writeText(json);
