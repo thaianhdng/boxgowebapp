@@ -1646,10 +1646,11 @@ export default function EquipmentManifest({ session }) {
                         )}
                         <button
                           onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }}
-                          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", flexShrink: 0, padding: 2 }}
-                          title="Edit project"
+                          className="btn btn-ghost"
+                          style={{ flexShrink: 0, padding: "5px 10px", fontSize: 12 }}
+                          title="Edit project details, days and quantity mode"
                         >
-                          <Pencil size={14} />
+                          <Pencil size={13} /> Edit project
                         </button>
                       </div>
                       <textarea
