@@ -90,7 +90,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
         <Plus size={18} /> Create New
       </button>
       {visibleProjects.map((p) => {
-        const bodies = usedModels(p, (c) => /camera/i.test(c.department) && /bod(y|ies)/i.test(c.subcategory || ""));
+        const bodies = usedModels(p, (c) => /camera/i.test(c.department));
         const lenses = usedModels(p, (c) => /lens/i.test(c.department) || /lens/i.test(c.subcategory || ""));
         const emptyDays = (p.days || []).filter(
           (d) => !Object.values(p.itemData || {}).some((entry) => (entry.quantities?.[d.id] || 0) > 0)
