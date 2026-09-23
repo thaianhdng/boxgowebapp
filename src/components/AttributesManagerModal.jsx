@@ -206,22 +206,24 @@ export function AttributesManagerModal({
             onRemove={onRemoveRentalHouse}
           />
 
-          {templates.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Templates</div>
-              {templates.map((t) => (
-                <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
-                  <span style={{ fontSize: 13 }}>{t.name}</span>
-                  <button onClick={() => onDeleteTemplate(t.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
           <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 20 }}>
             Click a name to rename it — this updates every project using it. Removing one just takes it off the list; projects already using it keep their saved value.
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Templates</div>
+            {templates.map((t) => (
+              <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ fontSize: 13 }}>{t.name}</span>
+                <button onClick={() => onDeleteTemplate(t.id)} title="Delete template" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
+              {templates.length === 0 && "No templates yet. "}
+              To make one, open a project → Edit project → Save as Template. New projects can then start from it via the "Start from" menu in Create New.
+            </div>
           </div>
           </>
         )}
