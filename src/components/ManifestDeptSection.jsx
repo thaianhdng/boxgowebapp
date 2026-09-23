@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Plus, Copy, ChevronDown, ChevronRight,
 } from "lucide-react";
@@ -23,6 +23,29 @@ export function ManifestDeptSection({
   // adding more shoot days, which makes the row wider than the screen,
   // scrolls the header along with the body instead of the header just
   // getting cut off.
+  const [copyMenu, setCopyMenu] = useState(null); // { index, top, left }
+  const copyMenuRef = useRef(null);
+  const dayShort = (d) => d.label.replace("Day ", "D");
+  function openCopyMenu(e, index) {
+    const r = e.currentTarget.getBoundingClientRect();
+    setCopyMenu((m) => (m?.index === index ? null : { index, top: r.bottom + 6, left: r.left + r.width / 2 }));
+  }
+  useEffect(() => {
+    if (!copyMenu) return;
+    const close = (e) => { if (!copyMenuRef.current?.contains(e.target)) setCopyMenu(null); };
+    const closeNow = () => setCopyMenu(null);
+    document.addEventListener("mousedown", close, true);
+    document.addEventListener("touchstart", close, true);
+    window.addEventListener("scroll", closeNow, true);
+    window.addEventListener("resize", closeNow);
+    return () => {
+      document.removeEventListener("mousedown", close, true);
+      document.removeEventListener("touchstart", close, true);
+      window.removeEventListener("scroll", closeNow, true);
+      window.removeEventListener("resize", closeNow);
+    };
+  }, [copyMenu]);
+
   function syncScroll(fromRef, toRef) {
     return () => { if (toRef.current) toRef.current.scrollLeft = fromRef.current.scrollLeft; };
   }
@@ -35,6 +58,22 @@ export function ManifestDeptSection({
 
   return (
     <div id={id} style={{ marginBottom: 32, border: "1px solid var(--border)", borderRadius: 4, scrollMarginTop: 16 }}>
+      {copyMenu && days[copyMenu.index] && (
+        <div
+          ref={copyMenuRef}
+          style={{
+            position: "fixed", top: copyMenu.top, left: copyMenu.left, transform: "translateX(-50%)", zIndex: 200,
+            background: "var(--surface)", border: "1px solid var(--text)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
+          }}
+        >
+          <button
+            onClick={() => { onCopyPreviousDay(copyMenu.index); setCopyMenu(null); }}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "none", border: "none", color: "var(--text)", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit" }}
+          >
+            <Copy size={13} /> Copy {dayShort(days[copyMenu.index - 1])} → {dayShort(days[copyMenu.index])}
+          </button>
+        </div>
+      )}
       <div style={{ position: "sticky", top: 0, zIndex: 6, borderRadius: collapsed ? "4px" : "4px 4px 0 0", overflow: "hidden" }}>
         <div
           onClick={onToggle}
@@ -68,18 +107,22 @@ export function ManifestDeptSection({
                     </div>
                   )}
                   {days.map((d, i) => (
-                    <div key={d.id} style={{ width: 40, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 2, fontSize: 10, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
-                      {d.label.replace("Day ", "D")}
-                      {days.length > 1 && i > 0 && (
-                        <button
-                          onClick={() => onCopyPreviousDay(i)}
-                          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", padding: 0 }}
-                          title={`Copy ${d.label.replace("Day ", "D")}'s quantities from the day before`}
-                        >
-                          <Copy size={11} />
-                        </button>
-                      )}
-                    </div>
+                    i === 0 ? (
+                      <div key={d.id} style={{ ...dayHeadStyle, cursor: "default" }}>{dayShort(d)}</div>
+                    ) : (
+                      // Day 2+: tapping the heading offers "copy from the day
+                      // before". The dot is positioned below the label so it
+                      // never shifts the label off-centre from its column.
+                      <button
+                        key={d.id}
+                        onClick={(e) => openCopyMenu(e, i)}
+                        style={dayHeadStyle}
+                        title={`Copy quantities from ${dayShort(days[i - 1])} into ${dayShort(d)}`}
+                      >
+                        {dayShort(d)}
+                        <span style={{ position: "absolute", left: "50%", bottom: -1, transform: "translateX(-50%)", width: 3, height: 3, borderRadius: "50%", background: "currentColor", opacity: 0.7 }} />
+                      </button>
+                    )
                   ))}
                 </>
               ) : (
@@ -191,3 +234,9 @@ export function ManifestDeptSection({
     </div>
   );
 }
+
+const dayHeadStyle = {
+  width: 40, flexShrink: 0, position: "relative", padding: "2px 0", background: "none", border: "none",
+  textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase",
+  cursor: "pointer", fontFamily: "inherit",
+};
