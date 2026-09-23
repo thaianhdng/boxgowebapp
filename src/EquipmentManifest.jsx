@@ -18,6 +18,26 @@ import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./
 import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDMY, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments } from "./lib/utils.js";
 
 
+// The app_state row as saved to Supabase. Built from one place so the
+// "has this changed since it was saved?" check compares like with like.
+function buildAppStatePayload(v) {
+  return {
+    catalog: v.catalog,
+    departments: v.departments,
+    project_tags: v.projectTags,
+    production_houses: v.productionHouses,
+    rental_houses: v.rentalHouses,
+    brands: v.brands,
+    templates: v.templates,
+    settings: {
+      userName: v.userName, userEmail: v.userEmail, userPhone: v.userPhone,
+      includeUsernameInPdf: v.includeUsernameInPdf, includeEmailInPdf: v.includeEmailInPdf, includePhoneInPdf: v.includePhoneInPdf,
+      theme: v.theme, accentId: v.accentId, fontId: v.fontId,
+      departmentOrder: Object.keys(v.departments),
+    },
+  };
+}
+
 export default function EquipmentManifest({ session }) {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -85,7 +105,6 @@ export default function EquipmentManifest({ session }) {
   const [undoState, setUndoState] = useState(null);
   const undoTimerRef = useRef(null);
   const [saveState, setSaveState] = useState("idle");
-  const saveTimer = useRef(null);
   const noteRef = useRef(null);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || null;
@@ -110,52 +129,95 @@ export default function EquipmentManifest({ session }) {
     );
   }
 
+  // Every device keeps a full copy of this user's data in memory, and a tab
+  // can sit open for days. To stop a stale device writing its old copy over
+  // newer changes from another device:
+  // - saves only write what actually changed since the last load/save
+  //   (tracked in savedProjectsRef / savedStateJsonRef), and
+  // - the app re-fetches from Supabase whenever it comes back into view,
+  //   before the user can edit anything, unless it has unsaved changes.
+  const savedProjectsRef = useRef(new Map()); // project id -> object as last loaded/saved
+  const savedStateJsonRef = useRef(null);     // app_state payload as last saved
+  const pendingSavesRef = useRef(0);
+
+  async function fetchServerData() {
+    const userId = session.user.id;
+    const [{ data: stateRow, error: stateErr }, { data: projectRows, error: projectsErr }] = await Promise.all([
+      supabase.from("app_state").select("*").eq("user_id", userId).maybeSingle(),
+      supabase.from("projects").select("*").eq("user_id", userId),
+    ]);
+    if (stateErr) throw stateErr;
+    if (projectsErr) throw projectsErr;
+    return { stateRow, projectRows: projectRows || [] };
+  }
+
+  function applyServerData({ stateRow, projectRows }) {
+    if (stateRow) {
+      const st = stateRow.settings || {};
+      const depts = orderDepartments(stateRow.departments || departments, st.departmentOrder);
+      if (!depts.Subrent) depts.Subrent = [];
+      const v = {
+        catalog: stateRow.catalog || catalog,
+        departments: depts,
+        projectTags: stateRow.project_tags || projectTags,
+        productionHouses: stateRow.production_houses || productionHouses,
+        rentalHouses: stateRow.rental_houses || rentalHouses,
+        brands: stateRow.brands || brands,
+        templates: stateRow.templates || templates,
+        userName: st.userName || "",
+        userEmail: st.userEmail || "",
+        userPhone: st.userPhone || "",
+        includeUsernameInPdf: typeof st.includeUsernameInPdf === "boolean" ? st.includeUsernameInPdf : true,
+        includeEmailInPdf: typeof st.includeEmailInPdf === "boolean" ? st.includeEmailInPdf : false,
+        includePhoneInPdf: typeof st.includePhoneInPdf === "boolean" ? st.includePhoneInPdf : false,
+        theme: st.theme || "dark",
+        accentId: st.accentId || "amber",
+        fontId: st.fontId || "jetbrains",
+      };
+      setCatalog(v.catalog);
+      setDepartments(v.departments);
+      setProjectTags(v.projectTags);
+      setProductionHouses(v.productionHouses);
+      setRentalHouses(v.rentalHouses);
+      setBrands(v.brands);
+      setTemplates(v.templates);
+      setUserName(v.userName);
+      setUserEmail(v.userEmail);
+      setUserPhone(v.userPhone);
+      setIncludeUsernameInPdf(v.includeUsernameInPdf);
+      setIncludeEmailInPdf(v.includeEmailInPdf);
+      setIncludePhoneInPdf(v.includePhoneInPdf);
+      setTheme(v.theme);
+      setAccentId(v.accentId);
+      setFontId(v.fontId);
+      // What we just loaded is by definition saved — so applying it never
+      // triggers a write-back that could race another device's save.
+      savedStateJsonRef.current = JSON.stringify(buildAppStatePayload(v));
+    }
+    const loadedProjects = projectRows.map((r) => ({ ...r.data, id: r.id }));
+    savedProjectsRef.current = new Map(loadedProjects.map((p) => [p.id, p]));
+    setProjectsState(loadedProjects);
+    setLiveShareTokens(Object.fromEntries(projectRows.filter((r) => r.share_token).map((r) => [r.id, r.share_token])));
+    // A project deleted on another device: leave its screens.
+    if (activeProjectId && !loadedProjects.some((p) => p.id === activeProjectId)) {
+      setActiveProjectId(null);
+      setView("projects");
+    }
+  }
+
   // load — reads everything from Supabase once we have an authenticated
   // session. app_state is one row per user (catalog/departments/tags/
   // houses/brands/templates/settings); projects are one row each, keyed
-  // by the project's own id. See supabase-schema.sql for the tables.
+  // by the project's own id.
   useEffect(() => {
     let cancelled = false;
     if (!session) return;
     (async () => {
       try {
-        const userId = session.user.id;
-        const [{ data: stateRow, error: stateErr }, { data: projectRows, error: projectsErr }] = await Promise.all([
-          supabase.from("app_state").select("*").eq("user_id", userId).maybeSingle(),
-          supabase.from("projects").select("*").eq("user_id", userId),
-        ]);
+        const data = await fetchServerData();
         if (cancelled) return;
-        if (stateErr) throw stateErr;
-        if (projectsErr) throw projectsErr;
-
-        if (stateRow) {
-          if (stateRow.catalog) setCatalog(stateRow.catalog);
-          if (stateRow.departments) {
-            const withDefaults = orderDepartments(stateRow.departments, stateRow.settings?.departmentOrder);
-            if (!withDefaults.Subrent) withDefaults.Subrent = [];
-            setDepartments(withDefaults);
-          }
-          if (stateRow.project_tags) setProjectTags(stateRow.project_tags);
-          if (stateRow.production_houses) setProductionHouses(stateRow.production_houses);
-          if (stateRow.rental_houses) setRentalHouses(stateRow.rental_houses);
-          if (stateRow.brands) setBrands(stateRow.brands);
-          if (stateRow.templates) setTemplates(stateRow.templates);
-          const s = stateRow.settings || {};
-          if (s.userName) setUserName(s.userName);
-          if (s.userEmail) setUserEmail(s.userEmail);
-          if (s.userPhone) setUserPhone(s.userPhone);
-          if (typeof s.includeUsernameInPdf === "boolean") setIncludeUsernameInPdf(s.includeUsernameInPdf);
-          if (typeof s.includeEmailInPdf === "boolean") setIncludeEmailInPdf(s.includeEmailInPdf);
-          if (typeof s.includePhoneInPdf === "boolean") setIncludePhoneInPdf(s.includePhoneInPdf);
-          if (s.theme) setTheme(s.theme);
-          if (s.accentId) setAccentId(s.accentId);
-          if (s.fontId) setFontId(s.fontId);
-        }
-        if (projectRows) {
-          setProjectsState(projectRows.map((r) => ({ ...r.data, id: r.id })));
-          setLiveShareTokens(Object.fromEntries(projectRows.filter((r) => r.share_token).map((r) => [r.id, r.share_token])));
-        }
-        if (!cancelled) setLoaded(true);
+        applyServerData(data);
+        setLoaded(true);
       } catch (e) {
         // Never fall through to "loaded" here: the defaults still in state
         // would then autosave over this user's real catalog and settings.
@@ -164,6 +226,7 @@ export default function EquipmentManifest({ session }) {
       }
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, loadAttempt]);
 
   // Support shareable preview links: ?project=<id> in the URL jumps straight
@@ -213,49 +276,97 @@ export default function EquipmentManifest({ session }) {
   }
 
 
-  // save (debounced) — mirrors state into Supabase: one upsert for the
-  // app_state row, one upsert per project. Deleting a project writes
-  // immediately in deleteProject() below rather than waiting on this.
+  const appStatePayload = () => buildAppStatePayload({
+    catalog, departments, projectTags, productionHouses, rentalHouses, brands, templates,
+    userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId,
+  });
+  const changedProjects = () => projects.filter((p) => savedProjectsRef.current.get(p.id) !== p);
+  const hasUnsavedChanges = () =>
+    pendingSavesRef.current > 0 ||
+    changedProjects().length > 0 ||
+    JSON.stringify(appStatePayload()) !== savedStateJsonRef.current;
+
+  async function runSave(write) {
+    pendingSavesRef.current += 1;
+    setSaveState("saving");
+    try {
+      await write();
+      pendingSavesRef.current -= 1;
+      if (pendingSavesRef.current === 0) setSaveState("saved");
+    } catch (e) {
+      pendingSavesRef.current -= 1;
+      console.error("Failed to save BOXGO data to Supabase:", e);
+      setSaveState("error");
+    }
+  }
+
+  // save catalog/settings (debounced) — only when they actually changed.
   useEffect(() => {
     if (!loaded || !session) return;
-    setSaveState("saving");
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      try {
-        const userId = session.user.id;
-        const settings = { userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId, departmentOrder: Object.keys(departments) };
-        const { error: stateErr } = await supabase.from("app_state").upsert({
-          user_id: userId,
-          catalog,
-          departments,
-          project_tags: projectTags,
-          production_houses: productionHouses,
-          rental_houses: rentalHouses,
-          brands,
-          templates,
-          settings,
+    const timer = setTimeout(() => {
+      const payload = appStatePayload();
+      const json = JSON.stringify(payload);
+      if (json === savedStateJsonRef.current) return;
+      runSave(async () => {
+        const { error } = await supabase.from("app_state").upsert({
+          user_id: session.user.id,
+          ...payload,
           updated_at: new Date().toISOString(),
         });
-        if (stateErr) throw stateErr;
-
-        if (projects.length > 0) {
-          const rows = projects.map((p) => ({
-            id: p.id,
-            user_id: userId,
-            data: p,
-            updated_at: new Date().toISOString(),
-          }));
-          const { error: projectsErr } = await supabase.from("projects").upsert(rows);
-          if (projectsErr) throw projectsErr;
-        }
-        setSaveState("saved");
-      } catch (e) {
-        console.error("Failed to save BOXGO data to Supabase:", e);
-        setSaveState("error");
-      }
+        if (error) throw error;
+        savedStateJsonRef.current = json;
+      });
     }, 500);
-    return () => clearTimeout(saveTimer.current);
-  }, [projects, departments, catalog, projectTags, productionHouses, rentalHouses, brands, userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, templates, theme, accentId, fontId, loaded, session]);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [departments, catalog, projectTags, productionHouses, rentalHouses, brands, userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, templates, theme, accentId, fontId, loaded, session]);
+
+  // save projects (debounced) — only the ones that changed. Deleting a
+  // project writes immediately in deleteProject() rather than here.
+  useEffect(() => {
+    if (!loaded || !session) return;
+    const timer = setTimeout(() => {
+      const changed = changedProjects();
+      if (changed.length === 0) return;
+      runSave(async () => {
+        const now = new Date().toISOString();
+        const { error } = await supabase.from("projects").upsert(
+          changed.map((p) => ({ id: p.id, user_id: session.user.id, data: p, updated_at: now }))
+        );
+        if (error) throw error;
+        changed.forEach((p) => savedProjectsRef.current.set(p.id, p));
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects, loaded, session]);
+
+  // Coming back to the app (switching tabs/apps, unlocking the phone):
+  // pull the latest from Supabase so this device can't overwrite newer
+  // changes made elsewhere. Skipped while this device has unsaved edits —
+  // those get saved first, and the next return refreshes.
+  useEffect(() => {
+    if (!loaded || !session) return;
+    let refreshing = false;
+    async function refresh() {
+      if (document.visibilityState !== "visible" || refreshing || hasUnsavedChanges()) return;
+      refreshing = true;
+      try {
+        const data = await fetchServerData();
+        if (!hasUnsavedChanges()) applyServerData(data);
+      } catch (e) {
+        console.error("Couldn't refresh from Supabase:", e);
+      } finally {
+        refreshing = false;
+      }
+    }
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  });
 
   const deptNames = Object.keys(departments);
 
