@@ -1602,6 +1602,15 @@ export default function EquipmentManifest({ session }) {
                 {view === "manifest" && (
                   <button
                     className="btn btn-ghost"
+                    onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }}
+                    title="Edit project details, days and quantity mode"
+                  >
+                    <Pencil size={14} /> Edit project
+                  </button>
+                )}
+                {view === "manifest" && (
+                  <button
+                    className="btn btn-ghost"
                     onClick={() => goToPreview(activeProject.id)}
                   >
                     <FileSpreadsheet size={14} /> Preview
@@ -1728,14 +1737,6 @@ export default function EquipmentManifest({ session }) {
                         ) : (
                           <div style={{ fontSize: 12, color: "var(--muted2)" }}>No production details set yet.</div>
                         )}
-                        <button
-                          onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }}
-                          className="btn btn-ghost"
-                          style={{ flexShrink: 0, padding: "5px 10px", fontSize: 12 }}
-                          title="Edit project details, days and quantity mode"
-                        >
-                          <Pencil size={13} /> Edit project
-                        </button>
                       </div>
                       <textarea
                         ref={noteRef}
