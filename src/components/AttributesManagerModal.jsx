@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
 import {
-  Trash2, FileSpreadsheet, X, Package, ClipboardPaste, Sun, Moon, Monitor,
+  Trash2, FileSpreadsheet, X, ClipboardPaste, Sun, Moon, Monitor,
 } from "lucide-react";
 import { EditableAttrSection } from "./EditableAttrSection.jsx";
+import { Logo } from "./Logo.jsx";
 import { ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "../constants.js";
 
 
@@ -234,7 +235,7 @@ export function AttributesManagerModal({
               style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}
               onClick={onOpenCatalog}
             >
-              <Package size={14} /> Manage Master Catalog
+              <Logo size={15} /> Manage Master Catalog
             </button>
 
             <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>

@@ -1,12 +1,13 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import {
-  Plus, Pencil, Search, FileSpreadsheet, X, Copy, Package, ChevronUp, CalendarDays, ListFilter, Loader2, Check, Settings,
+  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, CalendarDays, ListFilter, Loader2, Check, Settings,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient.js";
 import { AttributesManagerModal } from "./components/AttributesManagerModal.jsx";
 import { CatalogDeptSection } from "./components/CatalogDeptSection.jsx";
 import { CatalogItemFormModal } from "./components/CatalogItemFormModal.jsx";
 import { RestoreModal } from "./components/RestoreModal.jsx";
+import { Logo } from "./components/Logo.jsx";
 import { DepartmentManagerModal } from "./components/DepartmentManagerModal.jsx";
 import { ManifestDeptSection } from "./components/ManifestDeptSection.jsx";
 import { PreviewScreen } from "./components/PreviewScreen.jsx";
@@ -1527,7 +1528,7 @@ export default function EquipmentManifest({ session }) {
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Package size={18} strokeWidth={2.2} />
+                <Logo size={20} />
                 <span className="stencil" style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
                   BOXGO
                 </span>
@@ -1955,7 +1956,7 @@ export default function EquipmentManifest({ session }) {
           />
         ) : (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", flexDirection: "column", gap: 8 }}>
-            <Package size={28} strokeWidth={1.6} style={{ color: "var(--muted)" }} />
+            <Logo size={30} style={{ color: "var(--muted)" }} />
             <div className="stencil" style={{ fontSize: 13, color: "var(--muted)" }}>Project not found</div>
           </div>
         )
