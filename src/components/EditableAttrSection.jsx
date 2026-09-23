@@ -15,7 +15,7 @@ export function EditableAttrSection({ title, placeholder, items, onAdd, onRename
 
   return (
     <div style={{ marginBottom: 20 }}>
-      <div className="stencil" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>{title}</div>
+      <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>{title}</div>
       {items.length === 0 && (
         <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>None yet.</div>
       )}

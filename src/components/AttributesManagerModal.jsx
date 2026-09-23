@@ -6,6 +6,10 @@ import { EditableAttrSection } from "./EditableAttrSection.jsx";
 import { ACCENT_CHOICES, FONT_CHOICES } from "../constants.js";
 
 
+// The selected Light/Dark/System button uses the accent, so picking a
+// color visibly changes this panel too.
+const selectedModeStyle = { background: "var(--accent)", borderColor: "var(--accent)", color: "var(--accent-text)" };
+
 export function AttributesManagerModal({
   tags, onAddTag, onRenameTag, onRemoveTag,
   productionHouses, onAddProductionHouse, onRenameProductionHouse, onRemoveProductionHouse,
@@ -24,12 +28,12 @@ export function AttributesManagerModal({
     }}>
       <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 400, maxHeight: "88vh", overflowY: "auto", padding: 22, border: "1px solid var(--border2)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, position: "sticky", top: -22, background: "var(--surface)", paddingTop: 22, marginTop: -22, zIndex: 5 }}>
-          <div className="stencil" style={{ fontSize: 14 }}>Settings</div>
+          <div className="stencil" style={{ fontSize: 14, color: "var(--accent)" }}>Settings</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <div className="stencil" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>Master Catalog</div>
+          <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Master Catalog</div>
           <button
             className="btn btn-ghost"
             style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}
@@ -62,7 +66,7 @@ export function AttributesManagerModal({
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <div className="stencil" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>Username</div>
+          <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Username</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
             <input
               value={userName}
@@ -104,25 +108,25 @@ export function AttributesManagerModal({
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <div className="stencil" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>Appearance</div>
+          <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Appearance</div>
           <div style={{ display: "flex", gap: 8 }}>
             <button
               className="btn btn-ghost"
-              style={{ flex: 1, justifyContent: "center", background: theme === "light" ? "var(--text)" : "transparent", color: theme === "light" ? "var(--bg)" : "var(--text)" }}
+              style={{ flex: 1, justifyContent: "center", ...(theme === "light" ? selectedModeStyle : {}) }}
               onClick={() => onSetTheme("light")}
             >
               <Sun size={14} /> Light
             </button>
             <button
               className="btn btn-ghost"
-              style={{ flex: 1, justifyContent: "center", background: theme === "dark" ? "var(--text)" : "transparent", color: theme === "dark" ? "var(--bg)" : "var(--text)" }}
+              style={{ flex: 1, justifyContent: "center", ...(theme === "dark" ? selectedModeStyle : {}) }}
               onClick={() => onSetTheme("dark")}
             >
               <Moon size={14} /> Dark
             </button>
             <button
               className="btn btn-ghost"
-              style={{ flex: 1, justifyContent: "center", background: theme === "system" ? "var(--text)" : "transparent", color: theme === "system" ? "var(--bg)" : "var(--text)" }}
+              style={{ flex: 1, justifyContent: "center", ...(theme === "system" ? selectedModeStyle : {}) }}
               onClick={() => onSetTheme("system")}
             >
               <Monitor size={14} /> System
@@ -185,7 +189,7 @@ export function AttributesManagerModal({
 
         {templates.length > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <div className="stencil" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>Templates</div>
+            <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Templates</div>
             {templates.map((t) => (
               <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ fontSize: 13 }}>{t.name}</span>
