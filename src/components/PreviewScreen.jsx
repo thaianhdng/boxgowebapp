@@ -1,40 +1,35 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Printer, ChevronRight, Loader2, Share2, Radio,
 } from "lucide-react";
 import { defaultExportFilename } from "../lib/utils.js";
+import { renderPdfPages } from "../lib/pdfPreview.js";
 
 
-// Renders the preview screen. Builds the actual PDF and displays those
-// exact bytes in the browser's own native PDF viewer (an <iframe> pointed
-// at the real file) — there is no separate layout to keep in sync, so the
-// preview and the downloaded file are structurally guaranteed to match,
-// and because it's the real PDF (not a rasterized screenshot of it), the
-// text stays selectable and copyable straight out of the preview.
+// Renders the preview screen. Builds the actual PDF and draws those exact
+// bytes page by page with pdf.js (see lib/pdfPreview.js) — no separate
+// layout to keep in sync, so the preview and the downloaded file always
+// match, and pdf.js's text layer keeps the text selectable and copyable.
 export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDownload, pdfGenerating, onShareSnapshot, onShareLive, hasLiveLink, shareGenerating }) {
   const [filename, setFilename] = useState(() => defaultExportFilename(project, userName));
-  const [pdfUrl, setPdfUrl] = useState(null);
-  const [totalPages, setTotalPages] = useState(0);
-  const [error, setError] = useState(false);
+  const [status, setStatus] = useState("loading"); // "loading" | "ready" | "error"
+  const pagesRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
-    let url = null;
-    setPdfUrl(null);
-    (async () => {
-      try {
-        const { blob, totalPages: pages } = await buildPdfBlob();
-        url = URL.createObjectURL(blob);
+    let cancelRender = null;
+    setStatus("loading");
+    const fail = (err) => { console.error("Preview generation failed:", err); if (!cancelled) setStatus("error"); };
+    buildPdfBlob()
+      .then(({ blob }) => {
         if (cancelled) return;
-        setPdfUrl(url);
-        setTotalPages(pages);
-        setError(false);
-      } catch (err) {
-        console.error("Preview generation failed:", err);
-        if (!cancelled) setError(true);
-      }
-    })();
-    return () => { cancelled = true; if (url) URL.revokeObjectURL(url); };
+        cancelRender = renderPdfPages(pagesRef.current, blob, {
+          onDone: () => { if (!cancelled) setStatus("ready"); },
+          onError: fail,
+        });
+      })
+      .catch(fail);
+    return () => { cancelled = true; cancelRender?.(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
 
@@ -90,34 +85,18 @@ export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBac
       </div>
 
       <div style={{ flex: 1, padding: 16 }}>
-        {error && (
+        {status === "error" && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "50vh", flexDirection: "column", gap: 8 }}>
             <div className="stencil" style={{ fontSize: 13, color: "var(--muted)" }}>Couldn't generate the preview.</div>
           </div>
         )}
-        {!error && !pdfUrl ? (
+        {status === "loading" ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 10 }}>
             <Loader2 size={18} className="spin" style={{ color: "var(--accent)" }} />
             <span className="stencil" style={{ fontSize: 12, color: "var(--muted)" }}>Generating preview…</span>
           </div>
         ) : null}
-        {!error && pdfUrl && (
-          <div style={{ maxWidth: 900, margin: "0 auto" }}>
-            <iframe
-              src={`${pdfUrl}#toolbar=0&navpanes=0&statusbar=0&view=FitH`}
-              title={`PDF preview — ${totalPages} page${totalPages !== 1 ? "s" : ""}`}
-              style={{
-                width: "100%",
-                height: "calc(100vh - 140px)",
-                minHeight: 500,
-                border: "1px solid var(--border)",
-                borderRadius: 4,
-                background: "#fff",
-                display: "block",
-              }}
-            />
-          </div>
-        )}
+        <div ref={pagesRef} style={{ maxWidth: 900, margin: "0 auto", ...(status === "ready" ? {} : { visibility: "hidden", height: 0, overflow: "hidden" }) }} />
       </div>
     </div>
   );
