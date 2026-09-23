@@ -172,16 +172,16 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             )}
             <div style={{ marginTop: "auto", paddingTop: 12 }}>
               <div style={{ borderTop: "1px solid var(--border)" }} />
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginRight: -6, paddingTop: 10 }} onClick={(e) => e.stopPropagation()}>
-                <button onClick={() => onEdit(p)} style={cardIconStyle} title="Edit project"><Pencil size={16} /></button>
-                <button onClick={() => onExport(p)} style={cardIconStyle} title="Preview"><Printer size={16} /></button>
-                <button onClick={() => onDuplicate(p.id)} style={cardIconStyle} title="Duplicate project"><Copy size={16} /></button>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginRight: -6, paddingTop: 10 }} onClick={(e) => e.stopPropagation()}>
+                <button onClick={() => onEdit(p)} style={cardIconStyle} title="Edit project"><Pencil size={14} /></button>
+                <button onClick={() => onExport(p)} style={cardIconStyle} title="Preview"><Printer size={14} /></button>
+                <button onClick={() => onDuplicate(p.id)} style={cardIconStyle} title="Duplicate project"><Copy size={14} /></button>
                 <button
                   onClick={() => setConfirmId(p.id)}
                   style={cardIconStyle}
                   title="Delete project"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                 </button>
               </div>
             </div>

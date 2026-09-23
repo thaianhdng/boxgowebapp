@@ -56,6 +56,7 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
     <div style={{ marginBottom: 32, border: "1px solid var(--border)", borderRadius: 4 }}>
       <div
         onClick={onToggle}
+        className="sticky-top"
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "10px 14px", background: "var(--accent)", color: "var(--accent-text)", cursor: "pointer",

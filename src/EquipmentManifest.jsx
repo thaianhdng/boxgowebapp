@@ -1409,6 +1409,7 @@ export default function EquipmentManifest({ session }) {
       display: "flex",
       flexDirection: "column",
     }}>
+      <div className="top-tint" aria-hidden="true" />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=${selectedFont.googleFamily}&display=swap');
         [data-theme="dark"] {
@@ -1426,6 +1427,14 @@ export default function EquipmentManifest({ session }) {
         * { box-sizing: border-box; }
         ::selection { background: var(--accent); color: var(--accent-text); }
         input[type="checkbox"] { accent-color: var(--accent); }
+        /* iOS Safari colours its top bar from whatever fixed/sticky element
+           touches the top of the screen (it ignores theme-color) — which is
+           the accent category header once it sticks. A thin background-coloured
+           strip pinned above it, with the headers stopping just below, makes
+           Safari pick the background instead. iOS only (see index.html). */
+        .top-tint { display: none; }
+        .ios .top-tint { display: block; position: fixed; top: 0; left: 0; right: 0; height: 4px; background: var(--bg); z-index: 100; pointer-events: none; }
+        .ios .sticky-top { top: 4px !important; }
         .btn {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 5px 10px; border-radius: 3px; border: 1px solid var(--text);
@@ -1511,14 +1520,14 @@ export default function EquipmentManifest({ session }) {
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="+ Add your name"
                   title="Your name — shown on your PDFs"
-                  // Empty, it reads as a small field to fill in rather than
-                  // a big faded heading.
+                  // Empty, it's a small "+ Add your name" rather than a big
+                  // faded heading.
                   style={{
                     letterSpacing: "0.02em", color: "var(--text)", textAlign: "right",
                     background: "none", border: "none", padding: 0, width: userName ? 200 : 130, maxWidth: "40vw", minWidth: 60,
                     ...(userName
                       ? { fontSize: 17, fontWeight: 800 }
-                      : { fontSize: 12, fontWeight: 600, padding: "3px 0", borderBottom: "1px dashed var(--border2)" }),
+                      : { fontSize: 12, fontWeight: 600 }),
                   }}
                 />
               </div>

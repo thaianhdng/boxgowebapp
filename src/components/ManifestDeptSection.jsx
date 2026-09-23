@@ -68,7 +68,8 @@ export function ManifestDeptSection({
             background: "var(--surface)", border: "1px solid var(--text)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
           }}
         >
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: 6, maxWidth: 220 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", padding: "0 4px 0 2px" }}>Copy</span>
             {days.map((d, i) => i === copyMenu.index ? null : (
               <button
                 key={d.id}
@@ -82,7 +83,7 @@ export function ManifestDeptSection({
           </div>
         </div>
       )}
-      <div style={{ position: "sticky", top: 0, zIndex: 6, borderRadius: collapsed ? "4px" : "4px 4px 0 0", overflow: "hidden" }}>
+      <div className="sticky-top" style={{ position: "sticky", top: 0, zIndex: 6, borderRadius: collapsed ? "4px" : "4px 4px 0 0", overflow: "hidden" }}>
         <div
           onClick={onToggle}
           style={{
