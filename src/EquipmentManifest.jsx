@@ -18,6 +18,23 @@ import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./
 import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDMY, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments } from "./lib/utils.js";
 
 
+// Gives every day an explicit number for every item that has any. A day
+// that already has its own number keeps it; a day with nothing stored gets
+// `fill` — by default the item's shared quantity (what "All days same"
+// shows), used when switching to per-day, so a day added while in "All
+// days same" matches what was shown for it.
+function fillUnsetDays(itemData, days, fill) {
+  const result = {};
+  for (const [id, entry] of Object.entries(itemData || {})) {
+    const quantities = { ...(entry.quantities || {}) };
+    const vals = Object.values(quantities);
+    const shared = vals.length ? Math.max(...vals) : 0;
+    (days || []).forEach((d) => { if (!(d.id in quantities)) quantities[d.id] = fill ?? shared; });
+    result[id] = { ...entry, quantities };
+  }
+  return result;
+}
+
 // The app_state row as saved to Supabase. Built from one place so the
 // "has this changed since it was saved?" check compares like with like.
 function buildAppStatePayload(v) {
@@ -570,8 +587,10 @@ export default function EquipmentManifest({ session }) {
 
   // The "+" in the quantity column. Adding a day there means the user wants
   // to see each day, so an "All days same" project switches to per-day
-  // columns — with every day (the new one included) starting at the item's
-  // shared quantity, which is what "all days same" already meant.
+  // columns. Existing days keep whatever they hold — including custom
+  // per-day numbers kept from before the project was set to "All days
+  // same" — and only the new day is filled, with the item's shared
+  // quantity (what "all days same" showed for it).
   function addDay() {
     setProjectsState((prev) =>
       prev.map((p) => {
@@ -579,17 +598,10 @@ export default function EquipmentManifest({ session }) {
         const days = p.days || [];
         const prevDate = days.length > 0 ? days[days.length - 1].date : "";
         const date = prevDate ? addOneDay(prevDate) : tomorrowStr();
-        const nextDays = relabelDays([...days, { id: `day${Date.now()}`, date, location: "", projectLabel: "" }]);
+        const newDay = { id: `day${Date.now()}`, date, location: "", projectLabel: "" };
+        const nextDays = relabelDays([...days, newDay]);
         if (p.perDayQty) return { ...p, days: nextDays };
-        const itemData = {};
-        for (const [id, entry] of Object.entries(p.itemData || {})) {
-          const vals = Object.values(entry.quantities || {});
-          const shared = vals.length ? Math.max(...vals) : 0;
-          const quantities = {};
-          nextDays.forEach((d) => { quantities[d.id] = shared; });
-          itemData[id] = { ...entry, quantities };
-        }
-        return { ...p, days: nextDays, perDayQty: true, itemData };
+        return { ...p, days: nextDays, perDayQty: true, itemData: fillUnsetDays(p.itemData, nextDays) };
       })
     );
   }
@@ -745,6 +757,11 @@ export default function EquipmentManifest({ session }) {
           });
           next.itemData = prunedItemData;
         }
+        if (patch.perDayQty && !p.perDayQty) next.itemData = fillUnsetDays(next.itemData, next.days);
+        // Per-day -> "All days same": lock in the per-day numbers as shown
+        // (an untouched box shows 0 but stores nothing), so switching back
+        // restores exactly what was there.
+        if (patch.perDayQty === false && p.perDayQty) next.itemData = fillUnsetDays(next.itemData, next.days, 0);
         return next;
       })
     );
