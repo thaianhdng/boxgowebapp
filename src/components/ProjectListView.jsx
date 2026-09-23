@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Plus, Trash2, Pencil, Search, Printer, Copy,
+  Plus, Trash2, Pencil, Search, Printer, Copy, MoreVertical,
 } from "lucide-react";
 import { formatShootDateRange } from "../lib/utils.js";
 
@@ -8,6 +8,20 @@ import { formatShootDateRange } from "../lib/utils.js";
 export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew }) {
   const [confirmId, setConfirmId] = useState(null);
   const [projSearch, setProjSearch] = useState("");
+  const [menuId, setMenuId] = useState(null); // project whose ⋮ menu is open
+  useEffect(() => {
+    if (!menuId) return;
+    const close = (e) => { if (!e.target.closest?.("[data-card-menu]")) setMenuId(null); };
+    const closeNow = () => setMenuId(null);
+    document.addEventListener("mousedown", close, true);
+    document.addEventListener("touchstart", close, true);
+    window.addEventListener("scroll", closeNow, true);
+    return () => {
+      document.removeEventListener("mousedown", close, true);
+      document.removeEventListener("touchstart", close, true);
+      window.removeEventListener("scroll", closeNow, true);
+    };
+  }, [menuId]);
   if (projects.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "80px 20px", color: "var(--muted)" }}>
@@ -84,10 +98,11 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
         return (
           <div
             key={p.id}
-            style={{ border: "1px solid var(--border)", borderLeft: "3px solid var(--accent)", borderRadius: 4, background: "var(--surface)", cursor: "pointer", padding: "8px 12px 12px", display: "flex", flexDirection: "column" }}
+            style={{ position: "relative", minWidth: 0, border: "1px solid var(--border)", borderLeft: "3px solid var(--accent)", borderRadius: 4, background: "var(--surface)", cursor: "pointer", padding: "8px 12px 12px", display: "flex", flexDirection: "column" }}
             onClick={() => onOpen(p.id)}
           >
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 3, marginBottom: 3 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 3 }}>
               {p.tag && (
                 <span
                   onClick={(e) => attr(e, "tag", p.tag)}
@@ -111,6 +126,27 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               {formatShootDateRange(p.days) && (
                 <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)" }}>{formatShootDateRange(p.days)}</span>
               )}
+            </div>
+            <div data-card-menu style={{ position: "relative", flexShrink: 0, margin: "-4px -8px 0 0" }} onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
+                title="More"
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6, display: "flex" }}
+              >
+                <MoreVertical size={16} />
+              </button>
+              {menuId === p.id && (
+                <div style={{
+                  position: "absolute", top: "100%", right: 0, zIndex: 30, minWidth: 170, padding: 4,
+                  background: "var(--surface)", border: "1px solid var(--text)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
+                }}>
+                  <MenuItem icon={<Pencil size={14} />} label="Edit project" onClick={() => { setMenuId(null); onEdit(p); }} />
+                  <MenuItem icon={<Printer size={14} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
+                  <MenuItem icon={<Copy size={14} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
+                  <MenuItem icon={<Trash2 size={14} />} label="Delete" danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
+                </div>
+              )}
+            </div>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 3, fontSize: 11, color: "var(--muted)" }}>
               {(p.productionHouse || p.producer) && (
@@ -149,10 +185,10 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               ) : null;
             })()}
             {bodies.length > 0 && (
-              <div style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 5 }}>{bodies.join(" · ")}</div>
+              <div title={bodies.join(" · ")} style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 5, ...oneLine }}>{bodies.join(" · ")}</div>
             )}
             {lenses.length > 0 && (
-              <div style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 2 }}>{lenses.join(" · ")}</div>
+              <div title={lenses.join(" · ")} style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 2, ...oneLine }}>{lenses.join(" · ")}</div>
             )}
             {p.note && (
               <div
@@ -170,21 +206,6 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 ⚠ No items: {emptyDays.map((d) => d.label.replace("Day ", "D")).join(", ")}
               </div>
             )}
-            <div style={{ marginTop: "auto", paddingTop: 12 }}>
-              <div style={{ borderTop: "1px solid var(--border)" }} />
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginRight: -6, paddingTop: 10 }} onClick={(e) => e.stopPropagation()}>
-                <button onClick={() => onEdit(p)} style={cardIconStyle} title="Edit project"><Pencil size={14} /></button>
-                <button onClick={() => onExport(p)} style={cardIconStyle} title="Preview"><Printer size={14} /></button>
-                <button onClick={() => onDuplicate(p.id)} style={cardIconStyle} title="Duplicate project"><Copy size={14} /></button>
-                <button
-                  onClick={() => setConfirmId(p.id)}
-                  style={cardIconStyle}
-                  title="Delete project"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
           </div>
         );
       })}
@@ -220,4 +241,19 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
   );
 }
 
-const cardIconStyle = { background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6 };
+const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+
+function MenuItem({ icon, label, onClick, danger }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 10px",
+        background: "none", border: "none", borderRadius: 3, cursor: "pointer", textAlign: "left",
+        fontFamily: "inherit", fontSize: 13, fontWeight: 600, color: danger ? "var(--danger)" : "var(--text)",
+      }}
+    >
+      {icon} {label}
+    </button>
+  );
+}
