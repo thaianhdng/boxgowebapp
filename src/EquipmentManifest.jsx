@@ -1488,6 +1488,16 @@ export default function EquipmentManifest({ session }) {
         @media (max-width: 600px) {
           .mf-item-col { min-width: 80px; }
           .mf-pad { padding-left: 8px; padding-right: 8px; }
+          /* Phones: breadcrumb and buttons always on their own rows, buttons on
+             one line, so the header is the same height on every page. The
+             "saved" word goes (the tick stays) to make room. */
+          .hdr-crumb { width: 100%; height: 24px; }
+          /* Right-aligned via margin-left: auto rather than flex-end, so on the
+             narrowest phones the row scrolls instead of cutting off its left end. */
+          .hdr-actions { width: 100%; flex-wrap: nowrap !important; overflow-x: auto; justify-content: flex-start !important; }
+          .hdr-actions > :first-child { margin-left: auto; }
+          .hdr-actions .btn { white-space: nowrap; flex-shrink: 0; padding: 6px 10px; }
+          .save-label { display: none; }
         }
         @media (max-width: 780px) {
           .rail { display: none !important; }
@@ -1535,12 +1545,12 @@ export default function EquipmentManifest({ session }) {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              <div className="hdr-crumb" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                 <button
                   className="stencil"
                   onClick={() => { setActiveProjectId(null); setView("projects"); }}
                   style={{
-                    background: "none", border: "none", cursor: "pointer", padding: 0,
+                    background: "none", border: "none", cursor: "pointer", padding: 0, whiteSpace: "nowrap", flexShrink: 0,
                     fontSize: 15, letterSpacing: "0.08em", color: view === "projects" ? "var(--accent)" : "var(--text)",
                   }}
                 >
@@ -1568,16 +1578,16 @@ export default function EquipmentManifest({ session }) {
                 {view === "catalog" && (
                   <>
                     <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
-                    <span className="stencil" style={{ fontSize: 15, color: "var(--accent)" }}>Master Catalog</span>
+                    <span className="stencil" style={{ fontSize: 15, color: "var(--accent)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>Master Catalog</span>
                   </>
                 )}
               </div>
               {/* Always hugs the right edge, even when it wraps onto its own line. */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginLeft: "auto" }}>
+              <div className="hdr-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginLeft: "auto" }}>
                 <div style={{ fontSize: 11, color: saveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
-                  {saveState === "saving" && <><Loader2 size={12} className="spin" /> saving</>}
-                  {saveState === "saved" && <><Check size={12} /> saved</>}
-                  {saveState === "error" && <><X size={12} /> couldn't save — check your connection</>}
+                  {saveState === "saving" && <><Loader2 size={12} className="spin" /><span className="save-label"> saving</span></>}
+                  {saveState === "saved" && <><Check size={12} /><span className="save-label"> saved</span></>}
+                  {saveState === "error" && <><X size={12} /> couldn't save<span className="save-label"> — check your connection</span></>}
                 </div>
                 {view === "manifest" && (
                   <button
