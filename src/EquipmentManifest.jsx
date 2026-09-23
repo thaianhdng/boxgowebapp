@@ -1602,6 +1602,11 @@ export default function EquipmentManifest({ session }) {
                   {saveState === "saved" && <><Check size={12} /><span className="save-label"> saved</span></>}
                   {saveState === "error" && <><X size={12} /> couldn't save<span className="save-label"> — check your connection</span></>}
                 </div>
+                {view === "projects" && (
+                  <button className="btn btn-ghost" onClick={() => setView("catalog")}>
+                    <Logo size={14} /> Master Catalog
+                  </button>
+                )}
                 {view === "manifest" && (
                   <button
                     className="btn btn-ghost"
