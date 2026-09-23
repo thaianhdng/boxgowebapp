@@ -52,12 +52,13 @@ export function ManifestDeptSection({
           <div
             ref={headerScrollRef}
             onScroll={syncScroll(headerScrollRef, bodyScrollRef)}
+            className="mf-pad"
             style={{
-              display: "flex", alignItems: "center", width: "100%", padding: "6px 14px",
+              display: "flex", alignItems: "center", width: "100%", paddingTop: 6, paddingBottom: 6,
               borderBottom: "1px solid var(--border)", background: "var(--surface)", overflowX: "auto",
             }}
           >
-            <div style={{ flex: 1, minWidth: 160, maxWidth: 220, fontSize: 10.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>Item</div>
+            <div className="mf-item-col" style={{ flex: 1, maxWidth: 220, fontSize: 10.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>Item</div>
             <div style={{ display: "flex", alignItems: "center", marginLeft: "auto" }}>
               {perDayQty ? (
                 <>
@@ -67,18 +68,15 @@ export function ManifestDeptSection({
                     </div>
                   )}
                   {days.map((d, i) => (
-                    <div key={d.id} style={{ width: 40, flexShrink: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
+                    <div key={d.id} style={{ width: 40, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 2, fontSize: 10, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>
                       {d.label.replace("Day ", "D")}
                       {days.length > 1 && i > 0 && (
                         <button
                           onClick={() => onCopyPreviousDay(i)}
-                          style={{
-                            position: "absolute", left: "100%", marginLeft: 2, top: "50%", transform: "translateY(-50%)",
-                            background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", padding: 0,
-                          }}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", padding: 0 }}
                           title={`Copy ${d.label.replace("Day ", "D")}'s quantities from the day before`}
                         >
-                          <Copy size={13} />
+                          <Copy size={11} />
                         </button>
                       )}
                     </div>
@@ -89,10 +87,10 @@ export function ManifestDeptSection({
                   Qty
                 </div>
               )}
-              <div style={{ width: 22, flexShrink: 0 }} />
+              <div style={{ width: 24, flexShrink: 0 }} />
               <button
                 onClick={onAddDay}
-                style={{ width: 22, flexShrink: 0, background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", justifyContent: "center" }}
+                style={{ width: 24, flexShrink: 0, background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", justifyContent: "center" }}
                 title="Add another shoot day"
               >
                 <Plus size={18} />
@@ -108,7 +106,7 @@ export function ManifestDeptSection({
           style={{ background: "var(--surface)", overflowX: "auto", borderRadius: "0 0 4px 4px" }}
         >
           {flatItems.length > 0 && (
-            <div style={{ minWidth: "max-content" }}>
+            <div style={{ minWidth: "fit-content" }}>
               {flatItems.map((c) => (
                 <ManifestItemRow
                   key={c.id}
@@ -129,7 +127,7 @@ export function ManifestDeptSection({
             const subKey = `${dept}::${sub}`;
             const subCollapsed = !forceExpand && !!(collapsedSubcats && collapsedSubcats[subKey]);
             return (
-              <div key={sub} style={{ minWidth: "max-content" }}>
+              <div key={sub} style={{ minWidth: "fit-content" }}>
                 <div
                   onClick={() => onToggleSubcat(sub)}
                   style={{
@@ -158,7 +156,7 @@ export function ManifestDeptSection({
           })}
 
           {customItems && (
-            <div style={{ minWidth: "max-content" }}>
+            <div style={{ minWidth: "fit-content" }}>
               {customItems.map((c) => (
                 <ManifestItemRow
                   key={c.id}
@@ -172,7 +170,7 @@ export function ManifestDeptSection({
                   onDelete={() => onRemoveCustomItem(c.id)}
                 />
               ))}
-              <div style={{ display: "flex", gap: 6, padding: "8px 14px", minWidth: "max-content" }}>
+              <div style={{ display: "flex", gap: 6, padding: "8px 14px", minWidth: "fit-content" }}>
                 <Combobox
                   value={newCustomName}
                   onChange={setNewCustomName}

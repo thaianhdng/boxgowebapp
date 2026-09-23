@@ -568,12 +568,30 @@ export default function EquipmentManifest({ session }) {
     );
   }
 
+  // The "+" in the quantity column. Adding a day there means the user wants
+  // to see each day, so an "All days same" project switches to per-day
+  // columns — with every day (the new one included) starting at the item's
+  // shared quantity, which is what "all days same" already meant.
   function addDay() {
-    setDays((prev) => {
-      const prevDate = prev.length > 0 ? prev[prev.length - 1].date : "";
-      const date = prevDate ? addOneDay(prevDate) : tomorrowStr();
-      return relabelDays([...prev, { id: `day${Date.now()}`, date, location: "", projectLabel: "" }]);
-    });
+    setProjectsState((prev) =>
+      prev.map((p) => {
+        if (p.id !== activeProjectId) return p;
+        const days = p.days || [];
+        const prevDate = days.length > 0 ? days[days.length - 1].date : "";
+        const date = prevDate ? addOneDay(prevDate) : tomorrowStr();
+        const nextDays = relabelDays([...days, { id: `day${Date.now()}`, date, location: "", projectLabel: "" }]);
+        if (p.perDayQty) return { ...p, days: nextDays };
+        const itemData = {};
+        for (const [id, entry] of Object.entries(p.itemData || {})) {
+          const vals = Object.values(entry.quantities || {});
+          const shared = vals.length ? Math.max(...vals) : 0;
+          const quantities = {};
+          nextDays.forEach((d) => { quantities[d.id] = shared; });
+          itemData[id] = { ...entry, quantities };
+        }
+        return { ...p, days: nextDays, perDayQty: true, itemData };
+      })
+    );
   }
 
   function updateDay(id, patch) {
@@ -1386,6 +1404,12 @@ export default function EquipmentManifest({ session }) {
           .app-root { min-height: 0 !important; height: auto !important; display: block !important; }
           .app-root * { min-height: 0 !important; height: auto !important; }
           .print-root { width: 100% !important; max-width: 100% !important; overflow: hidden !important; box-sizing: border-box; }
+        }
+        .mf-item-col { min-width: 160px; }
+        .mf-pad { padding-left: 14px; padding-right: 14px; }
+        @media (max-width: 600px) {
+          .mf-item-col { min-width: 80px; }
+          .mf-pad { padding-left: 8px; padding-right: 8px; }
         }
         @media (max-width: 780px) {
           .rail { display: none !important; }

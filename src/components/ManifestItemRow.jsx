@@ -28,11 +28,11 @@ export function ManifestItemRow({ item, days, perDayQty, entry, onQtyChange, onN
 
   return (
     <>
-      <div className="row" style={{
-        display: "flex", alignItems: "center", width: "100%", minWidth: "max-content", padding: "6px 14px",
+      <div className="row mf-pad" style={{
+        display: "flex", alignItems: "center", width: "100%", minWidth: "fit-content", paddingTop: 6, paddingBottom: 6,
         borderTop: "1px solid var(--border)", fontSize: 13,
       }}>
-        <div style={{ flex: 1, minWidth: 160, maxWidth: 220, whiteSpace: "normal", wordBreak: "break-word" }}>
+        <div className="mf-item-col" style={{ flex: 1, maxWidth: 220, whiteSpace: "normal", wordBreak: "break-word", overflowWrap: "anywhere" }}>
           <div style={{ fontWeight: 600 }}>
             {item.name}
           </div>
@@ -87,7 +87,7 @@ export function ManifestItemRow({ item, days, perDayQty, entry, onQtyChange, onN
         </div>
       </div>
       {showNoteField && (
-        <div style={{ padding: "0 14px 8px 14px", minWidth: "max-content" }}>
+        <div style={{ padding: "0 14px 8px 14px", minWidth: "fit-content" }}>
           <input
             autoFocus={isAdding && !hasText}
             value={entry?.notes || ""}
