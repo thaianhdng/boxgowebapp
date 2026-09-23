@@ -546,15 +546,15 @@ export default function EquipmentManifest({ session }) {
   }
 
   // Copies every item's quantity (catalog items and project-specific custom
-  // items alike) from the day right before dayIndex into that day.
-  function copyPreviousDayQuantities(dayIndex) {
+  // items alike) from one shoot day into another.
+  function copyDayQuantities(fromIndex, toIndex) {
     setProjectsState((prev) =>
       prev.map((p) => {
         if (p.id !== activeProjectId) return p;
         const days = p.days || [];
-        if (dayIndex <= 0 || dayIndex >= days.length) return p;
-        const fromDayId = days[dayIndex - 1].id;
-        const toDayId = days[dayIndex].id;
+        if (fromIndex === toIndex || !days[fromIndex] || !days[toIndex]) return p;
+        const fromDayId = days[fromIndex].id;
+        const toDayId = days[toIndex].id;
         const nextItemData = {};
         Object.entries(p.itemData || {}).forEach(([itemId, entry]) => {
           const val = entry.quantities?.[fromDayId] || 0;
@@ -1711,7 +1711,7 @@ export default function EquipmentManifest({ session }) {
                           onQtyChange={setItemQty}
                           onNoteChange={setItemNote}
                           onNoteHiddenChange={setItemNoteHidden}
-                          onCopyPreviousDay={copyPreviousDayQuantities}
+                          onCopyDay={copyDayQuantities}
                           onAddDay={addDay}
                           customItems={isCustomEligible ? customItems.filter((c) => (c.department || "Others") === dept && (!searching || c.name.toLowerCase().includes(manifestSearch.trim().toLowerCase()))) : null}
                           onAddCustomItem={isCustomEligible ? (name) => addCustomItem(name, dept) : null}

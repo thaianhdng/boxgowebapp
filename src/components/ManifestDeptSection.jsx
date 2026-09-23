@@ -8,7 +8,7 @@ import { ManifestItemRow } from "./ManifestItemRow.jsx";
 
 export function ManifestDeptSection({
   id, dept, color, subcats, data, days, itemData, perDayQty, collapsed, onToggle, onQtyChange, onNoteChange, onNoteHiddenChange,
-  customItems, onAddCustomItem, onRemoveCustomItem, collapsedSubcats, onToggleSubcat, forceExpand, onAddDay, onCopyPreviousDay, recentCustomNames,
+  customItems, onAddCustomItem, onRemoveCustomItem, collapsedSubcats, onToggleSubcat, forceExpand, onAddDay, onCopyDay, recentCustomNames,
 }) {
   const total = Object.values(data).reduce((n, arr) => n + arr.length, 0) + (customItems ? customItems.length : 0);
   const [newCustomName, setNewCustomName] = useState("");
@@ -66,12 +66,20 @@ export function ManifestDeptSection({
             background: "var(--surface)", border: "1px solid var(--text)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
           }}
         >
-          <button
-            onClick={() => { onCopyPreviousDay(copyMenu.index); setCopyMenu(null); }}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "none", border: "none", color: "var(--text)", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit" }}
-          >
-            <Copy size={13} /> Copy {dayShort(days[copyMenu.index - 1])} → {dayShort(days[copyMenu.index])}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px 4px", fontSize: 11, fontWeight: 600, color: "var(--muted)", whiteSpace: "nowrap" }}>
+            <Copy size={12} /> Copy into {dayShort(days[copyMenu.index])} from:
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "4px 8px 8px", maxWidth: 220 }}>
+            {days.map((d, i) => i === copyMenu.index ? null : (
+              <button
+                key={d.id}
+                onClick={() => { onCopyDay(i, copyMenu.index); setCopyMenu(null); }}
+                style={{ minWidth: 40, padding: "6px 8px", background: "var(--surface2)", border: "1px solid var(--border2)", borderRadius: 3, color: "var(--text)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+              >
+                {dayShort(d)}
+              </button>
+            ))}
+          </div>
         </div>
       )}
       <div style={{ position: "sticky", top: 0, zIndex: 6, borderRadius: collapsed ? "4px" : "4px 4px 0 0", overflow: "hidden" }}>
@@ -106,23 +114,21 @@ export function ManifestDeptSection({
                       Max
                     </div>
                   )}
-                  {days.map((d, i) => (
-                    i === 0 ? (
-                      <div key={d.id} style={{ ...dayHeadStyle, cursor: "default" }}>{dayShort(d)}</div>
-                    ) : (
-                      // Day 2+: tapping the heading offers "copy from the day
-                      // before". The dot is positioned below the label so it
-                      // never shifts the label off-centre from its column.
-                      <button
-                        key={d.id}
-                        onClick={(e) => openCopyMenu(e, i)}
-                        style={dayHeadStyle}
-                        title={`Copy quantities from ${dayShort(days[i - 1])} into ${dayShort(d)}`}
-                      >
-                        {dayShort(d)}
-                        <span style={{ position: "absolute", left: "50%", bottom: -1, transform: "translateX(-50%)", width: 3, height: 3, borderRadius: "50%", background: "currentColor", opacity: 0.7 }} />
-                      </button>
-                    )
+                  {days.length === 1 ? (
+                    <div style={{ ...dayHeadStyle, cursor: "default" }}>{dayShort(days[0])}</div>
+                  ) : days.map((d, i) => (
+                    // Tapping a day heading offers "copy from" any other
+                    // day. The dot is positioned below the label so it
+                    // never shifts the label off-centre from its column.
+                    <button
+                      key={d.id}
+                      onClick={(e) => openCopyMenu(e, i)}
+                      style={dayHeadStyle}
+                      title={`Copy quantities from another day into ${dayShort(d)}`}
+                    >
+                      {dayShort(d)}
+                      <span style={{ position: "absolute", left: "50%", bottom: -1, transform: "translateX(-50%)", width: 3, height: 3, borderRadius: "50%", background: "currentColor", opacity: 0.7 }} />
+                    </button>
                   ))}
                 </>
               ) : (
