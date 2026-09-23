@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import {
   Plus, Pencil, Search, FileSpreadsheet, X, Copy, Package, ChevronUp, CalendarDays, ListFilter, Loader2, Check, Settings,
 } from "lucide-react";
@@ -1373,6 +1373,15 @@ export default function EquipmentManifest({ session }) {
   const selectedAccent = ACCENT_CHOICES.find((a) => a.id === accentId) || ACCENT_CHOICES[0];
   const selectedFont = FONT_CHOICES.find((f) => f.id === fontId) || FONT_CHOICES[0];
   const uiZoom = (UI_SIZES.find((sz) => sz.id === uiSize) || UI_SIZES[1]).zoom;
+  // On the narrowest phones the header's button row scrolls sideways; start it
+  // scrolled all the way right so Settings is always where it usually is.
+  const hdrActionsRef = useRef(null);
+  useLayoutEffect(() => {
+    const pin = () => { const el = hdrActionsRef.current; if (el) el.scrollLeft = el.scrollWidth; };
+    pin();
+    window.addEventListener("resize", pin);
+    return () => window.removeEventListener("resize", pin);
+  }, [view, activeProjectId, catalogCopyState, isCatalogOwner, uiZoom, loaded]);
 
   // Until this user's own data has loaded, show nothing editable: the state
   // still holds the built-in defaults, which are only meant for a brand-new
@@ -1583,7 +1592,7 @@ export default function EquipmentManifest({ session }) {
                 )}
               </div>
               {/* Always hugs the right edge, even when it wraps onto its own line. */}
-              <div className="hdr-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginLeft: "auto" }}>
+              <div ref={hdrActionsRef} className="hdr-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginLeft: "auto" }}>
                 <div style={{ fontSize: 11, color: saveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
                   {saveState === "saving" && <><Loader2 size={12} className="spin" /><span className="save-label"> saving</span></>}
                   {saveState === "saved" && <><Check size={12} /><span className="save-label"> saved</span></>}
