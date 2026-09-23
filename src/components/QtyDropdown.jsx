@@ -8,6 +8,7 @@ export function QtyDropdown({ value, onChange }) {
   const [draft, setDraft] = useState(String(value));
   const btnRef = useRef(null);
   const menuRef = useRef(null);
+  const cancelRef = useRef(false);
   const active = value > 0;
 
   useEffect(() => { setDraft(String(value)); }, [value]);
@@ -21,7 +22,7 @@ export function QtyDropdown({ value, onChange }) {
 
   function commit(raw) {
     const n = Math.max(0, Math.min(99, parseInt(raw, 10) || 0));
-    onChange(n);
+    if (n !== value) onChange(n);
     setDraft(String(n));
   }
 
@@ -57,7 +58,15 @@ export function QtyDropdown({ value, onChange }) {
         onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
         onKeyDown={(e) => {
           if (e.key === "Enter") { commit(draft); setOpen(false); e.target.blur(); }
-          if (e.key === "Escape") { setDraft(String(value)); setOpen(false); e.target.blur(); }
+          if (e.key === "Escape") { cancelRef.current = true; setDraft(String(value)); setOpen(false); e.target.blur(); }
+        }}
+        // Phones finish typing with the keyboard's "Done" (no Enter on the
+        // number pad), which only blurs — so a blur has to save too, or the
+        // box keeps showing a number that was never stored.
+        onBlur={() => {
+          if (cancelRef.current) { cancelRef.current = false; return; }
+          commit(draft);
+          setOpen(false);
         }}
         style={{
           width: 34, padding: "4px 0", textAlign: "center", lineHeight: "16px",
