@@ -55,7 +55,12 @@ function buildAppStatePayload(v) {
   };
 }
 
+const CATALOG_OWNER_EMAIL = "thaianh.dng@gmail.com";
+
 export default function EquipmentManifest({ session }) {
+  // Copy Catalog only matters to whoever maintains the default catalog new
+  // accounts start with, so it's only shown on that account.
+  const isCatalogOwner = session?.user?.email?.toLowerCase() === CATALOG_OWNER_EMAIL;
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -1068,8 +1073,8 @@ export default function EquipmentManifest({ session }) {
   }
 
 
-  // Copies the master catalog as JSON, shaped exactly like the DEFAULT_CATALOG
-  // array at the top of this file — the point isn't spreadsheet editing, it's
+  // Copies the master catalog as JSON — { departments, catalog }, shaped like
+  // DEFAULT_DEPARTMENTS and DEFAULT_CATALOG in constants.js — the point isn't spreadsheet editing, it's
   // getting a modified catalog back out so it can be baked into the app's
   // source as the new default (what a fresh account starts with). Ordered to
   // match your manual "Manage" department/subcategory order, items within
@@ -1101,7 +1106,9 @@ export default function EquipmentManifest({ session }) {
     });
     // safety net: any item whose department no longer matches the current list
     catalog.forEach((c) => { if (!pushed.has(c.id)) pushItem(c); });
-    const json = JSON.stringify(rows, null, 2);
+    // Categories come along too — as an ordered object (category order, and
+    // each category's sub-category order), shaped like DEFAULT_DEPARTMENTS.
+    const json = JSON.stringify({ departments, catalog: rows }, null, 2);
 
     try {
       await navigator.clipboard.writeText(json);
@@ -1521,9 +1528,11 @@ export default function EquipmentManifest({ session }) {
                 )}
                 {view === "catalog" && (
                   <>
-                    <button className="btn btn-ghost" onClick={copyCatalogJson}>
-                      <Copy size={14} /> {catalogCopyState === "copied" ? "Copied!" : "Copy Catalog"}
-                    </button>
+                    {isCatalogOwner && (
+                      <button className="btn btn-ghost" onClick={copyCatalogJson}>
+                        <Copy size={14} /> {catalogCopyState === "copied" ? "Copied!" : "Copy Catalog"}
+                      </button>
+                    )}
                     <button className="btn btn-ghost" onClick={() => setShowDeptManager(true)}>
                       <ListFilter size={14} /> Manage
                     </button>
