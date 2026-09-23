@@ -172,15 +172,16 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             )}
             <div style={{ marginTop: "auto", paddingTop: 12 }}>
               <div style={{ borderTop: "1px solid var(--border)" }} />
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginRight: -6, paddingTop: 12 }} onClick={(e) => e.stopPropagation()}>
-                <button onClick={() => onEdit(p)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6 }}><Pencil size={13} /></button>
-                <button onClick={() => onExport(p)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6 }} title="Preview"><Printer size={13} /></button>
-                <button onClick={() => onDuplicate(p.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6 }} title="Duplicate project"><Copy size={13} /></button>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginRight: -6, paddingTop: 10 }} onClick={(e) => e.stopPropagation()}>
+                <button onClick={() => onEdit(p)} style={cardIconStyle} title="Edit project"><Pencil size={16} /></button>
+                <button onClick={() => onExport(p)} style={cardIconStyle} title="Preview"><Printer size={16} /></button>
+                <button onClick={() => onDuplicate(p.id)} style={cardIconStyle} title="Duplicate project"><Copy size={16} /></button>
                 <button
                   onClick={() => setConfirmId(p.id)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6 }}
+                  style={cardIconStyle}
+                  title="Delete project"
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>
@@ -218,3 +219,5 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
     </>
   );
 }
+
+const cardIconStyle = { background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6 };

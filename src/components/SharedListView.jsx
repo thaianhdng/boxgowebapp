@@ -25,7 +25,12 @@ export function SharedListView({ token }) {
   }, [token]);
 
   useEffect(() => {
+    document.documentElement.style.background = "#fff";
     document.body.style.background = "#fff";
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = "#fff";
+    document.head.appendChild(meta);
   }, []);
 
   useEffect(() => {

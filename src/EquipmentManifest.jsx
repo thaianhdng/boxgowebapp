@@ -101,9 +101,21 @@ export default function EquipmentManifest({ session }) {
     return () => mql.removeEventListener("change", handler);
   }, []);
   const resolvedTheme = theme === "system" ? (systemPrefersDark ? "dark" : "light") : theme;
-  // Keep the page behind the app (seen on over-scroll) the same color as the app.
+  // Keep the page behind the app (seen on over-scroll) the same color as the
+  // app, and tell the browser that color for its own top bar — otherwise iOS
+  // Safari tints the status bar from whatever is at the top of the screen,
+  // e.g. an accent-colored category header.
   useEffect(() => {
-    document.body.style.background = resolvedTheme === "dark" ? "#0D0D0D" : "#FAFAF8";
+    const bg = resolvedTheme === "dark" ? "#0D0D0D" : "#FAFAF8";
+    document.documentElement.style.background = bg;
+    document.body.style.background = bg;
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "theme-color";
+      document.head.appendChild(meta);
+    }
+    meta.content = bg;
   }, [resolvedTheme]);
   const [accentId, setAccentId] = useState("amber");
   const [fontId, setFontId] = useState("jetbrains");
@@ -1413,6 +1425,7 @@ export default function EquipmentManifest({ session }) {
         }
         * { box-sizing: border-box; }
         ::selection { background: var(--accent); color: var(--accent-text); }
+        input[type="checkbox"] { accent-color: var(--accent); }
         .btn {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 5px 10px; border-radius: 3px; border: 1px solid var(--text);
@@ -1496,10 +1509,16 @@ export default function EquipmentManifest({ session }) {
                 <input
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Your name"
+                  placeholder="+ Add your name"
+                  title="Your name — shown on your PDFs"
+                  // Empty, it reads as a small field to fill in rather than
+                  // a big faded heading.
                   style={{
-                    fontSize: 17, fontWeight: 800, letterSpacing: "0.02em", color: "var(--text)", textAlign: "right",
-                    background: "none", border: "none", padding: 0, width: 200, maxWidth: "40vw", minWidth: 60,
+                    letterSpacing: "0.02em", color: "var(--text)", textAlign: "right",
+                    background: "none", border: "none", padding: 0, width: userName ? 200 : 130, maxWidth: "40vw", minWidth: 60,
+                    ...(userName
+                      ? { fontSize: 17, fontWeight: 800 }
+                      : { fontSize: 12, fontWeight: 600, padding: "3px 0", borderBottom: "1px dashed var(--border2)" }),
                   }}
                 />
               </div>

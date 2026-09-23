@@ -3,6 +3,7 @@ import {
   Trash2, StickyNote,
 } from "lucide-react";
 import { QtyDropdown } from "./QtyDropdown.jsx";
+import { BreakableName } from "./BreakableName.jsx";
 
 
 export function ManifestItemRow({ item, days, perDayQty, entry, onQtyChange, onNoteChange, onNoteHiddenChange, onDelete }) {
@@ -34,7 +35,7 @@ export function ManifestItemRow({ item, days, perDayQty, entry, onQtyChange, onN
       }}>
         <div className="mf-item-col" style={{ flex: 1, maxWidth: 220, whiteSpace: "normal", wordBreak: "break-word", overflowWrap: "anywhere" }}>
           <div style={{ fontWeight: 600 }}>
-            {item.name}
+            <BreakableName name={item.name} />
           </div>
           {item.note && (
             <div

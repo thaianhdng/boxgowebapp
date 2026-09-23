@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  Plus, Copy, ChevronDown, ChevronRight,
+  Plus, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { Combobox } from "./Combobox.jsx";
 import { fixedScale } from "../lib/fixedPos.js";
@@ -68,14 +68,12 @@ export function ManifestDeptSection({
             background: "var(--surface)", border: "1px solid var(--text)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px 4px", fontSize: 11, fontWeight: 600, color: "var(--muted)", whiteSpace: "nowrap" }}>
-            <Copy size={12} /> Copy into {dayShort(days[copyMenu.index])} from:
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "4px 8px 8px", maxWidth: 220 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: 6, maxWidth: 220 }}>
             {days.map((d, i) => i === copyMenu.index ? null : (
               <button
                 key={d.id}
                 onClick={() => { onCopyDay(i, copyMenu.index); setCopyMenu(null); }}
+                title={`Copy ${dayShort(d)} into ${dayShort(days[copyMenu.index])}`}
                 style={{ minWidth: 40, padding: "6px 8px", background: "var(--surface2)", border: "1px solid var(--border2)", borderRadius: 3, color: "var(--text)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
               >
                 {dayShort(d)}

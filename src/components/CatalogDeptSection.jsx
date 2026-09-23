@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Plus, Trash2, Pencil, ChevronDown, ChevronRight, GripVertical,
 } from "lucide-react";
+import { BreakableName } from "./BreakableName.jsx";
 
 
 export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onToggle, onEdit, onDelete, onReorderItem, onAddItem }) {
@@ -38,7 +39,7 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
           <GripVertical size={13} />
         </span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600 }}>{c.name}</div>
+          <div style={{ fontWeight: 600 }}><BreakableName name={c.name} /></div>
           {c.note && <div style={{ fontSize: 11, color: "var(--muted2)", marginTop: 1, whiteSpace: "pre-wrap" }}>{c.note}</div>}
         </div>
         <button onClick={() => onEdit(c)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>

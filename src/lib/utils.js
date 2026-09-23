@@ -130,6 +130,11 @@ export function slug(s) {
     .toString()
     .trim()
     .toLowerCase()
+    // Keep accented letters as their plain versions ("Đêm Sài Gòn" → "demsaigon")
+    // instead of dropping them.
+    .replace(/đ/g, "d")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "");
 }
 
