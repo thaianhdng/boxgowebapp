@@ -31,7 +31,13 @@ Start of each conversation, the owner should say which one it is:
    equipment composing (BOXGO) is only one small part of it. The expansion
    is where that larger app grows, so design expansion features as parts
    of a whole (shared navigation, shared project data), not one-off
-   add-ons. Rules:
+   add-ons. The **Job** (project / shoot) is the centre of that app and
+   holds everything about it: schedule, budget, script, treatment deck,
+   scouting and recce photos/videos, files (Google Drive). The equipment
+   list is only one section of a Job, and a BOXGO project is the same
+   record as the Job (same id), not a separate thing. For the owner, the
+   Jobs home is the front door; the equipment list composer opens from
+   inside a Job. Rules:
    - All expansion code lives in `src/expansion/`. Entry point:
      `src/expansion/Expansion.jsx`.
    - It is lazy-loaded (`lazy(() => import(...))` in `EquipmentManifest.jsx`)
