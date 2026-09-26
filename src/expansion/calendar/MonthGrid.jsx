@@ -1,0 +1,146 @@
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { MONTHS, parse, toStr, todayStr } from "../shared/dates.js";
+import { typeOf } from "../schedule/stepTypes.js";
+
+const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
+
+export function useWide(min = 700) {
+  const [wide, setWide] = useState(() => window.innerWidth >= min);
+  useEffect(() => {
+    const on = () => setWide(window.innerWidth >= min);
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, [min]);
+  return wide;
+}
+
+export function shiftMonth(month, n) {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(y, m - 1 + n, 1);
+  return toStr(d).slice(0, 7);
+}
+
+export function MonthHeader({ month, onChange, right }) {
+  const [y, m] = month.split("-").map(Number);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+      <button className="btn btn-ghost" style={{ padding: "4px 6px" }} onClick={() => onChange(shiftMonth(month, -1))} aria-label="Previous month"><ChevronLeft size={15} /></button>
+      <span className="stencil" style={{ fontSize: 13, minWidth: 128, textAlign: "center" }}>{MONTHS[m - 1]} {y}</span>
+      <button className="btn btn-ghost" style={{ padding: "4px 6px" }} onClick={() => onChange(shiftMonth(month, 1))} aria-label="Next month"><ChevronRight size={15} /></button>
+      <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{right}</div>
+    </div>
+  );
+}
+
+// Monday-first weeks covering the month.
+function gridDates(month) {
+  const first = parse(`${month}-01`);
+  const start = new Date(first);
+  start.setDate(1 - ((first.getDay() + 6) % 7));
+  const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+  const cells = Math.ceil((Math.round((last - start) / 86400000) + 1) / 7) * 7;
+  const out = [];
+  for (let i = 0; i < cells; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    out.push(toStr(d));
+  }
+  return out;
+}
+
+// A day has a clash when steps from two or more projects fall on it.
+export function clashDates(occ) {
+  const byDate = new Map();
+  for (const o of occ) {
+    if (!byDate.has(o.date)) byDate.set(o.date, new Set());
+    byDate.get(o.date).add(o.projectId);
+  }
+  return new Set([...byDate].filter(([, s]) => s.size > 1).map(([d]) => d));
+}
+
+// occ: occurrences (see schedule/steps.js). With `focusProjectId`, only
+// that project's steps are coloured; other projects show as a grey dot.
+export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectId, compact }) {
+  const wide = useWide();
+  const today = todayStr();
+  const clashes = clashDates(occ);
+  const byDate = new Map();
+  for (const o of occ) {
+    if (!byDate.has(o.date)) byDate.set(o.date, []);
+    byDate.get(o.date).push(o);
+  }
+  const showLabels = wide && !compact;
+  const cellH = compact ? 40 : wide ? 86 : 58;
+  const maxBars = compact ? 2 : wide ? 3 : 4;
+
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 4, overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", background: "var(--surface2)" }}>
+        {WEEK.map((w, i) => (
+          <div key={i} style={{ textAlign: "center", fontSize: 10, fontWeight: 800, color: i >= 5 ? "var(--muted2)" : "var(--muted)", padding: "5px 0" }}>{w}</div>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+        {gridDates(month).map((date, i) => {
+          const inMonth = date.startsWith(month);
+          const all = byDate.get(date) || [];
+          const mine = focusProjectId ? all.filter((o) => o.projectId === focusProjectId) : all;
+          const others = focusProjectId ? all.filter((o) => o.projectId !== focusProjectId) : [];
+          const isSel = selected === date;
+          const clash = clashes.has(date) && (!focusProjectId || (mine.length > 0 && others.length > 0));
+          return (
+            <button
+              key={date}
+              onClick={() => onSelect?.(isSel ? null : date)}
+              style={{
+                position: "relative", minWidth: 0, height: cellH, padding: "3px 3px 4px", textAlign: "left",
+                display: "flex", flexDirection: "column", gap: 2, cursor: "pointer", fontFamily: "inherit",
+                border: "none", borderTop: "1px solid var(--border)", borderLeft: i % 7 ? "1px solid var(--border)" : "none",
+                background: isSel ? "var(--surface2)" : "transparent",
+                outline: isSel ? "2px solid var(--accent)" : "none", outlineOffset: -2,
+                opacity: inMonth ? 1 : 0.35,
+              }}
+            >
+              <span style={{
+                fontSize: 11, fontWeight: 700, lineHeight: "16px", width: 18, height: 16, textAlign: "center", borderRadius: 3,
+                color: date === today ? "var(--accent-text)" : "var(--text)",
+                background: date === today ? "var(--accent)" : "transparent",
+              }}>
+                {Number(date.slice(8))}
+              </span>
+              {clash && (
+                <span title="Clash: more than one project on this day" style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7, borderRadius: "50%", background: "var(--danger)" }} />
+              )}
+              {mine.slice(0, maxBars).map((o, k) => {
+                const t = typeOf(types, o.step.typeId);
+                const faded = !o.step.confirmed;
+                return showLabels ? (
+                  <span key={k} style={{
+                    fontSize: 10, fontWeight: 700, lineHeight: "14px", padding: "0 4px", borderRadius: 2,
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    background: faded ? "transparent" : t.color, color: faded ? t.color : "#111",
+                    border: `1px ${faded ? "dashed" : "solid"} ${t.color}`, opacity: faded ? 0.75 : 1,
+                  }}>
+                    {o.project.name || t.name}
+                  </span>
+                ) : (
+                  <span key={k} style={{
+                    height: 5, borderRadius: 2, flexShrink: 0,
+                    background: t.color, opacity: faded ? 0.3 : 1,
+                  }} />
+                );
+              })}
+              {mine.length > maxBars && (
+                <span style={{ fontSize: 9, color: "var(--muted)", lineHeight: "10px" }}>+{mine.length - maxBars}</span>
+              )}
+              {others.length > 0 && (
+                <span title="Other projects on this day" style={{ position: "absolute", bottom: 4, right: 4, width: 6, height: 6, borderRadius: "50%", background: "var(--muted2)" }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

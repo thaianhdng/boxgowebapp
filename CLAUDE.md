@@ -65,6 +65,22 @@ Start of each conversation, the owner should say which one it is:
      owner-only rule.
    - Keep each expansion feature self-contained (its own files/folder in
      `src/expansion/`) so it can be promoted or removed cleanly later.
+   - How it's wired (v1: Projects, Calendar): for the owner,
+     `EquipmentManifest` starts on view `"x"`, which renders
+     `<Expansion part="screen">`; the equipment list screens get
+     `<Expansion part="nav">` (Projects · Calendar · Equipment) on top.
+     `xHooks` send the list's Create New / Edit project / "+ add day" to
+     the Project page. Data: `x_projects` (id = the list's `projects.id`)
+     and `x_settings` (step types), SQL in `supabase/004_…`, loaded and
+     saved by `src/expansion/store.js`. `src/expansion/projects/sync.js`
+     is the only bridge: a Project pushes name, tag, houses, Producer /
+     Gaffer (from People) and shoot days into its list whenever it's
+     edited. Shooting steps become list days; a multi-day step's days
+     have ids `<stepId>`, `<stepId>~1`… so quantities stay attached. Lists
+     without a Project get one automatically (days → Shooting steps).
+     Schedule steps: date or range, optional time, online/offline, note,
+     confirmed per step. Calendars colour by step type; tentative is
+     faded; Google Calendar (not built yet) should get confirmed steps only.
 
 ## Architecture
 
@@ -105,5 +121,8 @@ Start of each conversation, the owner should say which one it is:
 - Fake a signed-in session: localStorage key
   `sb-zumnkercznlzbnqpqmru-auth-token`, and mock `**/rest/v1/**`
   (an empty `maybeSingle` result is `200 []`).
+- The dev server needs `VITE_SUPABASE_URL=https://zumnkercznlzbnqpqmru.supabase.co
+  VITE_SUPABASE_ANON_KEY=test` (any key; requests are mocked) or the app
+  won't start. Owner tests must also mock `x_projects` / `x_settings`.
 - Stop the dev server with `pkill -f "[v]ite/bin"` (a plain `pkill -f vite`
   kills your own shell).

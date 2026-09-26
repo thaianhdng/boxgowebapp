@@ -73,7 +73,10 @@ export default function EquipmentManifest({ session }) {
   const [projects, setProjectsState] = useState([]);
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG);
-  const [view, setView] = useState("projects"); // "projects" | "manifest" | "catalog" | "preview"
+  // "x" is the owner's Projects / Calendar screens (src/expansion/), which
+  // are the owner's front door; everyone else starts on the project list.
+  const [view, setView] = useState(() => (isCatalogOwner ? "x" : "projects")); // "projects" | "manifest" | "catalog" | "preview" | "x"
+  const [xRoute, setXRoute] = useState({ screen: "projects" });
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [cameFromUrl, setCameFromUrl] = useState(false);
@@ -688,7 +691,7 @@ export default function EquipmentManifest({ session }) {
       });
     }
     const newProject = {
-      id: newProjectId(),
+      id: data.id || newProjectId(),
       name: data.name,
       tag: (template && template.tag) || data.tag || "",
       productionHouse: (template && template.productionHouse) || data.productionHouse || "",
@@ -1375,6 +1378,47 @@ export default function EquipmentManifest({ session }) {
     return () => window.removeEventListener("resize", pin);
   }, [view, activeProjectId, catalogCopyState, isCatalogOwner, uiZoom, loaded]);
 
+  // The owner's expansion (Projects, Calendar). For the owner, a project's
+  // name, houses, people and shoot days are edited on its Project page, so
+  // the equipment list's own "Create New", "Edit project" and "+ add day"
+  // lead there instead. Null for everyone else.
+  function goX(route) {
+    setXRoute({ ...route, t: Date.now() });
+    setActiveProjectId(null);
+    setView("x");
+  }
+  const xHooks = isCatalogOwner ? {
+    newProject: () => goX({ screen: "projects", intent: "new" }),
+    editProject: (id) => goX({ screen: "project", projectId: id }),
+    addShootDay: (id) => goX({ screen: "project", projectId: id, intent: "addShoot" }),
+  } : null;
+  const expansionApp = isCatalogOwner ? {
+    session,
+    projects,
+    catalog,
+    departments,
+    templates,
+    projectTags,
+    productionHouses,
+    rentalHouses,
+    route: xRoute,
+    inEquipment: view !== "x",
+    go: goX,
+    openEquipmentLists: () => { setActiveProjectId(null); setView("projects"); },
+    openEquipmentList: openProject,
+    previewEquipmentList: goToPreview,
+    createEquipmentList: (id, fields, templateId) => {
+      addProject({ ...fields, id, templateId });
+      // The Project's info wins over anything the template carries.
+      updateProject(id, fields);
+    },
+    updateEquipmentList: updateProject,
+    deleteEquipmentList: deleteProject,
+    addHouses: ({ productionHouse, rentalHouse }) => { addProductionHouse(productionHouse); addRentalHouse(rentalHouse); },
+    saveAsTemplate: (id, name) => saveAsTemplate(projects.find((p) => p.id === id), name),
+    recentProjectLabels,
+  } : null;
+
   // Until this user's own data has loaded, show nothing editable: the state
   // still holds the built-in defaults, which are only meant for a brand-new
   // account with no saved data.
@@ -1514,8 +1558,19 @@ export default function EquipmentManifest({ session }) {
         }
       `}</style>
 
-      {view !== "preview" && (
+      {view === "x" && (
+        <Suspense fallback={null}>
+          <Expansion part="screen" app={expansionApp} />
+        </Suspense>
+      )}
+
+      {view !== "preview" && view !== "x" && (
         <>
+          {isCatalogOwner && (
+            <Suspense fallback={<div style={{ height: 40 }} />}>
+              <Expansion part="nav" app={expansionApp} />
+            </Suspense>
+          )}
           {/* Top bar */}
           <header className="no-print" style={{
             padding: "12px 20px", borderBottom: "2px solid var(--border)",
@@ -1558,7 +1613,7 @@ export default function EquipmentManifest({ session }) {
                     fontSize: 15, letterSpacing: "0.08em", color: view === "projects" ? "var(--accent)" : "var(--text)",
                   }}
                 >
-                  Project Manager
+                  {isCatalogOwner ? "Equipment Lists" : "Project Manager"}
                 </button>
                 {view === "manifest" && (
                   <>
@@ -1601,7 +1656,10 @@ export default function EquipmentManifest({ session }) {
                 {view === "manifest" && (
                   <button
                     className="btn btn-ghost"
-                    onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }}
+                    onClick={() => {
+                      if (xHooks) return xHooks.editProject(activeProjectId);
+                      setEditingProjectId(activeProjectId); setShowProjectForm(true);
+                    }}
                     title="Edit project details, days and quantity mode"
                   >
                     <Pencil size={14} /> Edit project
@@ -1704,12 +1762,12 @@ export default function EquipmentManifest({ session }) {
                     catalog={catalog}
                     isFiltered={!!projectFilter}
                     onOpen={openProject}
-                    onEdit={(p) => { setEditingProjectId(p.id); setShowProjectForm(true); }}
+                    onEdit={(p) => { if (xHooks) return xHooks.editProject(p.id); setEditingProjectId(p.id); setShowProjectForm(true); }}
                     onExport={(p) => goToPreview(p.id)}
                     onDuplicate={duplicateProject}
                     onDelete={deleteProject}
                     onFilterAttr={(field, value) => setProjectFilter({ field, value })}
-                    onCreateNew={() => { setEditingProjectId(null); setShowProjectForm(true); }}
+                    onCreateNew={() => { if (xHooks) return xHooks.newProject(); setEditingProjectId(null); setShowProjectForm(true); }}
                   />
                 </>
               )}
@@ -1797,7 +1855,7 @@ export default function EquipmentManifest({ session }) {
                           onNoteChange={setItemNote}
                           onNoteHiddenChange={setItemNoteHidden}
                           onCopyDay={copyDayQuantities}
-                          onAddDay={addDay}
+                          onAddDay={xHooks ? () => xHooks.addShootDay(activeProjectId) : addDay}
                           customItems={isCustomEligible ? customItems.filter((c) => (c.department || "Others") === dept && (!searching || c.name.toLowerCase().includes(manifestSearch.trim().toLowerCase()))) : null}
                           onAddCustomItem={isCustomEligible ? (name) => addCustomItem(name, dept) : null}
                           recentCustomNames={isCustomEligible ? recentCustomItemNames : null}
@@ -2145,11 +2203,6 @@ export default function EquipmentManifest({ session }) {
         />
       )}
 
-      {isCatalogOwner && (
-        <Suspense fallback={null}>
-          <Expansion app={{ session, projects, catalog, departments, activeProjectId, view }} />
-        </Suspense>
-      )}
     </div>
   );
 }

@@ -1,0 +1,79 @@
+import { MapPin, Video } from "lucide-react";
+import { wdm } from "../shared/dates.js";
+import { stepDays } from "./steps.js";
+
+export function stepWhen(step) {
+  if (!step.start) return "Date TBC";
+  const days = stepDays(step).length;
+  let s = wdm(step.start);
+  if (days > 1) s += ` → ${wdm(step.end)} · ${days} days`;
+  if (step.time) s += ` · ${step.time}${step.endTime ? `–${step.endTime}` : ""}`;
+  return s;
+}
+
+function openUrl(url) {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+// One schedule step. `projectName` is shown on the all-projects calendar.
+export function StepRow({ step, type, projectName, dayLabel, onClick, onToggleConfirmed }) {
+  const faded = !step.confirmed;
+  const where = step.mode === "online" ? step.link : step.location;
+  return (
+    <div
+      onClick={onClick}
+      className="row"
+      style={{
+        display: "flex", gap: 10, padding: "9px 10px 9px 0", cursor: onClick ? "pointer" : "default",
+        borderBottom: "1px solid var(--border)", alignItems: "flex-start", minWidth: 0,
+      }}
+    >
+      <span style={{
+        width: 4, alignSelf: "stretch", borderRadius: 2, flexShrink: 0,
+        background: faded ? "transparent" : type.color,
+        border: faded ? `1px dashed ${type.color}` : "none",
+      }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: type.color }}>{type.name}</span>
+          {dayLabel && <span style={{ fontSize: 11, color: "var(--muted)" }}>{dayLabel}</span>}
+          {projectName && <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{projectName}</span>}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>{stepWhen(step)}</div>
+        {(where || step.mode === "online") && (
+          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+            {step.mode === "online" ? <Video size={12} style={{ flexShrink: 0 }} /> : <MapPin size={12} style={{ flexShrink: 0 }} />}
+            {step.mode === "online" && !step.link && <span>Online</span>}
+            {where && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{where}</span>}
+            {where && (
+              <a
+                href={step.mode === "online" ? openUrl(where) : `https://maps.google.com/?q=${encodeURIComponent(where)}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text)", border: "1px solid var(--border2)", borderRadius: 3, padding: "1px 6px", textDecoration: "none", marginLeft: 2 }}
+              >
+                {step.mode === "online" ? "Join" : "Map"}
+              </a>
+            )}
+          </div>
+        )}
+        {step.note && <div style={{ fontSize: 12, color: "var(--text)", marginTop: 4, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{step.note}</div>}
+      </div>
+      {onToggleConfirmed && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleConfirmed(); }}
+          title={faded ? "Tentative — tap to confirm" : "Confirmed — tap to mark tentative"}
+          style={{
+            flexShrink: 0, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em",
+            padding: "3px 7px", borderRadius: 3, cursor: "pointer", fontFamily: "inherit",
+            border: `1px ${faded ? "dashed" : "solid"} ${faded ? "var(--muted2)" : "var(--text)"}`,
+            background: faded ? "transparent" : "var(--text)", color: faded ? "var(--muted)" : "var(--bg)",
+          }}
+        >
+          {faded ? "Tentative" : "Confirmed"}
+        </button>
+      )}
+    </div>
+  );
+}
