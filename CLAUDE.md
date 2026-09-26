@@ -26,7 +26,12 @@ Start of each conversation, the owner should say which one it is:
 
 1. **"BOXGO fix: …"** — the app everyone uses. Version **1.0** is saved as
    the branch `v1.0` (a fixed marker; never push to it). Changes go to `main`.
-2. **"Expansion: …"** — owner-only features. Rules:
+2. **"Expansion: …"** — owner-only features. The big picture: the owner is
+   planning a larger **project management app** for their film work, and
+   equipment composing (BOXGO) is only one small part of it. The expansion
+   is where that larger app grows, so design expansion features as parts
+   of a whole (shared navigation, shared project data), not one-off
+   add-ons. Rules:
    - All expansion code lives in `src/expansion/`. Entry point:
      `src/expansion/Expansion.jsx`.
    - It is lazy-loaded (`lazy(() => import(...))` in `EquipmentManifest.jsx`)
