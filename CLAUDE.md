@@ -37,7 +37,11 @@ Start of each conversation, the owner should say which one it is:
    list is only one section of a Job, and a BOXGO project is the same
    record as the Job (same id), not a separate thing. For the owner, the
    Jobs home is the front door; the equipment list composer opens from
-   inside a Job. Rules:
+   inside a Job. **Job first:** the owner creates and edits a Job (info,
+   houses, people, schedule) in one place, and each module (equipment
+   list, calendar, future ones) takes what it needs from the Job; modules
+   don't hold their own copy of Job info. Other users keep creating
+   projects in the equipment list as before. Rules:
    - All expansion code lives in `src/expansion/`. Entry point:
      `src/expansion/Expansion.jsx`.
    - It is lazy-loaded (`lazy(() => import(...))` in `EquipmentManifest.jsx`)
