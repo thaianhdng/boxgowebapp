@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, lazy, Suspense } from "react";
 import {
   Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, CalendarDays, ListFilter, Loader2, Check, Settings,
 } from "lucide-react";
@@ -8,6 +8,7 @@ import { CatalogDeptSection } from "./components/CatalogDeptSection.jsx";
 import { CatalogItemFormModal } from "./components/CatalogItemFormModal.jsx";
 import { RestoreModal } from "./components/RestoreModal.jsx";
 import { Logo } from "./components/Logo.jsx";
+import { isOwner } from "./owner.js";
 import { DepartmentManagerModal } from "./components/DepartmentManagerModal.jsx";
 import { ManifestDeptSection } from "./components/ManifestDeptSection.jsx";
 import { PreviewScreen } from "./components/PreviewScreen.jsx";
@@ -57,13 +58,15 @@ function buildAppStatePayload(v) {
   };
 }
 
-const CATALOG_OWNER_EMAIL = "thaianh.dng@gmail.com";
+// Owner-only expansion, split into its own download: this import only runs
+// when <Expansion> is rendered, which only happens for the owner.
+const Expansion = lazy(() => import("./expansion/Expansion.jsx"));
 const UI_SIZE_KEY = "boxgo-ui-size";
 
 export default function EquipmentManifest({ session }) {
   // Copy Catalog only matters to whoever maintains the default catalog new
   // accounts start with, so it's only shown on that account.
-  const isCatalogOwner = session?.user?.email?.toLowerCase() === CATALOG_OWNER_EMAIL;
+  const isCatalogOwner = isOwner(session);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -2140,6 +2143,12 @@ export default function EquipmentManifest({ session }) {
           onReorderSubcategory={reorderSubcategory}
           onClose={() => setShowDeptManager(false)}
         />
+      )}
+
+      {isCatalogOwner && (
+        <Suspense fallback={null}>
+          <Expansion app={{ session, projects, catalog, departments, activeProjectId, view }} />
+        </Suspense>
       )}
     </div>
   );
