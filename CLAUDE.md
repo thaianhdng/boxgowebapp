@@ -41,6 +41,15 @@ Start of each conversation, the owner should say which one it is:
      Hiding in the UI is not enough for anything private or powerful.
    - Because it's hidden from everyone else, expansion work-in-progress can
      be pushed to main; the owner tests it live on their phone.
+   - Most expansion features stay owner-only for good. A feature moves to
+     BOXGO for everyone **only when the owner explicitly says so** (after it
+     has proved useful and reliable) — never promote one on your own.
+     Promoting means a planned "BOXGO fix": walk the owner through it first,
+     move the code out of `src/expansion/`, and give any `x_` tables normal
+     per-user row-level security (or new non-`x_` tables) instead of the
+     owner-only rule.
+   - Keep each expansion feature self-contained (its own files/folder in
+     `src/expansion/`) so it can be promoted or removed cleanly later.
 
 ## Architecture
 
