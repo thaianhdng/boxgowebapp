@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { Section } from "../shared/ui.jsx";
 import { monthKey, todayStr, wdm } from "../shared/dates.js";
@@ -6,7 +6,7 @@ import { typeOf, shootTypeId } from "../schedule/stepTypes.js";
 import { occurrences } from "../schedule/steps.js";
 import { MonthGrid, MonthHeader } from "../calendar/MonthGrid.jsx";
 import { ScheduleSection } from "../schedule/ScheduleSection.jsx";
-import { PeopleSection } from "./PeopleSection.jsx";
+import { InfoStrip } from "./InfoStrip.jsx";
 import { EquipmentPanel } from "./EquipmentPanel.jsx";
 import { ProjectInfoModal } from "./ProjectInfoModal.jsx";
 
@@ -22,17 +22,11 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
   const [showInfo, setShowInfo] = useState(false);
   const [month, setMonth] = useState(() => startMonth(project));
   const [selDate, setSelDate] = useState(null);
-  const noteRef = useRef(null);
   const list = actions.listOf(id);
   const update = (patch) => actions.update(id, (p) => ({ ...p, ...patch }));
 
   const occ = useMemo(() => occurrences(allProjects), [allProjects]);
   const onSel = selDate ? occ.filter((o) => o.date === selDate) : [];
-
-  useEffect(() => {
-    const el = noteRef.current;
-    if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; }
-  }, [project.notes]);
 
   return (
     <div>
@@ -40,26 +34,21 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         <ArrowLeft size={12} /> Projects
       </button>
 
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 6 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {project.tag && (
             <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px", marginRight: 6 }}>{project.tag}</span>
           )}
           <div className="stencil" style={{ fontSize: 20, lineHeight: 1.2, color: "var(--text)", overflowWrap: "anywhere", marginTop: project.tag ? 4 : 0 }}>{project.name}</div>
-          <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>
-            {[project.productionHouse, project.rentalHouse].filter(Boolean).join(" · ") || "No houses set"}
-          </div>
         </div>
         <button className="btn btn-ghost" onClick={() => setShowInfo(true)}><Pencil size={13} /> Edit</button>
       </div>
 
-      <textarea
-        ref={noteRef}
-        value={project.notes || ""}
-        onChange={(e) => update({ notes: e.target.value })}
-        placeholder="Project notes…"
-        rows={1}
-        style={{ width: "100%", resize: "none", overflow: "hidden", fontSize: 13, padding: "6px 0", marginBottom: 18, border: "none", borderBottom: "1px solid var(--border)", borderRadius: 0, background: "none" }}
+      <InfoStrip
+        project={project}
+        onEditInfo={() => setShowInfo(true)}
+        onPeopleChange={(people) => update({ people })}
+        onNotesChange={(notes) => update({ notes })}
       />
 
       <Section title="Calendar">
@@ -108,8 +97,6 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         hasShootSteps={(project.steps || []).some((s) => s.typeId === shootTypeId(types))}
         onCreate={(templateId) => actions.createList(id, project, templateId)}
       />
-
-      <PeopleSection people={project.people} onChange={(people) => update({ people })} />
 
       {showInfo && (
         <ProjectInfoModal
