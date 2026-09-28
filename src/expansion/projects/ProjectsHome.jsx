@@ -5,6 +5,8 @@ import { dm, todayStr, wdm } from "../shared/dates.js";
 import { typeOf } from "../schedule/stepTypes.js";
 import { sortSteps, projectSpan } from "../schedule/steps.js";
 import { ProjectInfoModal } from "./ProjectInfoModal.jsx";
+import { CalendarPanel } from "../calendar/CalendarPanel.jsx";
+import { useWide } from "../calendar/MonthGrid.jsx";
 
 function nextStep(project, today) {
   return sortSteps(project.steps).find((s) => s.start && (s.end || s.start) >= today);
@@ -67,7 +69,10 @@ function arrange(entries, today) {
   return [["Upcoming", upcoming], ["No dates yet", undated], ["Past", past]].filter(([, l]) => l.length);
 }
 
-export function ProjectsHome({ app, projects, types, actions, intent }) {
+// The owner's home: every project's steps on one calendar, and the list
+// of projects. Side by side on a wide screen, calendar first on a phone.
+export function ProjectsHome({ app, projects, types, actions, intent, onManageTypes }) {
+  const wide = useWide(1000);
   const [creating, setCreating] = useState(false);
   const [q, setQ] = useState("");
   const today = todayStr();
@@ -86,8 +91,8 @@ export function ProjectsHome({ app, projects, types, actions, intent }) {
     return arrange(entries, today);
   }, [projects, q, today]);
 
-  return (
-    <div>
+  const list = (
+    <div style={{ minWidth: 0 }}>
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
         <div style={{ position: "relative", flex: 1 }}>
           <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
@@ -97,17 +102,17 @@ export function ProjectsHome({ app, projects, types, actions, intent }) {
       </div>
 
       {Object.keys(projects).length === 0 && (
-        <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)", fontSize: 13 }}>No projects yet. Create your first one.</div>
+        <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--muted)", fontSize: 13 }}>No projects yet. Create your first one.</div>
       )}
       {Object.keys(projects).length > 0 && groups.length === 0 && (
-        <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--muted)", fontSize: 13 }}>No projects match your search.</div>
+        <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--muted)", fontSize: 13 }}>No projects match your search.</div>
       )}
 
-      {groups.map(([title, list]) => (
+      {groups.map(([title, entries]) => (
         <div key={title} style={{ marginBottom: 20 }}>
           <div className="stencil" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8 }}>{title}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
-            {list.map(({ id, project }) => (
+          <div style={{ display: "grid", gridTemplateColumns: wide ? "1fr" : "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
+            {entries.map(({ id, project }) => (
               <ProjectCard
                 key={id}
                 project={project}
@@ -120,6 +125,27 @@ export function ProjectsHome({ app, projects, types, actions, intent }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+  const calendar = (
+    <div style={{ minWidth: 0, marginBottom: 22 }}>
+      <CalendarPanel app={app} projects={projects} types={types} onManageTypes={onManageTypes} />
+    </div>
+  );
+
+  return (
+    <div>
+      {wide ? (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)", gap: 28, alignItems: "start" }}>
+          {calendar}
+          {list}
+        </div>
+      ) : (
+        <>
+          {calendar}
+          {list}
+        </>
+      )}
 
       {creating && (
         <ProjectInfoModal

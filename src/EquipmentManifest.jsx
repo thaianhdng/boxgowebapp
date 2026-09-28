@@ -75,8 +75,18 @@ export default function EquipmentManifest({ session }) {
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG);
   // "x" is the owner's Projects / Calendar screens (src/expansion/), which
   // are the owner's front door; everyone else starts on the project list.
-  const [view, setView] = useState(() => (isCatalogOwner ? "x" : "projects")); // "projects" | "manifest" | "catalog" | "preview" | "x"
+  const [view, setViewState] = useState(() => (isCatalogOwner ? "x" : "projects")); // "projects" | "manifest" | "catalog" | "preview" | "x"
   const [xRoute, setXRoute] = useState({ screen: "projects" });
+  const [xSaveState, setXSaveState] = useState("idle");
+  // For the owner, Projects replaces the equipment lists' own project list:
+  // anything that would go back to that list goes to Projects instead.
+  function setView(v) {
+    if (isCatalogOwner && v === "projects") {
+      setXRoute({ screen: "projects", t: Date.now() });
+      v = "x";
+    }
+    setViewState(v);
+  }
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [cameFromUrl, setCameFromUrl] = useState(false);
@@ -1402,10 +1412,9 @@ export default function EquipmentManifest({ session }) {
     productionHouses,
     rentalHouses,
     route: xRoute,
-    inEquipment: view !== "x",
     go: goX,
-    openEquipmentLists: () => { setActiveProjectId(null); setView("projects"); },
-    openEquipmentList: openProject,
+    reportSaveState: setXSaveState,
+    openEquipmentList: (id) => { openProject(id); window.scrollTo(0, 0); },
     previewEquipmentList: goToPreview,
     createEquipmentList: (id, fields, templateId) => {
       addProject({ ...fields, id, templateId });
@@ -1418,6 +1427,10 @@ export default function EquipmentManifest({ session }) {
     saveAsTemplate: (id, name) => saveAsTemplate(projects.find((p) => p.id === id), name),
     recentProjectLabels,
   } : null;
+
+  const shownSaveState = [saveState, xSaveState].includes("error") ? "error"
+    : [saveState, xSaveState].includes("saving") ? "saving"
+    : [saveState, xSaveState].includes("saved") ? "saved" : "idle";
 
   // Until this user's own data has loaded, show nothing editable: the state
   // still holds the built-in defaults, which are only meant for a brand-new
@@ -1558,19 +1571,8 @@ export default function EquipmentManifest({ session }) {
         }
       `}</style>
 
-      {view === "x" && (
-        <Suspense fallback={null}>
-          <Expansion part="screen" app={expansionApp} />
-        </Suspense>
-      )}
-
-      {view !== "preview" && view !== "x" && (
+      {view !== "preview" && (
         <>
-          {isCatalogOwner && (
-            <Suspense fallback={<div style={{ height: 40 }} />}>
-              <Expansion part="nav" app={expansionApp} />
-            </Suspense>
-          )}
           {/* Top bar */}
           <header className="no-print" style={{
             padding: "12px 20px", borderBottom: "2px solid var(--border)",
@@ -1610,12 +1612,42 @@ export default function EquipmentManifest({ session }) {
                   onClick={() => { setActiveProjectId(null); setView("projects"); }}
                   style={{
                     background: "none", border: "none", cursor: "pointer", padding: 0, whiteSpace: "nowrap", flexShrink: 0,
-                    fontSize: 15, letterSpacing: "0.08em", color: view === "projects" ? "var(--accent)" : "var(--text)",
+                    fontSize: 15, letterSpacing: "0.08em",
+                    color: view === "projects" || (view === "x" && xRoute.screen !== "project") ? "var(--accent)" : "var(--text)",
                   }}
                 >
-                  {isCatalogOwner ? "Equipment Lists" : "Project Manager"}
+                  {isCatalogOwner ? "Projects" : "Project Manager"}
                 </button>
-                {view === "manifest" && (
+                {view === "x" && xRoute.screen === "project" && (
+                  <>
+                    <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
+                    <Suspense fallback={null}>
+                      <Expansion part="crumb" app={expansionApp} />
+                    </Suspense>
+                  </>
+                )}
+                {view === "manifest" && isCatalogOwner && (
+                  <>
+                    <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
+                    <button
+                      className="stencil"
+                      onClick={() => xHooks.editProject(activeProjectId)}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit",
+                        fontSize: 15, letterSpacing: "0.08em", color: "var(--text)",
+                        display: "flex", alignItems: "center", gap: 6, minWidth: 0, whiteSpace: "nowrap",
+                      }}
+                    >
+                      {activeProject?.tag && (
+                        <span style={{ fontSize: 11, flexShrink: 0, color: "var(--muted)" }}>{activeProject.tag}</span>
+                      )}
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{activeProject?.name || "Project"}</span>
+                    </button>
+                    <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
+                    <span className="stencil" style={{ fontSize: 15, color: "var(--accent)", whiteSpace: "nowrap", flexShrink: 0 }}>Equipment</span>
+                  </>
+                )}
+                {view === "manifest" && !isCatalogOwner && (
                   <>
                     <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
                     <span
@@ -1643,12 +1675,17 @@ export default function EquipmentManifest({ session }) {
               </div>
               {/* Always hugs the right edge, even when it wraps onto its own line. */}
               <div ref={hdrActionsRef} className="hdr-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginLeft: "auto" }}>
-                <div style={{ fontSize: 11, color: saveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
-                  {saveState === "saving" && <><Loader2 size={12} className="spin" /><span className="save-label"> saving</span></>}
-                  {saveState === "saved" && <><Check size={12} /><span className="save-label"> saved</span></>}
-                  {saveState === "error" && <><X size={12} /> couldn't save<span className="save-label"> — check your connection</span></>}
+                <div style={{ fontSize: 11, color: shownSaveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
+                  {shownSaveState === "saving" && <><Loader2 size={12} className="spin" /><span className="save-label"> saving</span></>}
+                  {shownSaveState === "saved" && <><Check size={12} /><span className="save-label"> saved</span></>}
+                  {shownSaveState === "error" && <><X size={12} /> couldn't save<span className="save-label"> — check your connection</span></>}
                 </div>
-                {view === "projects" && (
+                {view === "x" && xRoute.screen === "project" && (
+                  <button className="btn btn-ghost" onClick={() => goX({ ...xRoute, intent: "edit" })} title="Edit project name, tag and houses">
+                    <Pencil size={14} /> Edit project
+                  </button>
+                )}
+                {(view === "projects" || (view === "x" && xRoute.screen !== "project")) && (
                   <button className="btn btn-ghost" onClick={() => setView("catalog")}>
                     <Logo size={14} /> Master Catalog
                   </button>
@@ -1692,7 +1729,13 @@ export default function EquipmentManifest({ session }) {
             </div>
           </header>
 
+          {view === "x" && (
+            <Suspense fallback={null}>
+              <Expansion part="screen" app={expansionApp} />
+            </Suspense>
+          )}
 
+          {view !== "x" && (<>
           <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
             {/* Sidebar */}
             {view !== "projects" && (
@@ -1994,6 +2037,7 @@ export default function EquipmentManifest({ session }) {
               ))}
             </div>
           )}
+          </>)}
         </>
       )}
 

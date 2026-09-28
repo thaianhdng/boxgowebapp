@@ -7,14 +7,16 @@ import { StepRow } from "../schedule/StepRow.jsx";
 import { MonthGrid, MonthHeader, clashDates } from "./MonthGrid.jsx";
 
 // Every step of every project on one calendar, coloured by step type,
-// tentative ones faded, and clashes marked.
-export function CalendarScreen({ app, projects, types, onManageTypes }) {
+// tentative ones faded, and clashes marked. Tap a day for its steps, or
+// list the whole month.
+export function CalendarPanel({ app, projects, types, onManageTypes }) {
   const [month, setMonth] = useState(() => monthKey(todayStr()));
   const [selDate, setSelDate] = useState(null);
+  const [listMonth, setListMonth] = useState(false);
   const occ = useMemo(() => occurrences(projects), [projects]);
   const clashes = useMemo(() => clashDates(occ), [occ]);
 
-  const shown = selDate ? occ.filter((o) => o.date === selDate) : occ.filter((o) => o.date.startsWith(month));
+  const shown = selDate ? occ.filter((o) => o.date === selDate) : listMonth ? occ.filter((o) => o.date.startsWith(month)) : [];
   const byDate = [];
   for (const o of shown) {
     const last = byDate[byDate.length - 1];
@@ -42,17 +44,20 @@ export function CalendarScreen({ app, projects, types, onManageTypes }) {
         ))}
       </div>
       <MonthGrid month={month} occ={occ} types={types} selected={selDate} onSelect={setSelDate} />
-      <div style={{ fontSize: 11, color: "var(--muted2)", marginTop: 6, marginBottom: 18 }}>
-        Faded = tentative · red dot = more than one project that day · tap a day to see just that day
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 6, marginBottom: 12 }}>
+        <div style={{ fontSize: 11, color: "var(--muted2)", flex: 1 }}>
+          Faded = tentative · red dot = more than one project that day · tap a day to see it
+        </div>
+        {selDate ? (
+          <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11, flexShrink: 0 }} onClick={() => setSelDate(null)}>Close day</button>
+        ) : (
+          <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11, flexShrink: 0 }} onClick={() => setListMonth((v) => !v)}>
+            {listMonth ? "Hide month list" : "List this month"}
+          </button>
+        )}
       </div>
-
-      {selDate && (
-        <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11, marginBottom: 10 }} onClick={() => setSelDate(null)}>
-          Show whole month
-        </button>
-      )}
-      {byDate.length === 0 && (
-        <div style={{ fontSize: 12.5, color: "var(--muted2)", padding: "10px 0" }}>{selDate ? `Nothing on ${wdm(selDate)}.` : "Nothing scheduled this month."}</div>
+      {(selDate || listMonth) && byDate.length === 0 && (
+        <div style={{ fontSize: 12.5, color: "var(--muted2)", padding: "4px 0 10px" }}>{selDate ? `Nothing on ${wdm(selDate)}.` : "Nothing scheduled this month."}</div>
       )}
       {byDate.map(({ date, items }) => (
         <div key={date} style={{ marginBottom: 14 }}>

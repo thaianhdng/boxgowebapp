@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Section } from "../shared/ui.jsx";
 import { monthKey, todayStr, wdm } from "../shared/dates.js";
 import { typeOf, shootTypeId } from "../schedule/stepTypes.js";
@@ -25,25 +24,16 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
   const list = actions.listOf(id);
   const update = (patch) => actions.update(id, (p) => ({ ...p, ...patch }));
 
+  // The header's "Edit project" button.
+  useEffect(() => {
+    if (intent === "edit") setShowInfo(true);
+  }, [intent, app.route.t]);
+
   const occ = useMemo(() => occurrences(allProjects), [allProjects]);
   const onSel = selDate ? occ.filter((o) => o.date === selDate) : [];
 
   return (
     <div>
-      <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11, marginBottom: 14 }} onClick={() => app.go({ screen: "projects" })}>
-        <ArrowLeft size={12} /> Projects
-      </button>
-
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {project.tag && (
-            <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px", marginRight: 6 }}>{project.tag}</span>
-          )}
-          <div className="stencil" style={{ fontSize: 20, lineHeight: 1.2, color: "var(--text)", overflowWrap: "anywhere", marginTop: project.tag ? 4 : 0 }}>{project.name}</div>
-        </div>
-        <button className="btn btn-ghost" onClick={() => setShowInfo(true)}><Pencil size={13} /> Edit</button>
-      </div>
-
       <InfoStrip
         project={project}
         onEditInfo={() => setShowInfo(true)}

@@ -7,32 +7,35 @@
 // catalog, houses, and ways to open / create / update a list). Add fields
 // there rather than reaching into BOXGO's internals from here.
 //
-// BOXGO renders this in two places:
-//   <Expansion part="nav">    the Projects · Calendar · Equipment bar, on
-//                             top of the equipment list screens
-//   <Expansion part="screen"> the Projects and Calendar screens
+// BOXGO renders this under its own header, in two places:
+//   <Expansion part="crumb">  the project's name in the breadcrumb
+//                             (PROJECTS / HONDA TVC)
+//   <Expansion part="screen"> the Projects home (calendar + projects) and
+//                             each Project page
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2, X } from "lucide-react";
-import Nav from "./Nav.jsx";
+import { Loader2 } from "lucide-react";
 import { useXStore, load, refresh, putProject, setStepTypes, getState } from "./store.js";
 import { projectActions } from "./projects/actions.js";
 import { projectFromList } from "./projects/sync.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
 import { ProjectPage } from "./projects/ProjectPage.jsx";
-import { CalendarScreen } from "./calendar/CalendarScreen.jsx";
 import { StepTypesModal } from "./schedule/StepTypesModal.jsx";
 
 export default function Expansion({ app, part }) {
-  if (part === "nav") return <Nav app={app} />;
+  if (part === "crumb") return <Crumb app={app} />;
   return <Screen app={app} />;
 }
 
-function SaveState({ saveState }) {
-  if (saveState === "saving") return <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Loader2 size={12} className="spin" /> saving</span>;
-  if (saveState === "saved") return <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Check size={12} /> saved</span>;
-  if (saveState === "error") return <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--danger)" }}><X size={12} /> couldn't save — check your connection</span>;
-  return null;
+function Crumb({ app }) {
+  const x = useXStore();
+  const p = x.projects[app.route.projectId];
+  return (
+    <span className="stencil" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", minWidth: 0 }}>
+      {p?.tag && <span style={{ fontSize: 11, flexShrink: 0, color: "var(--muted)" }}>{p.tag}</span>}
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", color: "var(--accent)" }}>{p?.name || "Project"}</span>
+    </span>
+  );
 }
 
 function Screen({ app }) {
@@ -62,6 +65,9 @@ function Screen({ app }) {
 
   useEffect(() => { window.scrollTo(0, 0); }, [screen, projectId]);
 
+  // BOXGO's header shows one save indicator for everything.
+  useEffect(() => { app.reportSaveState(x.saveState); }, [x.saveState]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const usage = useMemo(() => {
     const u = {};
     for (const p of Object.values(x.projects)) for (const s of p.steps || []) u[s.typeId] = (u[s.typeId] || 0) + 1;
@@ -78,8 +84,6 @@ function Screen({ app }) {
     );
   } else if (x.status !== "ready") {
     body = <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, padding: 60, color: "var(--muted)", fontSize: 13 }}><Loader2 size={16} className="spin" /> Loading…</div>;
-  } else if (screen === "calendar") {
-    body = <CalendarScreen app={app} projects={x.projects} types={types} onManageTypes={() => setShowTypes(true)} />;
   } else if (screen === "project" && x.projects[projectId]) {
     body = (
       <ProjectPage
@@ -95,16 +99,13 @@ function Screen({ app }) {
       />
     );
   } else {
-    body = <ProjectsHome app={app} projects={x.projects} types={types} actions={actions} intent={screen === "projects" ? intent : null} />;
+    body = <ProjectsHome app={app} projects={x.projects} types={types} actions={actions} intent={screen === "projects" ? intent : null} onManageTypes={() => setShowTypes(true)} />;
   }
 
   return (
     <>
-      <Nav app={app} />
-      <main style={{ padding: "16px 16px 60px", maxWidth: 920, width: "100%", margin: "0 auto" }}>
-        <div style={{ fontSize: 11, color: "var(--muted)", display: "flex", justifyContent: "flex-end", minHeight: 14, marginTop: -6, marginBottom: 2 }}>
-          <SaveState saveState={x.saveState} />
-        </div>
+      <main className="x-main" style={{ padding: "18px 22px 60px", maxWidth: screen === "project" ? 920 : 1280, width: "100%", margin: "0 auto" }}>
+        <style>{"@media (max-width: 600px) { .x-main { padding: 16px 14px 60px !important; } }"}</style>
         {body}
       </main>
       {showTypes && (

@@ -66,11 +66,15 @@ Start of each conversation, the owner should say which one it is:
    - Keep each expansion feature self-contained (its own files/folder in
      `src/expansion/`) so it can be promoted or removed cleanly later.
    - How it's wired (v1: Projects, Calendar): for the owner,
-     `EquipmentManifest` starts on view `"x"`, which renders
-     `<Expansion part="screen">`; the equipment list screens get
-     `<Expansion part="nav">` (Projects · Calendar · Equipment) on top.
-     `xHooks` send the list's Create New / Edit project / "+ add day" to
-     the Project page. Data: `x_projects` (id = the list's `projects.id`)
+     `EquipmentManifest` starts on view `"x"`, which renders BOXGO's own
+     header (breadcrumbs PROJECTS / <project> / EQUIPMENT, save tick,
+     Settings) with `<Expansion part="screen">` under it and
+     `<Expansion part="crumb">` for the project name. The Projects home
+     is the calendar (all projects) + the project list on one screen. The
+     equipment lists' own project list is replaced for the owner
+     (`setView("projects")` → Projects). `xHooks` send the list's
+     Create New / Edit project / "+ add day" to the Project page; the
+     expansion reports its save state via `app.reportSaveState`. Data: `x_projects` (id = the list's `projects.id`)
      and `x_settings` (step types), SQL in `supabase/004_…`, loaded and
      saved by `src/expansion/store.js`. `src/expansion/projects/sync.js`
      is the only bridge: a Project pushes name, tag, houses, Producer /
