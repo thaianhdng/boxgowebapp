@@ -35,12 +35,13 @@ Start of each conversation, the owner should say which one it is:
    holds everything about it: schedule, budget, script, treatment deck,
    scouting and recce photos/videos, files (Google Drive). The equipment
    list is only one section of a Job, and a BOXGO project is the same
-   record as the Job (same id), not a separate thing. For the owner, the
-   Jobs home is the front door; the equipment list composer opens from
-   inside a Job. **Job first:** the owner creates and edits a Job (info,
-   houses, people, schedule) in one place, and each module (equipment
-   list, calendar, future ones) takes what it needs from the Job; modules
-   don't hold their own copy of Job info. Other users keep creating
+   record as the Job (same id), not a separate thing. **The equipment list
+   composer keeps its v1.0 UI/UX exactly** (owner's call: compact, lots of
+   info) — don't reshape it for the expansion; link to it instead. Shared
+   Job info (name, tag, houses, Producer, Gaffer, shoot days) has one
+   value, editable from either side and kept in step both ways. New
+   expansion screens should match that v1.0 style: compact, dense with
+   useful info, BOXGO's header and breadcrumbs. Other users keep creating
    projects in the equipment list as before. Rules:
    - All expansion code lives in `src/expansion/`. Entry point:
      `src/expansion/Expansion.jsx`.
@@ -65,26 +66,31 @@ Start of each conversation, the owner should say which one it is:
      owner-only rule.
    - Keep each expansion feature self-contained (its own files/folder in
      `src/expansion/`) so it can be promoted or removed cleanly later.
-   - How it's wired (v1: Projects, Calendar): for the owner,
-     `EquipmentManifest` starts on view `"x"`, which renders BOXGO's own
-     header (breadcrumbs PROJECTS / <project> / EQUIPMENT, save tick,
-     Settings) with `<Expansion part="screen">` under it and
-     `<Expansion part="crumb">` for the project name. The Projects home
-     is the calendar (all projects) + the project list on one screen. The
-     equipment lists' own project list is replaced for the owner
-     (`setView("projects")` → Projects). `xHooks` send the list's
-     Create New / Edit project / "+ add day" to the Project page; the
-     expansion reports its save state via `app.reportSaveState`. Data: `x_projects` (id = the list's `projects.id`)
-     and `x_settings` (step types), SQL in `supabase/004_…`, loaded and
-     saved by `src/expansion/store.js`. `src/expansion/projects/sync.js`
-     is the only bridge: a Project pushes name, tag, houses, Producer /
-     Gaffer (from People) and shoot days into its list whenever it's
-     edited. Shooting steps become list days; a multi-day step's days
-     have ids `<stepId>`, `<stepId>~1`… so quantities stay attached. Lists
-     without a Project get one automatically (days → Shooting steps).
-     Schedule steps: date or range, optional time, online/offline, note,
-     confirmed per step. Calendars colour by step type; tentative is
-     faded; Google Calendar (not built yet) should get confirmed steps only.
+   - How it's wired (Projects + Calendar): for the owner, BOXGO's header
+     top row has a PROJECTS | EQUIPMENT switch (instead of the "Equipment
+     List Composer" caption). `EquipmentManifest` starts on view `"x"`:
+     BOXGO's header (crumb PROJECTS / <project>, Edit project, Settings,
+     one save tick) with `<Expansion part="screen">` under it (Projects
+     home = calendar of all projects + project list; Project page) and
+     `<Expansion part="crumb">` for the name. EQUIPMENT is the v1.0
+     composer untouched, except the owner can tap the project name in its
+     crumb to open the Project page. `<Expansion part="sync">` is always
+     mounted for the owner (renders nothing): loads the store, reports
+     save state (`app.reportSaveState`) and runs the list → Project link.
+     Data: `x_projects` (id = the list's `projects.id`) and `x_settings`
+     (step types), SQL in `supabase/004_…`, loaded and saved by
+     `src/expansion/store.js`. `src/expansion/projects/sync.js` is the only
+     bridge: Project edits push into the list (`equipmentPatch`, from
+     `projects/actions.js`); list changes pull into the Project
+     (`projectWithList`, from the sync part). Shooting steps = list days; a
+     multi-day step's days have ids `<stepId>`, `<stepId>~1`… so quantities
+     stay attached; if the list breaks a multi-day step's run, it splits
+     into single-day steps keeping those ids. New lists (Create New,
+     Duplicate) get a Project automatically. A Project with a list must
+     keep at least one Shooting step. Schedule steps: date or range,
+     optional time, online/offline, note, confirmed per step. Calendars
+     colour by step type; tentative is faded; Google Calendar (not built
+     yet) should get confirmed steps only.
 
 ## Architecture
 

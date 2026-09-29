@@ -73,20 +73,11 @@ export default function EquipmentManifest({ session }) {
   const [projects, setProjectsState] = useState([]);
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG);
-  // "x" is the owner's Projects / Calendar screens (src/expansion/), which
-  // are the owner's front door; everyone else starts on the project list.
-  const [view, setViewState] = useState(() => (isCatalogOwner ? "x" : "projects")); // "projects" | "manifest" | "catalog" | "preview" | "x"
+  // "x" is the owner's Projects section (src/expansion/), their front door;
+  // everyone else starts on the project list.
+  const [view, setView] = useState(() => (isCatalogOwner ? "x" : "projects")); // "projects" | "manifest" | "catalog" | "preview" | "x"
   const [xRoute, setXRoute] = useState({ screen: "projects" });
   const [xSaveState, setXSaveState] = useState("idle");
-  // For the owner, Projects replaces the equipment lists' own project list:
-  // anything that would go back to that list goes to Projects instead.
-  function setView(v) {
-    if (isCatalogOwner && v === "projects") {
-      setXRoute({ screen: "projects", t: Date.now() });
-      v = "x";
-    }
-    setViewState(v);
-  }
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [cameFromUrl, setCameFromUrl] = useState(false);
@@ -1388,20 +1379,16 @@ export default function EquipmentManifest({ session }) {
     return () => window.removeEventListener("resize", pin);
   }, [view, activeProjectId, catalogCopyState, isCatalogOwner, uiZoom, loaded]);
 
-  // The owner's expansion (Projects, Calendar). For the owner, a project's
-  // name, houses, people and shoot days are edited on its Project page, so
-  // the equipment list's own "Create New", "Edit project" and "+ add day"
-  // lead there instead. Null for everyone else.
+  // The owner's Projects section (src/expansion/). The equipment list
+  // composer works exactly as in v1.0; each list is linked to a Project
+  // (same id) and the expansion keeps their shared details in step both
+  // ways (<Expansion part="sync">). Null for everyone else.
   function goX(route) {
     setXRoute({ ...route, t: Date.now() });
     setActiveProjectId(null);
     setView("x");
+    window.scrollTo(0, 0);
   }
-  const xHooks = isCatalogOwner ? {
-    newProject: () => goX({ screen: "projects", intent: "new" }),
-    editProject: (id) => goX({ screen: "project", projectId: id }),
-    addShootDay: (id) => goX({ screen: "project", projectId: id, intent: "addShoot" }),
-  } : null;
   const expansionApp = isCatalogOwner ? {
     session,
     projects,
@@ -1424,8 +1411,6 @@ export default function EquipmentManifest({ session }) {
     updateEquipmentList: updateProject,
     deleteEquipmentList: deleteProject,
     addHouses: ({ productionHouse, rentalHouse }) => { addProductionHouse(productionHouse); addRentalHouse(rentalHouse); },
-    saveAsTemplate: (id, name) => saveAsTemplate(projects.find((p) => p.id === id), name),
-    recentProjectLabels,
   } : null;
 
   const shownSaveState = [saveState, xSaveState].includes("error") ? "error"
@@ -1468,6 +1453,11 @@ export default function EquipmentManifest({ session }) {
       flexDirection: "column",
     }}>
       <div className="top-tint" aria-hidden="true" />
+      {isCatalogOwner && (
+        <Suspense fallback={null}>
+          <Expansion part="sync" app={expansionApp} />
+        </Suspense>
+      )}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=${selectedFont.googleFamily}&display=swap');
         [data-theme="dark"] {
@@ -1583,9 +1573,28 @@ export default function EquipmentManifest({ session }) {
                 <span className="stencil" style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
                   BOXGO
                 </span>
-                <span className="stencil" style={{ fontSize: 10, letterSpacing: "0.01em", color: "var(--muted)" }}>
-                  Equipment List Composer
-                </span>
+                {isCatalogOwner ? (
+                  // The owner's two sections: Projects (src/expansion/) and
+                  // the equipment list composer, which works exactly as v1.0.
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 2 }}>
+                    {[["Projects", view === "x", () => goX({ screen: "projects" })], ["Equipment", view !== "x", () => { setActiveProjectId(null); setView("projects"); }]].map(([label, on, go], i) => (
+                      <span key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {i > 0 && <span style={{ color: "var(--border2)", fontSize: 10 }}>|</span>}
+                        <button
+                          className="stencil"
+                          onClick={go}
+                          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 10, letterSpacing: "0.04em", color: on ? "var(--accent)" : "var(--muted)" }}
+                        >
+                          {label}
+                        </button>
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="stencil" style={{ fontSize: 10, letterSpacing: "0.01em", color: "var(--muted)" }}>
+                    Equipment List Composer
+                  </span>
+                )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <input
@@ -1609,14 +1618,14 @@ export default function EquipmentManifest({ session }) {
               <div className="hdr-crumb" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                 <button
                   className="stencil"
-                  onClick={() => { setActiveProjectId(null); setView("projects"); }}
+                  onClick={() => (view === "x" ? goX({ screen: "projects" }) : (setActiveProjectId(null), setView("projects")))}
                   style={{
                     background: "none", border: "none", cursor: "pointer", padding: 0, whiteSpace: "nowrap", flexShrink: 0,
                     fontSize: 15, letterSpacing: "0.08em",
                     color: view === "projects" || (view === "x" && xRoute.screen !== "project") ? "var(--accent)" : "var(--text)",
                   }}
                 >
-                  {isCatalogOwner ? "Projects" : "Project Manager"}
+                  {view === "x" ? "Projects" : "Project Manager"}
                 </button>
                 {view === "x" && xRoute.screen === "project" && (
                   <>
@@ -1626,35 +1635,18 @@ export default function EquipmentManifest({ session }) {
                     </Suspense>
                   </>
                 )}
-                {view === "manifest" && isCatalogOwner && (
-                  <>
-                    <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
-                    <button
-                      className="stencil"
-                      onClick={() => xHooks.editProject(activeProjectId)}
-                      style={{
-                        background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit",
-                        fontSize: 15, letterSpacing: "0.08em", color: "var(--text)",
-                        display: "flex", alignItems: "center", gap: 6, minWidth: 0, whiteSpace: "nowrap",
-                      }}
-                    >
-                      {activeProject?.tag && (
-                        <span style={{ fontSize: 11, flexShrink: 0, color: "var(--muted)" }}>{activeProject.tag}</span>
-                      )}
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{activeProject?.name || "Project"}</span>
-                    </button>
-                    <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
-                    <span className="stencil" style={{ fontSize: 15, color: "var(--accent)", whiteSpace: "nowrap", flexShrink: 0 }}>Equipment</span>
-                  </>
-                )}
-                {view === "manifest" && !isCatalogOwner && (
+                {view === "manifest" && (
                   <>
                     <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
                     <span
                       className="stencil"
+                      // The owner can tap the name to open this job's Project page.
+                      onClick={isCatalogOwner ? () => goX({ screen: "project", projectId: activeProjectId }) : undefined}
+                      title={isCatalogOwner ? "Open this project's page (schedule, people, calendar)" : undefined}
                       style={{
                         fontSize: 15, display: "flex", alignItems: "center", gap: 6,
                         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200,
+                        cursor: isCatalogOwner ? "pointer" : undefined,
                       }}
                     >
                       {activeProject?.tag && (
@@ -1663,6 +1655,7 @@ export default function EquipmentManifest({ session }) {
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--accent)" }}>
                         {activeProject?.name || "Project"}
                       </span>
+                      {isCatalogOwner && <CalendarDays size={13} style={{ flexShrink: 0, color: "var(--muted)" }} />}
                     </span>
                   </>
                 )}
@@ -1685,7 +1678,7 @@ export default function EquipmentManifest({ session }) {
                     <Pencil size={14} /> Edit project
                   </button>
                 )}
-                {(view === "projects" || (view === "x" && xRoute.screen !== "project")) && (
+                {view === "projects" && (
                   <button className="btn btn-ghost" onClick={() => setView("catalog")}>
                     <Logo size={14} /> Master Catalog
                   </button>
@@ -1693,10 +1686,7 @@ export default function EquipmentManifest({ session }) {
                 {view === "manifest" && (
                   <button
                     className="btn btn-ghost"
-                    onClick={() => {
-                      if (xHooks) return xHooks.editProject(activeProjectId);
-                      setEditingProjectId(activeProjectId); setShowProjectForm(true);
-                    }}
+                    onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }}
                     title="Edit project details, days and quantity mode"
                   >
                     <Pencil size={14} /> Edit project
@@ -1805,12 +1795,12 @@ export default function EquipmentManifest({ session }) {
                     catalog={catalog}
                     isFiltered={!!projectFilter}
                     onOpen={openProject}
-                    onEdit={(p) => { if (xHooks) return xHooks.editProject(p.id); setEditingProjectId(p.id); setShowProjectForm(true); }}
+                    onEdit={(p) => { setEditingProjectId(p.id); setShowProjectForm(true); }}
                     onExport={(p) => goToPreview(p.id)}
                     onDuplicate={duplicateProject}
                     onDelete={deleteProject}
                     onFilterAttr={(field, value) => setProjectFilter({ field, value })}
-                    onCreateNew={() => { if (xHooks) return xHooks.newProject(); setEditingProjectId(null); setShowProjectForm(true); }}
+                    onCreateNew={() => { setEditingProjectId(null); setShowProjectForm(true); }}
                   />
                 </>
               )}
@@ -1898,7 +1888,7 @@ export default function EquipmentManifest({ session }) {
                           onNoteChange={setItemNote}
                           onNoteHiddenChange={setItemNoteHidden}
                           onCopyDay={copyDayQuantities}
-                          onAddDay={xHooks ? () => xHooks.addShootDay(activeProjectId) : addDay}
+                          onAddDay={addDay}
                           customItems={isCustomEligible ? customItems.filter((c) => (c.department || "Others") === dept && (!searching || c.name.toLowerCase().includes(manifestSearch.trim().toLowerCase()))) : null}
                           onAddCustomItem={isCustomEligible ? (name) => addCustomItem(name, dept) : null}
                           recentCustomNames={isCustomEligible ? recentCustomItemNames : null}

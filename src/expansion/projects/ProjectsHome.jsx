@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { Logo } from "../../components/Logo.jsx";
 import { dm, todayStr, wdm } from "../shared/dates.js";
@@ -71,16 +71,11 @@ function arrange(entries, today) {
 
 // The owner's home: every project's steps on one calendar, and the list
 // of projects. Side by side on a wide screen, calendar first on a phone.
-export function ProjectsHome({ app, projects, types, actions, intent, onManageTypes }) {
+export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
   const wide = useWide(1000);
   const [creating, setCreating] = useState(false);
   const [q, setQ] = useState("");
   const today = todayStr();
-
-  // Coming from the equipment list's "Create New".
-  useEffect(() => {
-    if (intent === "new") setCreating(true);
-  }, [intent, app.route.t]);
 
   const groups = useMemo(() => {
     const query = q.trim().toLowerCase();

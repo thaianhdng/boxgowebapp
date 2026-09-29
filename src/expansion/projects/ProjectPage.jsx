@@ -75,9 +75,16 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
       <ScheduleSection
         steps={project.steps}
         types={types}
-        onChange={(steps) => update({ steps })}
+        onChange={(steps) => {
+          // The equipment list's days are its Shooting steps, so a project
+          // with a list keeps at least one.
+          if (list && !steps.some((s) => s.typeId === shootTypeId(types)) && (project.steps || []).some((s) => s.typeId === shootTypeId(types))) {
+            window.alert("This project has an equipment list, and its shoot days come from the Shooting steps — keep at least one Shooting step.");
+            return;
+          }
+          update({ steps });
+        }}
         onManageTypes={onManageTypes}
-        openShootStep={intent === "addShoot" ? app.route.t : null}
         highlightDate={selDate}
       />
 

@@ -7,22 +7,26 @@
 // catalog, houses, and ways to open / create / update a list). Add fields
 // there rather than reaching into BOXGO's internals from here.
 //
-// BOXGO renders this under its own header, in two places:
+// BOXGO renders this in three places:
+//   <Expansion part="sync">   always (owner signed in), renders nothing:
+//                             loads Projects and keeps each Project and its
+//                             equipment list in step (projects/sync.js)
 //   <Expansion part="crumb">  the project's name in the breadcrumb
 //                             (PROJECTS / HONDA TVC)
-//   <Expansion part="screen"> the Projects home (calendar + projects) and
-//                             each Project page
+//   <Expansion part="screen"> under BOXGO's header: the Projects home
+//                             (calendar + projects) and each Project page
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useXStore, load, refresh, putProject, setStepTypes, getState } from "./store.js";
 import { projectActions } from "./projects/actions.js";
-import { projectFromList } from "./projects/sync.js";
+import { projectFromList, projectWithList } from "./projects/sync.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
 import { ProjectPage } from "./projects/ProjectPage.jsx";
 import { StepTypesModal } from "./schedule/StepTypesModal.jsx";
 
 export default function Expansion({ app, part }) {
+  if (part === "sync") return <Sync app={app} />;
   if (part === "crumb") return <Crumb app={app} />;
   return <Screen app={app} />;
 }
@@ -38,12 +42,10 @@ function Crumb({ app }) {
   );
 }
 
-function Screen({ app }) {
+function Sync({ app }) {
   const x = useXStore();
-  const [showTypes, setShowTypes] = useState(false);
   const types = x.settings.stepTypes;
-  const actions = useMemo(() => projectActions(app, types), [app, types]);
-  const { screen, projectId, intent } = app.route;
+  const checked = useRef(new Map()); // list id -> [list, project] last compared
 
   useEffect(() => {
     if (getState().status === "idle") load();
@@ -52,21 +54,41 @@ function Screen({ app }) {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  // Every equipment list gets a Project: lists made before Projects
-  // existed (or duplicated in the equipment list screens) become Projects
-  // with their shoot days as Shooting steps. Only after a successful load,
-  // so a failed load can never write over real Projects.
+  // BOXGO's header shows one save indicator for everything.
+  useEffect(() => { app.reportSaveState(x.saveState); }, [x.saveState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Whenever an equipment list changes (edited in the equipment list
+  // composer, or loaded), bring its Project in line: lists without one
+  // get a Project; otherwise the list's name, houses, Producer, Gaffer and
+  // shoot days are copied over. Project edits reach the list straight away
+  // (projects/actions.js), so here they already agree. Only after a
+  // successful load, so a failed load can never write over real Projects.
   useEffect(() => {
     if (x.status !== "ready") return;
     for (const list of app.projects) {
-      if (!getState().projects[list.id]) putProject(list.id, projectFromList(list, types));
+      const cur = getState().projects[list.id];
+      const seen = checked.current.get(list.id);
+      if (seen && seen[0] === list && seen[1] === cur) continue;
+      if (!cur) putProject(list.id, projectFromList(list, types));
+      else {
+        const next = projectWithList(cur, list, types);
+        if (next) putProject(list.id, next);
+      }
+      checked.current.set(list.id, [list, getState().projects[list.id]]);
     }
-  }, [x.status, app.projects, types]);
+  }, [x.status, app.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return null;
+}
+
+function Screen({ app }) {
+  const x = useXStore();
+  const [showTypes, setShowTypes] = useState(false);
+  const types = x.settings.stepTypes;
+  const actions = useMemo(() => projectActions(app, types), [app, types]);
+  const { screen, projectId, intent } = app.route;
 
   useEffect(() => { window.scrollTo(0, 0); }, [screen, projectId]);
-
-  // BOXGO's header shows one save indicator for everything.
-  useEffect(() => { app.reportSaveState(x.saveState); }, [x.saveState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const usage = useMemo(() => {
     const u = {};
@@ -99,7 +121,7 @@ function Screen({ app }) {
       />
     );
   } else {
-    body = <ProjectsHome app={app} projects={x.projects} types={types} actions={actions} intent={screen === "projects" ? intent : null} onManageTypes={() => setShowTypes(true)} />;
+    body = <ProjectsHome app={app} projects={x.projects} types={types} actions={actions} onManageTypes={() => setShowTypes(true)} />;
   }
 
   return (

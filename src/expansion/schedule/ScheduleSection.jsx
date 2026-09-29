@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CheckCheck, Palette, Plus } from "lucide-react";
 import { Section, smallBtn } from "../shared/ui.jsx";
-import { addDays, todayStr } from "../shared/dates.js";
 import { typeOf } from "./stepTypes.js";
 import { sortSteps } from "./steps.js";
 import { StepRow } from "./StepRow.jsx";
@@ -9,20 +8,10 @@ import { StepModal, newStep } from "./StepModal.jsx";
 
 // A project's schedule: every step in date (then time) order, any type as
 // many times as needed.
-export function ScheduleSection({ steps, types, onChange, onManageTypes, openShootStep, highlightDate }) {
+export function ScheduleSection({ steps, types, onChange, onManageTypes, highlightDate }) {
   const [editing, setEditing] = useState(null); // { step, isNew }
   const list = steps || [];
   const tentative = list.filter((s) => !s.confirmed).length;
-
-  // Coming from the equipment list's "+ add day": open a new Shooting
-  // step the day after the last shoot day.
-  useEffect(() => {
-    if (!openShootStep) return;
-    const shoot = types.find((t) => t.shoot);
-    const last = list.filter((s) => s.typeId === shoot?.id).map((s) => s.end || s.start).filter(Boolean).sort().pop();
-    setEditing({ isNew: true, step: newStep(shoot?.id, last ? addDays(last, 1) : addDays(todayStr(), 1)) });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openShootStep]);
 
   function save(step) {
     onChange(editing.isNew ? [...list, step] : list.map((s) => (s.id === step.id ? step : s)));
