@@ -190,6 +190,10 @@ export default function EquipmentManifest({ session }) {
   const savedProjectsRef = useRef(new Map()); // project id -> object as last loaded/saved
   const savedStateJsonRef = useRef(null);     // app_state payload as last saved
   const pendingSavesRef = useRef(0);
+  const writeCountRef = useRef(0);            // bumped by every write to Supabase
+  // Each row's updated_at as the server last reported it, so coming back to
+  // the app only downloads what another device has changed since.
+  const serverStampsRef = useRef({ state: undefined, projects: new Map() });
 
   async function fetchServerData() {
     const userId = session.user.id;
@@ -203,6 +207,87 @@ export default function EquipmentManifest({ session }) {
   }
 
   function applyServerData({ stateRow, projectRows }) {
+    applyStateRow(stateRow);
+    const loadedProjects = projectRows.map((r) => ({ ...r.data, id: r.id }));
+    savedProjectsRef.current = new Map(loadedProjects.map((p) => [p.id, p]));
+    serverStampsRef.current.projects = new Map(projectRows.map((r) => [r.id, r.updated_at]));
+    setProjectsState(loadedProjects);
+    setLiveShareTokens(shareTokensOf(projectRows));
+    leaveIfActiveProjectGone(loadedProjects);
+  }
+
+  function shareTokensOf(rows) {
+    return Object.fromEntries(rows.filter((r) => r.share_token).map((r) => [r.id, r.share_token]));
+  }
+
+  // A project deleted on another device: leave its screens.
+  function leaveIfActiveProjectGone(currentProjects) {
+    if (activeProjectId && !currentProjects.some((p) => p.id === activeProjectId)) {
+      setActiveProjectId(null);
+      setView("projects");
+    }
+  }
+
+  // Cheap check first (just each row's updated_at and share link), then
+  // download in full only the rows another device changed since this one
+  // last loaded or saved them.
+  async function fetchServerChanges() {
+    const userId = session.user.id;
+    const [{ data: stateStamp, error: stateErr }, { data: projectStamps, error: projectsErr }] = await Promise.all([
+      supabase.from("app_state").select("updated_at").eq("user_id", userId).maybeSingle(),
+      supabase.from("projects").select("id, updated_at, share_token").eq("user_id", userId),
+    ]);
+    if (stateErr) throw stateErr;
+    if (projectsErr) throw projectsErr;
+    const known = serverStampsRef.current;
+    const stamps = projectStamps || [];
+    const changedIds = stamps
+      .filter((r) => !known.projects.has(r.id) || known.projects.get(r.id) !== r.updated_at)
+      .map((r) => r.id);
+    // Lots changed (e.g. a backup restored elsewhere): just reload everything.
+    if (changedIds.length > 40) return { full: await fetchServerData() };
+    const stateChanged = (stateStamp?.updated_at ?? null) !== known.state;
+    const [stateRes, rowsRes] = await Promise.all([
+      stateChanged ? supabase.from("app_state").select("*").eq("user_id", userId).maybeSingle() : { data: null },
+      changedIds.length ? supabase.from("projects").select("*").in("id", changedIds) : { data: [] },
+    ]);
+    if (stateRes.error) throw stateRes.error;
+    if (rowsRes.error) throw rowsRes.error;
+    return {
+      stateRow: stateRes.data,
+      changedRows: rowsRes.data || [],
+      serverIds: new Set(stamps.map((r) => r.id)),
+      shareTokens: shareTokensOf(stamps),
+    };
+  }
+
+  function applyServerChanges(changes) {
+    if (changes.full) return applyServerData(changes.full);
+    const { stateRow, changedRows, serverIds, shareTokens } = changes;
+    if (stateRow) applyStateRow(stateRow);
+    const fresh = new Map(changedRows.map((r) => [r.id, { ...r.data, id: r.id }]));
+    const stamps = serverStampsRef.current.projects;
+    changedRows.forEach((r) => stamps.set(r.id, r.updated_at));
+    // Untouched projects stay the very same objects, so nothing re-renders
+    // or re-saves when nothing changed.
+    const kept = projects.filter((p) => serverIds.has(p.id));
+    const next = [
+      ...kept.map((p) => fresh.get(p.id) || p),
+      ...[...fresh.values()].filter((p) => !kept.some((k) => k.id === p.id)),
+    ];
+    if (fresh.size > 0 || kept.length !== projects.length) {
+      projects.forEach((p) => { if (!serverIds.has(p.id)) { savedProjectsRef.current.delete(p.id); stamps.delete(p.id); } });
+      fresh.forEach((p) => savedProjectsRef.current.set(p.id, p));
+      setProjectsState(next);
+      leaveIfActiveProjectGone(next);
+    }
+    const tokenIds = Object.keys(shareTokens);
+    if (tokenIds.length !== Object.keys(liveShareTokens).length || tokenIds.some((id) => shareTokens[id] !== liveShareTokens[id])) {
+      setLiveShareTokens(shareTokens);
+    }
+  }
+
+  function applyStateRow(stateRow) {
     if (stateRow) {
       const st = stateRow.settings || {};
       const depts = orderDepartments(stateRow.departments || departments, st.departmentOrder);
@@ -245,15 +330,7 @@ export default function EquipmentManifest({ session }) {
       // triggers a write-back that could race another device's save.
       savedStateJsonRef.current = JSON.stringify(buildAppStatePayload(v));
     }
-    const loadedProjects = projectRows.map((r) => ({ ...r.data, id: r.id }));
-    savedProjectsRef.current = new Map(loadedProjects.map((p) => [p.id, p]));
-    setProjectsState(loadedProjects);
-    setLiveShareTokens(Object.fromEntries(projectRows.filter((r) => r.share_token).map((r) => [r.id, r.share_token])));
-    // A project deleted on another device: leave its screens.
-    if (activeProjectId && !loadedProjects.some((p) => p.id === activeProjectId)) {
-      setActiveProjectId(null);
-      setView("projects");
-    }
+    serverStampsRef.current.state = stateRow?.updated_at ?? null;
   }
 
   // load — reads everything from Supabase once we have an authenticated
@@ -339,6 +416,7 @@ export default function EquipmentManifest({ session }) {
 
   async function runSave(write) {
     pendingSavesRef.current += 1;
+    writeCountRef.current += 1;
     setSaveState("saving");
     try {
       await write();
@@ -359,13 +437,14 @@ export default function EquipmentManifest({ session }) {
       const json = JSON.stringify(payload);
       if (json === savedStateJsonRef.current) return;
       runSave(async () => {
-        const { error } = await supabase.from("app_state").upsert({
+        const { data, error } = await supabase.from("app_state").upsert({
           user_id: session.user.id,
           ...payload,
           updated_at: new Date().toISOString(),
-        });
+        }).select("updated_at");
         if (error) throw error;
         savedStateJsonRef.current = json;
+        serverStampsRef.current.state = data?.[0]?.updated_at;
       });
     }, 500);
     return () => clearTimeout(timer);
@@ -381,16 +460,25 @@ export default function EquipmentManifest({ session }) {
       if (changed.length === 0) return;
       runSave(async () => {
         const now = new Date().toISOString();
-        const { error } = await supabase.from("projects").upsert(
+        const { data, error } = await supabase.from("projects").upsert(
           changed.map((p) => ({ id: p.id, user_id: session.user.id, data: p, updated_at: now }))
-        );
+        ).select("id, updated_at");
         if (error) throw error;
         changed.forEach((p) => savedProjectsRef.current.set(p.id, p));
+        // Our own write, so the next return to the app doesn't re-download it.
+        const stamps = serverStampsRef.current.projects;
+        changed.forEach((p) => stamps.delete(p.id));
+        (data || []).forEach((r) => stamps.set(r.id, r.updated_at));
       });
     }, 500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, loaded, session]);
+
+  // The functions as of the latest render: refresh() resumes after a network
+  // wait, by which time the user may have edited something.
+  const latestRef = useRef(null);
+  latestRef.current = { hasUnsavedChanges, applyServerChanges };
 
   // Coming back to the app (switching tabs/apps, unlocking the phone):
   // pull the latest from Supabase so this device can't overwrite newer
@@ -400,11 +488,16 @@ export default function EquipmentManifest({ session }) {
     if (!loaded || !session) return;
     let refreshing = false;
     async function refresh() {
-      if (document.visibilityState !== "visible" || refreshing || hasUnsavedChanges()) return;
+      if (document.visibilityState !== "visible" || refreshing || latestRef.current.hasUnsavedChanges()) return;
       refreshing = true;
+      const writesBefore = writeCountRef.current;
       try {
-        const data = await fetchServerData();
-        if (!hasUnsavedChanges()) applyServerData(data);
+        const changes = await fetchServerChanges();
+        // Skip if this device saved anything meanwhile: what we fetched may
+        // predate that save.
+        if (writeCountRef.current === writesBefore && !latestRef.current.hasUnsavedChanges()) {
+          latestRef.current.applyServerChanges(changes);
+        }
       } catch (e) {
         console.error("Couldn't refresh from Supabase:", e);
       } finally {
@@ -417,7 +510,8 @@ export default function EquipmentManifest({ session }) {
       document.removeEventListener("visibilitychange", refresh);
       window.removeEventListener("focus", refresh);
     };
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, session]);
 
   const deptNames = Object.keys(departments);
 
@@ -863,6 +957,10 @@ export default function EquipmentManifest({ session }) {
     const removed = projects.find((p) => p.id === id);
     const removedIndex = projects.findIndex((p) => p.id === id);
     setProjectsState((prev) => prev.filter((p) => p.id !== id));
+    // Forget it was saved, so Undo puts it back on the server too.
+    savedProjectsRef.current.delete(id);
+    serverStampsRef.current.projects.delete(id);
+    writeCountRef.current += 1;
     if (activeProjectId === id) {
       setActiveProjectId(null);
       setView("projects");
