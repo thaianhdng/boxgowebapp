@@ -41,20 +41,21 @@ export function Section({ title, right, children, id }) {
   );
 }
 
-// Two-state pill, e.g. Offline / Online.
-export function Toggle({ options, value, onChange }) {
+// On/off switch in the style of BOXGO's Create New window (e.g. "All days
+// same | Custom per day"): grey track, the chosen side in the accent colour.
+export function Toggle({ options, value, onChange, style }) {
   return (
-    <div style={{ display: "inline-flex", border: "1px solid var(--border2)", borderRadius: 3, overflow: "hidden" }}>
+    <div style={{ display: "flex", gap: 3, background: "var(--surface2)", borderRadius: 4, padding: 3, ...style }}>
       {options.map(([v, label]) => (
         <button
-          key={v}
+          key={String(v)}
           type="button"
           onClick={() => onChange(v)}
           style={{
-            border: "none", padding: "7px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer",
-            fontFamily: "inherit",
-            background: value === v ? "var(--text)" : "transparent",
-            color: value === v ? "var(--bg)" : "var(--muted)",
+            flex: 1, padding: "5px 8px", fontSize: 12, fontWeight: 700, border: "none", borderRadius: 3,
+            cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
+            background: value === v ? "var(--accent)" : "transparent",
+            color: value === v ? "var(--accent-text)" : "var(--text)",
           }}
         >
           {label}
