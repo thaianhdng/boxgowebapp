@@ -17,6 +17,7 @@ import { ProjectListView } from "./components/ProjectListView.jsx";
 import { SideItem } from "./components/SideItem.jsx";
 import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
+import { DEFAULT_PDF_FONT } from "./lib/font.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
 import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, formatDMY, fmtDate, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
 
@@ -52,7 +53,7 @@ function buildAppStatePayload(v) {
     settings: {
       userName: v.userName, userEmail: v.userEmail, userPhone: v.userPhone,
       includeUsernameInPdf: v.includeUsernameInPdf, includeEmailInPdf: v.includeEmailInPdf, includePhoneInPdf: v.includePhoneInPdf,
-      theme: v.theme, accentId: v.accentId, fontId: v.fontId,
+      theme: v.theme, accentId: v.accentId, fontId: v.fontId, pdfFontId: v.pdfFontId,
       departmentOrder: Object.keys(v.departments),
     },
   };
@@ -127,6 +128,9 @@ export default function EquipmentManifest({ session }) {
   }, [resolvedTheme]);
   const [accentId, setAccentId] = useState("amber");
   const [fontId, setFontId] = useState("jetbrains");
+  // PDF font is per project (project.pdfFont); this is the last one picked,
+  // which new projects start with.
+  const [pdfFontId, setPdfFontId] = useState(DEFAULT_PDF_FONT);
   // Per device, so it lives in this browser's storage rather than app_state.
   const [uiSize, setUiSize] = useState(() => {
     try { return localStorage.getItem(UI_SIZE_KEY) || "normal"; } catch { return "normal"; }
@@ -309,6 +313,7 @@ export default function EquipmentManifest({ session }) {
         theme: st.theme || "dark",
         accentId: st.accentId || "amber",
         fontId: st.fontId || "jetbrains",
+        pdfFontId: st.pdfFontId || DEFAULT_PDF_FONT,
       };
       setCatalog(v.catalog);
       setDepartments(v.departments);
@@ -326,6 +331,7 @@ export default function EquipmentManifest({ session }) {
       setTheme(v.theme);
       setAccentId(v.accentId);
       setFontId(v.fontId);
+      setPdfFontId(v.pdfFontId);
       // What we just loaded is by definition saved — so applying it never
       // triggers a write-back that could race another device's save.
       savedStateJsonRef.current = JSON.stringify(buildAppStatePayload(v));
@@ -406,7 +412,7 @@ export default function EquipmentManifest({ session }) {
 
   const appStatePayload = () => buildAppStatePayload({
     catalog, departments, projectTags, productionHouses, rentalHouses, brands, templates,
-    userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId,
+    userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId, pdfFontId,
   });
   const changedProjects = () => projects.filter((p) => savedProjectsRef.current.get(p.id) !== p);
   const hasUnsavedChanges = () =>
@@ -449,7 +455,7 @@ export default function EquipmentManifest({ session }) {
     }, 500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [departments, catalog, projectTags, productionHouses, rentalHouses, brands, userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, templates, theme, accentId, fontId, loaded, session]);
+  }, [departments, catalog, projectTags, productionHouses, rentalHouses, brands, userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, templates, theme, accentId, fontId, pdfFontId, loaded, session]);
 
   // save projects (debounced) — only the ones that changed. Deleting a
   // project writes immediately in deleteProject() rather than here.
@@ -800,6 +806,7 @@ export default function EquipmentManifest({ session }) {
       note: "",
       collapsedDepts,
       collapsedSubcats,
+      pdfFont: pdfFontId,
       createdAt: Date.now(),
     };
     setProjectsState((prev) => [...prev, newProject]);
@@ -2139,6 +2146,7 @@ export default function EquipmentManifest({ session }) {
             onBack={exitPreview}
             onDownload={exportToPdf}
             pdfGenerating={pdfGenerating}
+            onSetPdfFont={(id) => { updateProject(activeProject.id, { pdfFont: id }); setPdfFontId(id); }}
             onShareSnapshot={shareSnapshot}
             onShareLive={shareLive}
             hasLiveLink={Boolean(liveShareTokens[activeProject.id])}

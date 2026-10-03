@@ -118,7 +118,9 @@ Start of each conversation, the owner should say which one it is:
   app_state are written; the app refreshes from the server when it comes
   back into view (unless there are unsaved edits); a failed load shows
   Retry and never lets defaults overwrite real data.
-- PDF: `src/lib/pdf.js` (jsPDF, JetBrains Mono). Preview and share page draw
+- PDF: `src/lib/pdf.js` (jsPDF). Font is per project (`project.pdfFont`,
+  picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
+  default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and share page draw
   the real PDF with pdf.js (`src/lib/pdfPreview.js`). Downloads go through
   `saveFile()` in `src/lib/utils.js` (iOS: opens the Share menu).
 - Phone details that matter: iOS-only `maximum-scale=1` (no focus zoom) and

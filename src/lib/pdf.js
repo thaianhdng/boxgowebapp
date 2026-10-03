@@ -1,4 +1,4 @@
-import { loadJbmFont } from "./font.js";
+import { loadPdfFont, pdfFontFor } from "./font.js";
 import { formatShootDateRange, fmtDate, formatDMY, formatTime24, computeVisibleGrouped, orderedKeys, hexToRgb, groupCatalog } from "./utils.js";
 
 // Rasterizes the visible preview screen and slices it into a real
@@ -16,17 +16,19 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
   const days = project?.days || [];
   const itemData = project?.itemData || {};
   const manifestGrouped = groupCatalog(catalog);
-  const [{ jsPDF }, font] = await Promise.all([import("jspdf"), loadJbmFont()]);
+  const fontChoice = pdfFontFor(project?.pdfFont);
+  const [{ jsPDF }, font] = await Promise.all([import("jspdf"), loadPdfFont(fontChoice.id)]);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
 
-    // Embed JetBrains Mono directly (regular + bold) so Vietnamese
-    // diacritics render as real, selectable text rather than a flattened
-    // screenshot image.
-    doc.addFileToVFS("JetBrainsMono-Regular.ttf", font.regular);
-    doc.addFont("JetBrainsMono-Regular.ttf", "JetBrainsMono", "normal");
-    doc.addFileToVFS("JetBrainsMono-Bold.ttf", font.bold);
-    doc.addFont("JetBrainsMono-Bold.ttf", "JetBrainsMono", "bold");
-    doc.setFont("JetBrainsMono", "normal");
+    // Embed the project's chosen font directly (regular + bold) so
+    // Vietnamese diacritics render as real, selectable text rather than a
+    // flattened screenshot image.
+    const FONT = "PdfFont";
+    doc.addFileToVFS(`${fontChoice.id}-Regular.ttf`, font.regular);
+    doc.addFont(`${fontChoice.id}-Regular.ttf`, FONT, "normal");
+    doc.addFileToVFS(`${fontChoice.id}-Bold.ttf`, font.bold);
+    doc.addFont(`${fontChoice.id}-Bold.ttf`, FONT, "bold");
+    doc.setFont(FONT, "normal");
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -66,7 +68,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       if (y + h > contentBottom) newPage();
     }
     function drawColumnHeader() {
-      doc.setFont("JetBrainsMono", "bold");
+      doc.setFont(FONT, "bold");
       doc.setFontSize(8);
       doc.setTextColor(136, 136, 136);
       doc.text("ITEM", rowX, y);
@@ -97,7 +99,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     // Header: tag + name + date (left), prepared-by (right)
     const headerTopY = y;
     let leftX = marginX;
-    doc.setFont("JetBrainsMono", "bold");
+    doc.setFont(FONT, "bold");
     if (project?.tag) {
       doc.setFontSize(11);
       doc.setTextColor(0, 0, 0);
@@ -119,21 +121,21 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     let rightY = headerTopY;
     const rightX = marginX + usableWidth;
     if (preparedBy.name) {
-      doc.setFont("JetBrainsMono", "bold");
+      doc.setFont(FONT, "bold");
       doc.setFontSize(17);
       doc.setTextColor(0, 0, 0);
       doc.text(preparedBy.name, rightX, rightY, { align: "right" });
       rightY += 14;
     }
     if (preparedBy.email) {
-      doc.setFont("JetBrainsMono", "normal");
+      doc.setFont(FONT, "normal");
       doc.setFontSize(9);
       doc.setTextColor(85, 85, 85);
       doc.text(preparedBy.email, rightX, rightY, { align: "right" });
       rightY += 11;
     }
     if (preparedBy.phone) {
-      doc.setFont("JetBrainsMono", "normal");
+      doc.setFont(FONT, "normal");
       doc.setFontSize(9);
       doc.setTextColor(85, 85, 85);
       doc.text(preparedBy.phone, rightX, rightY, { align: "right" });
@@ -151,7 +153,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       let px = marginX;
       const gap = 28;
       infoPairs.forEach((pair) => {
-        doc.setFont("JetBrainsMono", "bold");
+        doc.setFont(FONT, "bold");
         doc.setFontSize(8);
         doc.setTextColor(136, 136, 136);
         const labelText = pair.label.toUpperCase();
@@ -168,7 +170,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       });
 
       if (hasCreatedOn) {
-        doc.setFont("JetBrainsMono", "bold");
+        doc.setFont(FONT, "bold");
         doc.setFontSize(8);
         doc.setTextColor(136, 136, 136);
         doc.text("CREATED ON", rightX, y, { align: "right" });
@@ -192,12 +194,12 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
 
     // Project note
     if (project?.note) {
-      doc.setFont("JetBrainsMono", "bold");
+      doc.setFont(FONT, "bold");
       doc.setFontSize(8);
       doc.setTextColor(136, 136, 136);
       doc.text("PROJECT NOTE", marginX, y);
       y += 12;
-      doc.setFont("JetBrainsMono", "normal");
+      doc.setFont(FONT, "normal");
       doc.setFontSize(10);
       doc.setTextColor(51, 51, 51);
       const noteLines = doc.splitTextToSize(project.note, usableWidth);
@@ -206,7 +208,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     }
 
     if (Object.keys(visibleGrouped).length === 0) {
-      doc.setFont("JetBrainsMono", "normal");
+      doc.setFont(FONT, "normal");
       doc.setFontSize(11);
       doc.setTextColor(136, 136, 136);
       doc.text("No quantities entered for this shoot yet.", marginX, y);
@@ -219,7 +221,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       ensureSpace(20 + 16 + 14 + 16);
       doc.setFillColor(...accentRgb);
       doc.rect(marginX, y, usableWidth, 17, "F");
-      doc.setFont("JetBrainsMono", "bold");
+      doc.setFont(FONT, "bold");
       doc.setFontSize(11);
       doc.setTextColor(255, 255, 255);
       doc.text(dept.toUpperCase(), marginX + 8, y + 12.5);
@@ -229,7 +231,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         ensureSpace(15 + 14 + 16);
         doc.setFillColor(242, 242, 242);
         doc.rect(marginX, y, usableWidth, 15, "F");
-        doc.setFont("JetBrainsMono", "bold");
+        doc.setFont(FONT, "bold");
         doc.setFontSize(9);
         doc.setTextColor(0, 0, 0);
         doc.text(sub.toUpperCase(), marginX + 12, y + 11);
@@ -238,17 +240,17 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         // Row geometry: the same gap above the first line's capitals and
         // below the last line's baseline, so text sits centred between the
         // dividers whether or not a row has a spec line or a long note.
-        // (Cap-height 0.731em from the embedded font; the gap is wider than
-        // its deepest descender incl. Vietnamese marks, 0.213em, so those
-        // still clear the divider.)
+        // (Cap-height from the embedded font; the gap is wider than the
+        // deepest descender of any of the fonts, incl. Vietnamese marks,
+        // so those still clear the divider.)
         const PAD = 6;
-        const topPad = PAD + 0.731 * 10;   // first baseline, from the row top
+        const topPad = PAD + fontChoice.capHeight * 10; // first baseline, from the row top
         const specGap = 11;                // name baseline → spec-line baseline
         const itemsInSub = visibleGrouped[dept][sub];
         itemsInSub.forEach((c, idx) => {
           const entry = itemData[c.id];
           const projectNote = entry?.noteHidden ? "" : (entry?.notes || "");
-          doc.setFont("JetBrainsMono", "normal");
+          doc.setFont(FONT, "normal");
           doc.setFontSize(10);
           const nameLines = doc.splitTextToSize(c.name, nameColW - 4);
           doc.setFontSize(8.5);
@@ -264,14 +266,14 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           ensureSpace(rowHeight);
           const rowTop = y;
 
-          doc.setFont("JetBrainsMono", "bold");
+          doc.setFont(FONT, "bold");
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           let ty = rowTop + topPad;
           nameLines.forEach((line, i) => { if (i) ty += lh(10); doc.text(line, rowX, ty); });
           if (catNoteLines.length) {
             ty += specGap;
-            doc.setFont("JetBrainsMono", "normal");
+            doc.setFont(FONT, "normal");
             doc.setFontSize(8.5);
             doc.setTextColor(136, 136, 136);
             catNoteLines.forEach((line, i) => { if (i) ty += lh(8.5); doc.text(line, rowX, ty); });
@@ -280,13 +282,13 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           if (maxColW > 0) {
             const qtyValues = days.map((d) => entry?.quantities?.[d.id] || 0).filter((q) => q > 0);
             const peak = qtyValues.length > 0 ? Math.max(...qtyValues) : 0;
-            doc.setFont("JetBrainsMono", "bold");
+            doc.setFont(FONT, "bold");
             doc.setFontSize(10);
             if (peak > 0) doc.setTextColor(...accentRgb); else doc.setTextColor(210, 210, 206);
             doc.text(String(peak), rowX + nameColW + maxColW / 2, rowTop + topPad, { align: "center" });
           }
 
-          doc.setFont("JetBrainsMono", "bold");
+          doc.setFont(FONT, "bold");
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           if (perDayQty) {
@@ -303,7 +305,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           }
 
           if (projectNoteLines.length) {
-            doc.setFont("JetBrainsMono", "normal");
+            doc.setFont(FONT, "normal");
             doc.setFontSize(10);
             doc.setTextColor(136, 136, 136);
             let ny = rowTop + topPad;
@@ -324,11 +326,11 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const totalPages = doc.internal.getNumberOfPages();
     for (let p = 1; p <= totalPages; p++) {
       doc.setPage(p);
-      doc.setFont("JetBrainsMono", "bold");
+      doc.setFont(FONT, "bold");
       doc.setFontSize(7.5);
       doc.setTextColor(180, 180, 180);
       doc.text("BOXGO · EQUIPMENT LIST COMPOSER", marginX, pageHeight - marginBottom / 2);
-      doc.setFont("JetBrainsMono", "normal");
+      doc.setFont(FONT, "normal");
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
       doc.text(`Page ${p} of ${totalPages}`, pageWidth - marginX, pageHeight - marginBottom / 2, { align: "right" });
