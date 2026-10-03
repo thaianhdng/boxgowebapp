@@ -9,7 +9,7 @@ import { InfoStrip } from "./InfoStrip.jsx";
 import { EquipmentPanel } from "./EquipmentPanel.jsx";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { listLike } from "./sync.js";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 // Which month the project's calendar opens on: the month of its next
 // step from today, else its last one, else this month.
@@ -24,8 +24,8 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
   const [creatingList, setCreatingList] = useState(false); // Create New, prefilled
   const [month, setMonth] = useState(() => startMonth(project));
   const [selDate, setSelDate] = useState(null);
-  // Opens the schedule's step window from the calendar: { kind: "add", date }
-  // or { kind: "edit", step }, with `n` so the same request can repeat.
+  // Opens the schedule's step window from the calendar to edit a step:
+  // { step, n } (`n` so the same request can repeat).
   const [stepRequest, setStepRequest] = useState(null);
   const list = actions.listOf(id);
   const update = (patch) => actions.update(id, (p) => ({ ...p, ...patch }));
@@ -54,15 +54,10 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
           <MonthKey month={month} occ={occ} types={types} focusProjectId={id} />
         </div>
         {selDate && (
-          // The tapped day: this project's steps (tap to edit), other
-          // projects that day, and + Add step for that date.
+          // The tapped day: this project's steps (tap to edit) and other
+          // projects that day. Schedule's + Add step then starts on it.
           <div style={{ marginTop: 10, padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 4 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
-              <span className="stencil" style={{ fontSize: 11, color: "var(--muted)" }}>{wdm(selDate)}</span>
-              <button className="btn btn-primary" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => setStepRequest({ kind: "add", date: selDate, n: Date.now() })}>
-                <Plus size={12} /> Add step
-              </button>
-            </div>
+            <div className="stencil" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>{wdm(selDate)}</div>
             {onSel.length === 0 && <div style={{ fontSize: 12, color: "var(--muted2)" }}>Nothing scheduled.</div>}
             {onSel.map((o, i) => {
               const t = typeOf(types, o.step.typeId);
@@ -71,7 +66,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
                 <div
                   key={i}
                   className="row"
-                  onClick={() => (mine ? setStepRequest({ kind: "edit", step: o.step, n: Date.now() }) : app.go({ screen: "project", projectId: o.projectId }))}
+                  onClick={() => (mine ? setStepRequest({ step: o.step, n: Date.now() }) : app.go({ screen: "project", projectId: o.projectId }))}
                   style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center", padding: "4px 2px", cursor: "pointer", opacity: o.step.confirmed ? 1 : 0.55 }}
                 >
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: mine ? t.color : "var(--muted2)", flexShrink: 0 }} />

@@ -30,14 +30,11 @@ export function ScheduleSection({ steps, types, labels, request, onChange, onMan
   const [open, setOpen] = useState({}); // first shoot day id -> group unfolded
   const list = steps || [];
 
-  // From the project's calendar: add a step on the tapped day, or edit one.
+  // From the project's calendar: edit a step tapped there.
   useEffect(() => {
     if (!request) return;
-    if (request.kind === "add") setEditing({ isNew: true, step: newStep("", request.date) });
-    else {
-      const cur = list.find((s) => s.id === request.step.id);
-      if (cur) setEditing({ isNew: false, step: cur });
-    }
+    const cur = list.find((s) => s.id === request.step.id);
+    if (cur) setEditing({ isNew: false, step: cur });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request?.n]);
   const tentative = list.filter((s) => !s.confirmed).length;
@@ -111,7 +108,7 @@ export function ScheduleSection({ steps, types, labels, request, onChange, onMan
             </button>
           )}
           <button className="btn btn-ghost" style={smallBtn} onClick={onManageTypes} title="Step types and colours" aria-label="Step types"><Palette size={12} /></button>
-          <button className="btn btn-primary" style={smallBtn} onClick={() => setEditing({ isNew: true, step: newStep("") })}><Plus size={12} /> Add step</button>
+          <button className="btn btn-primary" style={smallBtn} onClick={() => setEditing({ isNew: true, step: highlightDate ? newStep("", highlightDate) : newStep("") })} title={highlightDate ? "Add a step on the day picked in the calendar" : "Add a step"}><Plus size={12} /> Add step</button>
         </>
       }
     >
