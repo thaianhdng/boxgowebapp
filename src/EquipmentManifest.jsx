@@ -1627,6 +1627,11 @@ export default function EquipmentManifest({ session }) {
           -webkit-appearance: none;
           appearance: none;
         }
+        /* The browser draws the calendar / clock icons in date and time
+           fields black whatever the theme; lighten them in dark mode. */
+        [data-theme="dark"] input::-webkit-calendar-picker-indicator {
+          filter: invert(1); opacity: 0.65; cursor: pointer;
+        }
         .stencil {
           text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800;
         }
