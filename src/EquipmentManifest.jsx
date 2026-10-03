@@ -74,7 +74,7 @@ export default function EquipmentManifest({ session }) {
   const [projects, setProjectsState] = useState([]);
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG);
-  // "x" is the owner's Projects section (src/expansion/), their front door;
+  // "x" is the owner's Calendar module (src/expansion/), their front door;
   // everyone else starts on the project list.
   const [view, setView] = useState(() => (isCatalogOwner ? "x" : "projects")); // "projects" | "manifest" | "catalog" | "preview" | "x"
   const [xRoute, setXRoute] = useState({ screen: "projects" });
@@ -1484,7 +1484,7 @@ export default function EquipmentManifest({ session }) {
     return () => window.removeEventListener("resize", pin);
   }, [view, activeProjectId, catalogCopyState, isCatalogOwner, uiZoom, loaded]);
 
-  // The owner's Projects section (src/expansion/). The equipment list
+  // The owner's Calendar module (src/expansion/). The equipment list
   // composer works exactly as in v1.0; each list is linked to a Project
   // (same id) and the expansion keeps their shared details in step both
   // ways (<Expansion part="sync">). Null for everyone else.
@@ -1679,10 +1679,10 @@ export default function EquipmentManifest({ session }) {
                   BOXGO
                 </span>
                 {isCatalogOwner ? (
-                  // The owner's two sections: Projects (src/expansion/) and
+                  // The owner's two modules, sharing one projects database: Calendar (src/expansion/) and
                   // the equipment list composer, which works exactly as v1.0.
                   <span style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 2 }}>
-                    {[["Projects", view === "x", () => goX({ screen: "projects" })], ["Equipment", view !== "x", () => { setActiveProjectId(null); setView("projects"); }]].map(([label, on, go], i) => (
+                    {[["Calendar", view === "x", () => goX({ screen: "projects" })], ["Equipment", view !== "x", () => { setActiveProjectId(null); setView("projects"); }]].map(([label, on, go], i) => (
                       <span key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         {i > 0 && <span style={{ color: "var(--border2)", fontSize: 10 }}>|</span>}
                         <button
@@ -1730,7 +1730,7 @@ export default function EquipmentManifest({ session }) {
                     color: view === "projects" || (view === "x" && xRoute.screen !== "project") ? "var(--accent)" : "var(--text)",
                   }}
                 >
-                  {view === "x" ? "Projects" : "Project Manager"}
+                  {view === "x" ? "Calendar" : "Project Manager"}
                 </button>
                 {view === "x" && xRoute.screen === "project" && (
                   <>

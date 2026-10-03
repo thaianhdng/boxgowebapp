@@ -66,10 +66,12 @@ Start of each conversation, the owner should say which one it is:
      owner-only rule.
    - Keep each expansion feature self-contained (its own files/folder in
      `src/expansion/`) so it can be promoted or removed cleanly later.
-   - How it's wired (Projects + Calendar): for the owner, BOXGO's header
-     top row has a PROJECTS | EQUIPMENT switch (instead of the "Equipment
-     List Composer" caption). `EquipmentManifest` starts on view `"x"`:
-     BOXGO's header (crumb PROJECTS / <project>, Edit project, Settings,
+   - How it's wired: the owner has two modules sharing one projects
+     database — **Calendar** (the expansion) and **Equipment** (v1.0
+     composer). BOXGO's header top row has a CALENDAR | EQUIPMENT switch
+     (instead of the "Equipment List Composer" caption). `EquipmentManifest`
+     starts on view `"x"` (Calendar): BOXGO's header (crumb CALENDAR /
+     <project>, Edit project, Settings,
      one save tick) with `<Expansion part="screen">` under it (Projects
      home = calendar of all projects + project list; Project page) and
      `<Expansion part="crumb">` for the name. EQUIPMENT is the v1.0
