@@ -18,7 +18,7 @@ import { SideItem } from "./components/SideItem.jsx";
 import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
-import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
+import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, formatDMY, fmtDate, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
 
 
 // Gives every day an explicit number for every item that has any. A day
@@ -1406,7 +1406,7 @@ export default function EquipmentManifest({ session }) {
   // what they priced must stay what they see.
   function shareSnapshot(project) {
     return runShare(async () => {
-      const token = await createSnapshot({
+      const { token, reusedFrom } = await createSnapshot({
         userId: session.user.id,
         project,
         catalog,
@@ -1414,7 +1414,7 @@ export default function EquipmentManifest({ session }) {
         accentId,
         preparedBy: pdfInputs(project).preparedBy,
       });
-      return { kind: "snapshot", url: shareUrlFor(token), projectId: project.id };
+      return { kind: "snapshot", url: shareUrlFor(token), projectId: project.id, reusedFrom };
     });
   }
 
@@ -2278,7 +2278,9 @@ export default function EquipmentManifest({ session }) {
                 <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
                   {shareResult.kind === "live"
                     ? "Anyone with this link can view this list as it is right now, and it keeps updating as you edit. No account needed. Copied to your clipboard."
-                    : "Anyone with this link can view this list exactly as it is right now. It won't change when you edit the project later, and sending another snapshot makes a new link. No account needed. Copied to your clipboard."}
+                    : shareResult.reusedFrom
+                      ? `Nothing has changed since your last snapshot (${formatDMY(fmtDate(new Date(shareResult.reusedFrom)))}), so this is that same link. Anyone with it can view the list, no account needed. Copied to your clipboard.`
+                      : "Anyone with this link can view this list exactly as it is right now. It won't change when you edit the project later; after you make changes, sending another snapshot makes a new link. No account needed. Copied to your clipboard."}
                 </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                   <input readOnly value={shareResult.url} onFocus={(e) => e.target.select()} style={{ flex: 1, fontSize: 12.5 }} />

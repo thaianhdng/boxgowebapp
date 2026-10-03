@@ -104,6 +104,9 @@ Start of each conversation, the owner should say which one it is:
     reapplied with `orderDepartments()`.
   - `projects`: one row per project (`data` jsonb, `share_token`).
   - `shared_snapshots` + RPC `get_shared_list(p_token)` for share links.
+    Sending a snapshot identical to the project's last one reuses that
+    link. Live links show "Updated" from `projects.list_updated_at`, set by
+    a trigger only when the list content changes (`supabase/005_…`).
   - SQL the owner has already run lives in `supabase/`. New SQL: add a
     numbered file there and give the owner the steps to run it in the
     Supabase SQL Editor.
