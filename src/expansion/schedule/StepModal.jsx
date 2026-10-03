@@ -27,6 +27,12 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
   const [multi, setMulti] = useState(!!initial.end && initial.end > initial.start);
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
   const ready = !!s.typeId;
+  // All day unless switched to a specific time (which starts at 09:00–10:00).
+  const [timed, setTimed] = useState(!!initial.time);
+  function chooseTimed(on) {
+    setTimed(on);
+    if (on && !s.time) set({ time: "09:00", endTime: "10:00" });
+  }
 
   // Multi-day needs an end date: it starts as the day after the start.
   function addEnd() {
@@ -37,7 +43,8 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
   function save() {
     if (!ready) return;
     const end = multi && s.end && s.start && s.end > s.start ? s.end : "";
-    onSave({ ...s, end, endTime: s.time ? s.endTime : "" });
+    const time = timed ? s.time : "";
+    onSave({ ...s, end, time, endTime: time ? s.endTime : "" });
   }
 
   return (
@@ -95,17 +102,15 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
       )}
 
       <Row label="Time">
-        <div style={{ display: "flex", gap: 6, alignItems: "center", flex: 1, minWidth: 0, flexWrap: "nowrap" }}>
+        <Toggle options={[[false, "All day"], [true, "Set time"]]} value={timed} onChange={chooseTimed} style={{ flex: 1 }} />
+      </Row>
+      {timed && (
+        <Row label="">
           <input type="time" value={s.time} onChange={(e) => set({ time: e.target.value })} style={{ ...small, flex: 1, minWidth: 0 }} />
           <span style={{ color: "var(--muted)", flexShrink: 0 }}>–</span>
-          <input type="time" value={s.endTime} disabled={!s.time} onChange={(e) => set({ endTime: e.target.value })} style={{ ...small, flex: 1, minWidth: 0, opacity: s.time ? 1 : 0.5 }} />
-          {s.time ? (
-            <button type="button" onClick={() => set({ time: "", endTime: "" })} title="All day" aria-label="All day" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 2, display: "flex", flexShrink: 0 }}><X size={14} /></button>
-          ) : (
-            <span style={{ fontSize: 10.5, color: "var(--muted2)", flexShrink: 0 }}>all day</span>
-          )}
-        </div>
-      </Row>
+          <input type="time" value={s.endTime} onChange={(e) => set({ endTime: e.target.value })} style={{ ...small, flex: 1, minWidth: 0 }} />
+        </Row>
+      )}
 
       <Row label="Where">
         <Toggle options={[["offline", "Offline"], ["online", "Online"]]} value={s.mode} onChange={(mode) => set({ mode })} style={{ flex: "0 0 auto" }} />
