@@ -222,7 +222,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       doc.setFont("JetBrainsMono", "bold");
       doc.setFontSize(11);
       doc.setTextColor(255, 255, 255);
-      doc.text(dept.toUpperCase(), marginX + 8, y + 12);
+      doc.text(dept.toUpperCase(), marginX + 8, y + 12.5);
       y += 17;
 
       orderedKeys(visibleGrouped[dept], departments[dept] || []).forEach((sub) => {
@@ -235,17 +235,15 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         doc.text(sub.toUpperCase(), marginX + 12, y + 11);
         y += 15;
 
-        // Row geometry: a shared baseline offset can't give equal visual
-        // clearance on both sides of the divider — a line's cap-height
-        // eats into the space below its own baseline, but there's no
-        // matching eat-in above the previous line's baseline (uppercase
-        // text has no descender). So top and bottom use different values,
-        // each sized off the embedded font's real metrics (cap-height
-        // 0.731em, worst-case descender incl. Vietnamese marks 0.213em)
-        // plus a flat 3pt of intended clearance:
-        const G = 4.5;
-        const topPad = G + 0.731 * 10;   // clears the next line's cap-height
-        const bottomPad = G + 0.22 * 10; // clears this line's descender
+        // Row geometry: the same gap above the first line's capitals and
+        // below the last line's baseline, so text sits centred between the
+        // dividers whether or not a row has a spec line or a long note.
+        // (Cap-height 0.731em from the embedded font; the gap is wider than
+        // its deepest descender incl. Vietnamese marks, 0.213em, so those
+        // still clear the divider.)
+        const PAD = 6;
+        const topPad = PAD + 0.731 * 10;   // first baseline, from the row top
+        const specGap = 11;                // name baseline → spec-line baseline
         const itemsInSub = visibleGrouped[dept][sub];
         itemsInSub.forEach((c, idx) => {
           const entry = itemData[c.id];
@@ -257,8 +255,11 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           const catNoteLines = c.note ? doc.splitTextToSize(c.note, nameColW - 4) : [];
           doc.setFontSize(10);
           const projectNoteLines = projectNote ? doc.splitTextToSize(projectNote, notesColW - 4) : [];
-          const rowLines = Math.max(nameLines.length + catNoteLines.length, projectNoteLines.length, 1);
-          const rowHeight = topPad + (rowLines - 1) * lh(10) + bottomPad;
+          // Distance from the first baseline to the last one, per column.
+          const leftDepth = (nameLines.length - 1) * lh(10)
+            + (catNoteLines.length ? specGap + (catNoteLines.length - 1) * lh(8.5) : 0);
+          const rightDepth = Math.max(projectNoteLines.length - 1, 0) * lh(10);
+          const rowHeight = topPad + Math.max(leftDepth, rightDepth) + PAD;
 
           ensureSpace(rowHeight);
           const rowTop = y;
@@ -267,12 +268,13 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           let ty = rowTop + topPad;
-          nameLines.forEach((line) => { doc.text(line, rowX, ty); ty += lh(10); });
+          nameLines.forEach((line, i) => { if (i) ty += lh(10); doc.text(line, rowX, ty); });
           if (catNoteLines.length) {
+            ty += specGap;
             doc.setFont("JetBrainsMono", "normal");
             doc.setFontSize(8.5);
             doc.setTextColor(136, 136, 136);
-            catNoteLines.forEach((line) => { doc.text(line, rowX, ty); ty += lh(8.5); });
+            catNoteLines.forEach((line, i) => { if (i) ty += lh(8.5); doc.text(line, rowX, ty); });
           }
 
           if (maxColW > 0) {
@@ -314,7 +316,6 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
             doc.line(rowX, y, rowX + rowWidth, y);
           }
         });
-        y += 3;
       });
     });
 
