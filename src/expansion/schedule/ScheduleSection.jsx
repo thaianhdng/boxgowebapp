@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCheck, Palette, Plus } from "lucide-react";
 import { Section, smallBtn } from "../shared/ui.jsx";
 import { addDays } from "../shared/dates.js";
@@ -25,10 +25,21 @@ const uniq = (xs) => [...new Set(xs.filter(Boolean))];
 
 // A project's schedule: every step in date (then time) order, any type as
 // many times as needed.
-export function ScheduleSection({ steps, types, labels, onChange, onManageTypes, highlightDate }) {
+export function ScheduleSection({ steps, types, labels, request, onChange, onManageTypes, highlightDate }) {
   const [editing, setEditing] = useState(null); // { step, isNew }
   const [open, setOpen] = useState({}); // first shoot day id -> group unfolded
   const list = steps || [];
+
+  // From the project's calendar: add a step on the tapped day, or edit one.
+  useEffect(() => {
+    if (!request) return;
+    if (request.kind === "add") setEditing({ isNew: true, step: newStep("", request.date) });
+    else {
+      const cur = list.find((s) => s.id === request.step.id);
+      if (cur) setEditing({ isNew: false, step: cur });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [request?.n]);
   const tentative = list.filter((s) => !s.confirmed).length;
   const shootId = shootTypeId(types);
   const sorted = sortSteps(list);
