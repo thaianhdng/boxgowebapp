@@ -59,8 +59,10 @@ export function clashDates(occ) {
   return new Set([...byDate].filter(([, s]) => s.size > 1).map(([d]) => d));
 }
 
-// occ: occurrences (see schedule/steps.js). With `focusProjectId`, only
-// that project's steps are coloured; other projects show as a grey dot.
+// occ: occurrences (see schedule/steps.js). With `focusProjectId` (a
+// project's own calendar), that project's steps are named in each day —
+// shoot days as D1, D2… like the equipment list — and other projects show
+// as a grey dot.
 export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectId, compact }) {
   const wide = useWide();
   const today = todayStr();
@@ -70,9 +72,17 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
     if (!byDate.has(o.date)) byDate.set(o.date, []);
     byDate.get(o.date).push(o);
   }
-  const showLabels = wide && !compact;
-  const cellH = compact ? 40 : wide ? 86 : 48;
-  const maxBars = compact ? 2 : wide ? 3 : 4;
+  const named = !!focusProjectId;
+  const showLabels = named || (wide && !compact);
+  const cellH = named ? (wide ? 62 : 50) : compact ? 40 : wide ? 86 : 48;
+  const maxBars = named ? 2 : compact ? 2 : wide ? 3 : 4;
+  // Shoot day numbers for the focused project, in date order.
+  const shootIds = new Set(types.filter((t) => t.shoot).map((t) => t.id));
+  const dayNo = new Map(
+    [...new Map(occ.filter((o) => o.projectId === focusProjectId && shootIds.has(o.step.typeId)).map((o) => [o.step.id, o.date])).entries()]
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([sid], i) => [sid, i + 1]),
+  );
 
   return (
     <div style={{ border: "1px solid var(--border)", borderRadius: 4, overflow: "hidden" }}>
@@ -116,13 +126,14 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                 const t = typeOf(types, o.step.typeId);
                 const faded = !o.step.confirmed;
                 return showLabels ? (
-                  <span key={k} style={{
-                    fontSize: 10, fontWeight: 700, lineHeight: "14px", padding: "0 4px", borderRadius: 2,
+                  <span key={k} title={t.name} style={{
+                    fontSize: named && !wide ? 9 : 10, fontWeight: 700, lineHeight: named && !wide ? "13px" : "14px",
+                    padding: named && !wide ? "0 2px" : "0 4px", borderRadius: 2,
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                     background: faded ? "transparent" : t.color, color: faded ? t.color : "#111",
                     border: `1px ${faded ? "dashed" : "solid"} ${t.color}`, opacity: faded ? 0.75 : 1,
                   }}>
-                    {o.project.name || t.name}
+                    {named ? (dayNo.has(o.step.id) ? `D${dayNo.get(o.step.id)}` : t.name) : (o.project.name || t.name)}
                   </span>
                 ) : (
                   <span key={k} style={{

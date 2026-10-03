@@ -2,8 +2,6 @@ import { useState } from "react";
 import { Trash2, X } from "lucide-react";
 import { Modal, Toggle } from "../shared/ui.jsx";
 import { uid } from "../../lib/utils.js";
-import { Combobox } from "../../components/Combobox.jsx";
-import { eachDay } from "../shared/dates.js";
 import { addDays, todayStr } from "../shared/dates.js";
 
 // A new step starts today; its type is picked in the window.
@@ -24,14 +22,14 @@ function Row({ label, children, top }) {
 
 const small = { fontSize: 13, padding: "6px 7px" };
 
-// onSave gets an array of steps: usually one, but a Shooting step given a
-// date range becomes one shoot day per date (like the equipment list's days).
-export function StepModal({ initial, isNew, types, labels, onSave, onDelete, onClose }) {
+// For every step except shoot days: those are set in the project's Create
+// New / Edit window, like the equipment list's days. onSave gets [step].
+export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) {
   const [s, setS] = useState(initial);
   const [multi, setMulti] = useState(!!initial.end && initial.end > initial.start);
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
+  const stepTypes = types.filter((t) => !t.shoot);
   const ready = !!s.typeId;
-  const isShoot = !!types.find((t) => t.id === s.typeId)?.shoot;
   // All day unless switched to a specific time (which starts at 09:00–10:00).
   const [timed, setTimed] = useState(!!initial.time);
   function chooseTimed(on) {
@@ -49,10 +47,7 @@ export function StepModal({ initial, isNew, types, labels, onSave, onDelete, onC
     if (!ready) return;
     const end = multi && s.end && s.start && s.end > s.start ? s.end : "";
     const time = timed ? s.time : "";
-    const step = { ...s, end, time, endTime: time ? s.endTime : "" };
-    if (!isShoot) return onSave([{ ...step, label: undefined }]);
-    const dates = eachDay(step.start, end);
-    onSave((dates.length ? dates : [step.start]).map((date, i) => ({ ...step, id: i === 0 ? step.id : uid(), start: date, end: "" })));
+    onSave([{ ...s, end, time, endTime: time ? s.endTime : "" }]);
   }
 
   return (
@@ -73,7 +68,7 @@ export function StepModal({ initial, isNew, types, labels, onSave, onDelete, onC
     >
       {/* Step type: an even grid, each with its colour. */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 5, marginBottom: 16 }}>
-        {types.map((t) => {
+        {stepTypes.map((t) => {
           const on = s.typeId === t.id;
           return (
             <button
@@ -106,20 +101,6 @@ export function StepModal({ initial, isNew, types, labels, onSave, onDelete, onC
         <Row label="To">
           <input type="date" value={s.end} min={s.start || undefined} onChange={(e) => set({ end: e.target.value })} style={{ ...small, flex: "1 1 120px", minWidth: 0, maxWidth: 190 }} />
           <button type="button" onClick={() => setMulti(false)} title="Back to a single day" aria-label="Single day" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 2, display: "flex", flexShrink: 0 }}><X size={14} /></button>
-          {isShoot && <span style={{ fontSize: 10.5, color: "var(--muted2)", flexShrink: 1, minWidth: 0 }}>one shoot day per date</span>}
-        </Row>
-      )}
-
-      {isShoot && (
-        <Row label="Type">
-          <Combobox
-            value={s.label || ""}
-            onChange={(v) => set({ label: v })}
-            options={labels || []}
-            placeholder="Type of shooting…"
-            style={{ flex: 1, minWidth: 0 }}
-            inputStyle={small}
-          />
         </Row>
       )}
 

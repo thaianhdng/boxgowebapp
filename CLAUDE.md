@@ -90,8 +90,11 @@ Start of each conversation, the owner should say which one it is:
      one-to-one with the list's days (same ids; `label` ↔ `projectLabel`);
      non-consecutive days are just separate steps. Older multi-day
      Shooting steps are split into days (ids `<id>`, `<id>~1`…) by
-     `splitShootRanges`. A Shooting range in the step window creates one
-     day per date. The schedule numbers shoot days D1… and folds
+     `splitShootRanges`. Shoot days are added / changed **only** in the
+     project's Create New / Edit window (the step window has no Shooting
+     type; tapping a shoot day opens Edit project; its Tentative /
+     Confirmed switch still works in the schedule). A project's own
+     calendar names each day's step (shoot days as D1, D2…). The schedule numbers shoot days D1… and folds
      consecutive ones (same status) into one line. New shoot days (from
      either module) start tentative. Every project keeps at least one
      shoot day; Calendar's Create New requires them; projects without

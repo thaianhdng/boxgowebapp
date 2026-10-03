@@ -93,8 +93,8 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
           }
           update({ steps });
         }}
-        labels={app.recentProjectLabels}
         request={stepRequest}
+        onEditShootDays={() => setShowInfo(true)}
         onManageTypes={onManageTypes}
         highlightDate={selDate}
       />

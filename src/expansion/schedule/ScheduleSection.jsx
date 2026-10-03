@@ -25,7 +25,9 @@ const uniq = (xs) => [...new Set(xs.filter(Boolean))];
 
 // A project's schedule: every step in date (then time) order, any type as
 // many times as needed.
-export function ScheduleSection({ steps, types, labels, request, onChange, onManageTypes, highlightDate }) {
+// Shoot days are listed here but changed in the project's Edit window
+// (onEditShootDays); their Tentative / Confirmed switch works here.
+export function ScheduleSection({ steps, types, request, onChange, onManageTypes, onEditShootDays, highlightDate }) {
   const [editing, setEditing] = useState(null); // { step, isNew }
   const [open, setOpen] = useState({}); // first shoot day id -> group unfolded
   const list = steps || [];
@@ -34,7 +36,7 @@ export function ScheduleSection({ steps, types, labels, request, onChange, onMan
   useEffect(() => {
     if (!request) return;
     const cur = list.find((s) => s.id === request.step.id);
-    if (cur) setEditing({ isNew: false, step: cur });
+    if (cur) openStep(cur);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request?.n]);
   const tentative = list.filter((s) => !s.confirmed).length;
@@ -49,6 +51,7 @@ export function ScheduleSection({ steps, types, labels, request, onChange, onMan
     onChange(editing.isNew ? [...list, ...saved] : list.flatMap((s) => (s.id === editing.step.id ? saved : [s])));
     setEditing(null);
   }
+  const openStep = (s) => (s.typeId === shootId ? onEditShootDays() : setEditing({ isNew: false, step: s }));
   const setConfirmed = (ids, confirmed) => onChange(list.map((x) => (ids.includes(x.id) ? { ...x, confirmed } : x)));
 
   const row = (s, dayLabel, extra = {}) => (
@@ -57,7 +60,7 @@ export function ScheduleSection({ steps, types, labels, request, onChange, onMan
         step={s}
         type={typeOf(types, s.typeId)}
         dayLabel={dayLabel}
-        onClick={() => setEditing({ isNew: false, step: s })}
+        onClick={() => openStep(s)}
         onToggleConfirmed={() => setConfirmed([s.id], !s.confirmed)}
       />
     </div>
@@ -122,7 +125,6 @@ export function ScheduleSection({ steps, types, labels, request, onChange, onMan
           initial={editing.step}
           isNew={editing.isNew}
           types={types}
-          labels={labels}
           onSave={save}
           onDelete={() => { onChange(list.filter((s) => s.id !== editing.step.id)); setEditing(null); }}
           onClose={() => setEditing(null)}
