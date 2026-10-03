@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { defaultExportFilename } from "../lib/utils.js";
 import { renderPdfPages } from "../lib/pdfPreview.js";
-import { PDF_FONTS, DEFAULT_PDF_FONT } from "../lib/font.js";
+import { PDF_FONTS, pdfFontFor } from "../lib/font.js";
 
 
 // Renders the preview screen. Builds the actual PDF and draws those exact
@@ -59,7 +59,7 @@ export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBac
         <div style={{ marginLeft: "auto", display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 10 }}>
           {onSetPdfFont && (
             <select
-              value={project.pdfFont || DEFAULT_PDF_FONT}
+              value={pdfFontFor(project.pdfFont).id}
               onChange={(e) => onSetPdfFont(e.target.value)}
               title="Font for this project's PDF and share links"
               aria-label="PDF font"

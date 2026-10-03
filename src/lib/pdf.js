@@ -56,6 +56,8 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const nameColW = rowWidth - maxColW - dayColsWidth - notesColW;
     const accentRgb = hexToRgb(accentHex);
     const lh = (size) => size * 1.28;
+    const BAR_H = 17;
+    const barBaseline = (size) => (BAR_H + fontChoice.capHeight * size) / 2;
 
     let y = marginTop;
 
@@ -218,24 +220,26 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     }
 
     orderedKeys(visibleGrouped, Object.keys(departments)).forEach((dept) => {
-      ensureSpace(20 + 16 + 14 + 16);
+      // Department and subcategory bars share one height; text is centred
+      // on its capitals.
+      ensureSpace(BAR_H * 2 + 14 + 16);
       doc.setFillColor(...accentRgb);
-      doc.rect(marginX, y, usableWidth, 17, "F");
+      doc.rect(marginX, y, usableWidth, BAR_H, "F");
       doc.setFont(FONT, "bold");
       doc.setFontSize(11);
       doc.setTextColor(255, 255, 255);
-      doc.text(dept.toUpperCase(), marginX + 8, y + 12.5);
-      y += 17;
+      doc.text(dept.toUpperCase(), marginX + 8, y + barBaseline(11));
+      y += BAR_H;
 
       orderedKeys(visibleGrouped[dept], departments[dept] || []).forEach((sub) => {
-        ensureSpace(15 + 14 + 16);
+        ensureSpace(BAR_H + 14 + 16);
         doc.setFillColor(242, 242, 242);
-        doc.rect(marginX, y, usableWidth, 15, "F");
+        doc.rect(marginX, y, usableWidth, BAR_H, "F");
         doc.setFont(FONT, "bold");
         doc.setFontSize(9);
         doc.setTextColor(0, 0, 0);
-        doc.text(sub.toUpperCase(), marginX + 12, y + 11);
-        y += 15;
+        doc.text(sub.toUpperCase(), marginX + 12, y + barBaseline(9));
+        y += BAR_H;
 
         // Row geometry: the same gap above the first line's capitals and
         // below the last line's baseline, so text sits centred between the

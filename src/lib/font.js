@@ -4,8 +4,6 @@ import interRegularUrl from "../assets/fonts/Inter-Regular.ttf?url";
 import interBoldUrl from "../assets/fonts/Inter-Bold.ttf?url";
 import plexRegularUrl from "../assets/fonts/IBMPlexSans-Regular.ttf?url";
 import plexBoldUrl from "../assets/fonts/IBMPlexSans-Bold.ttf?url";
-import barlowRegularUrl from "../assets/fonts/BarlowSemiCondensed-Regular.ttf?url";
-import barlowBoldUrl from "../assets/fonts/BarlowSemiCondensed-Bold.ttf?url";
 
 
 // Fonts a PDF can be set in — chosen per project on the preview page
@@ -16,10 +14,11 @@ export const PDF_FONTS = [
   { id: "jetbrains", name: "JetBrains Mono", regular: jbmRegularUrl, bold: jbmBoldUrl, capHeight: 0.731 },
   { id: "inter", name: "Inter", regular: interRegularUrl, bold: interBoldUrl, capHeight: 0.728 },
   { id: "plex", name: "IBM Plex Sans", regular: plexRegularUrl, bold: plexBoldUrl, capHeight: 0.698 },
-  { id: "barlow", name: "Barlow Semi Condensed", regular: barlowRegularUrl, bold: barlowBoldUrl, capHeight: 0.7 },
 ];
 export const DEFAULT_PDF_FONT = "jetbrains";
 
+// Unknown ids (e.g. a font since removed from the list) fall back to the
+// default.
 export function pdfFontFor(id) {
   return PDF_FONTS.find((f) => f.id === id) || PDF_FONTS[0];
 }

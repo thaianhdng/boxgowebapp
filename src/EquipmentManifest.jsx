@@ -17,7 +17,7 @@ import { ProjectListView } from "./components/ProjectListView.jsx";
 import { SideItem } from "./components/SideItem.jsx";
 import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
-import { DEFAULT_PDF_FONT } from "./lib/font.js";
+import { DEFAULT_PDF_FONT, pdfFontFor } from "./lib/font.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
 import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, formatDMY, fmtDate, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
 
@@ -313,7 +313,7 @@ export default function EquipmentManifest({ session }) {
         theme: st.theme || "dark",
         accentId: st.accentId || "amber",
         fontId: st.fontId || "jetbrains",
-        pdfFontId: st.pdfFontId || DEFAULT_PDF_FONT,
+        pdfFontId: pdfFontFor(st.pdfFontId).id,
       };
       setCatalog(v.catalog);
       setDepartments(v.departments);
