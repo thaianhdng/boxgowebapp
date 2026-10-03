@@ -7,7 +7,9 @@ import { formatShootDateRange } from "../lib/utils.js";
 
 // A project with `ghost: true` (owner only: a Calendar project that has no
 // equipment list yet) shows greyed out; tapping it calls onCreateFromGhost.
-export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost }) {
+// `listOnly` (owner only): Delete removes just the equipment list — the
+// project stays in Calendar — so the wording says so.
+export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost, listOnly }) {
   const [confirmId, setConfirmId] = useState(null);
   const [projSearch, setProjSearch] = useState("");
   const [menuId, setMenuId] = useState(null); // project whose ⋮ menu is open
@@ -154,7 +156,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                   <MenuItem icon={<Pencil size={13} />} label="Edit project" onClick={() => { setMenuId(null); onEdit(p); }} />
                   <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
                   <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
-                  <MenuItem icon={<Trash2 size={13} />} label="Delete" danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
+                  <MenuItem icon={<Trash2 size={13} />} label={listOnly ? "Delete list" : "Delete"} danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
                 </div>
               )}
             </div>
@@ -231,9 +233,11 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
           alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
         }}>
           <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 340, padding: 22, border: "1px solid var(--border2)" }}>
-            <div className="stencil" style={{ fontSize: 14, marginBottom: 10 }}>Delete Project</div>
+            <div className="stencil" style={{ fontSize: 14, marginBottom: 10 }}>{listOnly ? "Delete Equipment List" : "Delete Project"}</div>
             <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
-              Delete "{target.name}"? This can't be undone.
+              {listOnly
+                ? <>Delete the equipment list for "{target.name}"? The project, its schedule and people stay in Calendar.</>
+                : <>Delete "{target.name}"? This can't be undone.</>}
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button className="btn btn-ghost" onClick={() => setConfirmId(null)}>Cancel</button>

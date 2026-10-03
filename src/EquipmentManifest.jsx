@@ -987,7 +987,7 @@ export default function EquipmentManifest({ session }) {
       });
     }
     if (removed) {
-      showUndo(`Deleted "${removed.name}"`, () => {
+      showUndo(isCatalogOwner ? `Deleted the equipment list for "${removed.name}"` : `Deleted "${removed.name}"`, () => {
         setProjectsState((prev) => {
           const next = [...prev];
           next.splice(Math.min(removedIndex, next.length), 0, removed);
@@ -1916,6 +1916,7 @@ export default function EquipmentManifest({ session }) {
                     onFilterAttr={(field, value) => setProjectFilter({ field, value })}
                     onCreateNew={() => { setEditingProjectId(null); setShowProjectForm(true); }}
                     onCreateFromGhost={setGhostDraft}
+                    listOnly={isCatalogOwner}
                   />
                 </>
               )}
