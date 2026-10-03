@@ -7,7 +7,9 @@ import { MonthGrid, MonthHeader } from "../calendar/MonthGrid.jsx";
 import { ScheduleSection } from "../schedule/ScheduleSection.jsx";
 import { InfoStrip } from "./InfoStrip.jsx";
 import { EquipmentPanel } from "./EquipmentPanel.jsx";
-import { ProjectInfoModal } from "./ProjectInfoModal.jsx";
+import { ProjectForm } from "../shared/ProjectForm.jsx";
+import { listLike, projectWithInfo } from "./sync.js";
+import { Trash2 } from "lucide-react";
 
 // Which month the project's calendar opens on: the month of its next
 // step from today, else its last one, else this month.
@@ -18,7 +20,8 @@ function startMonth(project) {
 }
 
 export function ProjectPage({ app, id, project, allProjects, types, actions, intent, onManageTypes }) {
-  const [showInfo, setShowInfo] = useState(false);
+  const [showInfo, setShowInfo] = useState(false); // the shared Edit Project window
+  const [creatingList, setCreatingList] = useState(false); // Create New, prefilled
   const [month, setMonth] = useState(() => startMonth(project));
   const [selDate, setSelDate] = useState(null);
   const list = actions.listOf(id);
@@ -92,26 +95,56 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         app={app}
         list={list}
         hasShootSteps={(project.steps || []).some((s) => s.typeId === shootTypeId(types))}
-        onCreate={(templateId) => actions.createList(id, project, templateId)}
+        onCreate={() => setCreatingList(true)}
       />
 
-      {showInfo && (
-        <ProjectInfoModal
-          initial={project}
-          app={app}
-          onClose={() => setShowInfo(false)}
-          onSave={(info) => { update(info); app.addHouses(info); setShowInfo(false); }}
-          onDelete={() => {
+      <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14, marginTop: 6 }}>
+        <button
+          className="btn btn-ghost"
+          style={{ padding: "3px 8px", fontSize: 11, color: "var(--danger)" }}
+          onClick={() => {
             const msg = list
-              ? `Delete "${project.name}" — its schedule, people and its equipment list?`
-              : `Delete "${project.name}" — its schedule and people?`;
+              ? `Delete "${project.name}" — its schedule, people and its equipment list? This can't be undone.`
+              : `Delete "${project.name}" — its schedule and people? This can't be undone.`;
             if (!window.confirm(msg)) return;
-            setShowInfo(false);
             actions.remove(id);
             app.go({ screen: "projects" });
           }}
+        >
+          <Trash2 size={12} /> Delete project
+        </button>
+      </div>
+
+      {creatingList && (
+        // The equipment list composer's own Create New, starting from this
+        // Project's info and Shooting days (template and quantities too).
+        <ProjectForm
+          app={app}
+          prefill={listLike(id, project, types)}
+          onClose={() => setCreatingList(false)}
+          onSave={(data) => { setCreatingList(false); app.createEquipmentList(id, data); }}
         />
       )}
+
+      {showInfo && (list ? (
+        // With a list: exactly the equipment list's Edit Project (the link
+        // then brings any change back into this Project).
+        <ProjectForm
+          app={app}
+          initial={list}
+          onSaveAsTemplate={(name) => app.saveAsTemplate(id, name)}
+          onClose={() => setShowInfo(false)}
+          onSave={(data) => { app.updateEquipmentList(id, data); setShowInfo(false); }}
+        />
+      ) : (
+        <ProjectForm
+          app={app}
+          noList
+          initial={listLike(id, project, types)}
+          onClose={() => setShowInfo(false)}
+          onSave={(info) => { actions.update(id, (p) => projectWithInfo(p, info)); app.addHouses(info); setShowInfo(false); }}
+        />
+      ))}
     </div>
   );
 }

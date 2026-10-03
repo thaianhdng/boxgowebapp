@@ -5,7 +5,9 @@ import {
 import { formatShootDateRange } from "../lib/utils.js";
 
 
-export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew }) {
+// A project with `ghost: true` (owner only: a Calendar project that has no
+// equipment list yet) shows greyed out; tapping it calls onCreateFromGhost.
+export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost }) {
   const [confirmId, setConfirmId] = useState(null);
   const [projSearch, setProjSearch] = useState("");
   const [menuId, setMenuId] = useState(null); // project whose ⋮ menu is open
@@ -98,8 +100,12 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
         return (
           <div
             key={p.id}
-            style={{ position: "relative", minWidth: 0, border: "1px solid var(--border)", borderLeft: "3px solid var(--accent)", borderRadius: 4, background: "var(--surface)", cursor: "pointer", padding: "8px 12px 12px", display: "flex", flexDirection: "column" }}
-            onClick={() => onOpen(p.id)}
+            style={{
+              position: "relative", minWidth: 0, border: "1px solid var(--border)", borderLeft: "3px solid var(--accent)", borderRadius: 4, background: "var(--surface)", cursor: "pointer", padding: "8px 12px 12px", display: "flex", flexDirection: "column",
+              ...(p.ghost ? { opacity: 0.45, borderStyle: "dashed", borderLeftColor: "var(--border2)", background: "transparent" } : {}),
+            }}
+            title={p.ghost ? "No equipment list yet — tap to create one" : undefined}
+            onClick={() => (p.ghost ? onCreateFromGhost(p) : onOpen(p.id))}
           >
             <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
             <div style={{ flex: 1, minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 3 }}>
@@ -127,6 +133,11 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)" }}>{formatShootDateRange(p.days)}</span>
               )}
             </div>
+            {p.ghost ? (
+              <span style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, fontWeight: 700, color: "var(--muted)", paddingTop: 2 }}>
+                <Plus size={12} /> List
+              </span>
+            ) : (
             <div data-card-menu style={{ position: "relative", flexShrink: 0, margin: "-4px -8px 0 0" }} onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
@@ -147,6 +158,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 </div>
               )}
             </div>
+            )}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 3, fontSize: 11, color: "var(--muted)" }}>
               {(p.productionHouse || p.producer) && (

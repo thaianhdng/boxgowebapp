@@ -7,21 +7,26 @@ import { Field } from "./Field.jsx";
 import { uid, tomorrowStr, addOneDay, cascadeDates } from "../lib/utils.js";
 
 
-export function ProjectFormModal({ initial, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
-  const [name, setName] = useState(initial?.name || "");
-  const [tag, setTag] = useState((initial && initial.tag) || projectTags[0] || "");
-  const [productionHouse, setProductionHouse] = useState(initial?.productionHouse || "");
-  const [producer, setProducer] = useState(initial?.producer || "");
-  const [rentalHouse, setRentalHouse] = useState(initial?.rentalHouse || "");
-  const [gaffer, setGaffer] = useState(initial?.gaffer || "");
+// `initial` edits an existing project. Two extras, used only by the
+// owner's Calendar module (src/expansion/): `prefill` starts a *new*
+// project from given values, and `noList` hides the equipment-only parts
+// (template, shoot days, quantity mode) for a project without a list.
+export function ProjectFormModal({ initial, prefill, noList, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
+  const start = initial || prefill;
+  const [name, setName] = useState(start?.name || "");
+  const [tag, setTag] = useState((start && start.tag) || projectTags[0] || "");
+  const [productionHouse, setProductionHouse] = useState(start?.productionHouse || "");
+  const [producer, setProducer] = useState(start?.producer || "");
+  const [rentalHouse, setRentalHouse] = useState(start?.rentalHouse || "");
+  const [gaffer, setGaffer] = useState(start?.gaffer || "");
   const [templateId, setTemplateId] = useState("");
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [templateName, setTemplateName] = useState("");
-  const [dayCount, setDayCount] = useState(initial?.days?.length || 1);
-  const [perDayQty, setPerDayQty] = useState(initial?.perDayQty || false);
+  const [dayCount, setDayCount] = useState(start?.days?.length || 1);
+  const [perDayQty, setPerDayQty] = useState(start?.perDayQty || false);
   const [dayRows, setDayRows] = useState(
-    initial?.days?.length
-      ? initial.days.map((d) => ({ id: d.id, date: d.date, location: d.location || "", projectLabel: d.projectLabel || "" }))
+    start?.days?.length
+      ? start.days.map((d) => ({ id: d.id, date: d.date, location: d.location || "", projectLabel: d.projectLabel || "" }))
       : [{ id: uid(), date: tomorrowStr(), location: "", projectLabel: "" }]
   );
 
@@ -74,7 +79,7 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
 
-        {!initial && templates.length > 0 && (
+        {!initial && !noList && templates.length > 0 && (
           <div style={{ marginBottom: 12 }}>
             <select
               value={templateId}
@@ -146,6 +151,7 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
           <Pencil size={11} /> Manage tags, production houses and rental houses
         </button>
 
+        {!noList && (<>
         <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
           <Field label="Shooting Days" style={{ flex: "0 0 auto", marginBottom: 0 }}>
             <div style={{ display: "flex", gap: 4, background: "var(--surface2)", borderRadius: 4, padding: 3, maxWidth: 280 }}>
@@ -221,8 +227,9 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
             </div>
           ))}
         </Field>
+        </>)}
 
-        {initial && (
+        {initial && !noList && (
           <div style={{ marginBottom: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
             {showSaveTemplate ? (
               <div style={{ display: "flex", gap: 6 }}>

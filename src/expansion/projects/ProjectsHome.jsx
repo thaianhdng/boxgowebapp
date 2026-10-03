@@ -4,7 +4,7 @@ import { Logo } from "../../components/Logo.jsx";
 import { dm, todayStr, wdm } from "../shared/dates.js";
 import { typeOf } from "../schedule/stepTypes.js";
 import { sortSteps, projectSpan } from "../schedule/steps.js";
-import { ProjectInfoModal } from "./ProjectInfoModal.jsx";
+import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { CalendarPanel } from "../calendar/CalendarPanel.jsx";
 import { useWide } from "../calendar/MonthGrid.jsx";
 
@@ -77,24 +77,32 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
   const [q, setQ] = useState("");
   const today = todayStr();
 
-  const groups = useMemo(() => {
+  // One search for both the calendar and the project cards.
+  const matching = useMemo(() => {
     const query = q.trim().toLowerCase();
-    const entries = Object.entries(projects)
-      .map(([id, project]) => ({ id, project }))
-      .filter(({ project: p }) => !query || [p.name, p.tag, p.productionHouse, p.rentalHouse, ...(p.people || []).map((x) => x.name)]
-        .some((v) => (v || "").toLowerCase().includes(query)));
-    return arrange(entries, today);
-  }, [projects, q, today]);
+    return Object.fromEntries(Object.entries(projects).filter(([, p]) => !query ||
+      [p.name, p.tag, p.productionHouse, p.rentalHouse, ...(p.people || []).map((x) => x.name)]
+        .some((v) => (v || "").toLowerCase().includes(query))));
+  }, [projects, q]);
+  const groups = useMemo(
+    () => arrange(Object.entries(matching).map(([id, project]) => ({ id, project })), today),
+    [matching, today],
+  );
 
   const list = (
     <div style={{ minWidth: 0 }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-        <div style={{ position: "relative", flex: 1 }}>
-          <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects…" style={{ width: "100%", paddingLeft: 30, fontSize: 13 }} />
-        </div>
-        <button className="btn btn-primary" onClick={() => setCreating(true)} style={{ flexShrink: 0 }}><Plus size={14} /> New project</button>
-      </div>
+      {/* Desktop: the dashed Create New card, as in the equipment list. */}
+      <button
+        className="new-project-card"
+        onClick={() => setCreating(true)}
+        style={{
+          width: "100%", border: "1px dashed var(--border2)", borderRadius: 4, background: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          color: "var(--accent)", minHeight: 56, fontSize: 13, fontWeight: 600, marginBottom: 14,
+        }}
+      >
+        <Plus size={18} /> Create New
+      </button>
 
       {Object.keys(projects).length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--muted)", fontSize: 13 }}>No projects yet. Create your first one.</div>
@@ -124,12 +132,21 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
   );
   const calendar = (
     <div style={{ minWidth: 0, marginBottom: 22 }}>
-      <CalendarPanel app={app} projects={projects} types={types} onManageTypes={onManageTypes} />
+      <CalendarPanel app={app} projects={matching} types={types} onManageTypes={onManageTypes} />
     </div>
   );
 
   return (
     <div>
+      {/* Same search bar and Create New as the equipment list's project list. */}
+      <div style={{ position: "relative", marginBottom: 14 }}>
+        <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects…" style={{ width: "100%", paddingLeft: 30, fontSize: 13 }} />
+      </div>
+      <button className="new-project-row-btn btn btn-primary" onClick={() => setCreating(true)} style={{ width: "100%", justifyContent: "center", marginBottom: 14 }}>
+        <Plus size={14} /> Create New
+      </button>
+
       {wide ? (
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)", gap: 28, alignItems: "start" }}>
           {calendar}
@@ -143,9 +160,11 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
       )}
 
       {creating && (
-        <ProjectInfoModal
-          isNew
+        // The equipment list composer's Create New window, without the
+        // equipment-only parts: a Calendar project starts with no list.
+        <ProjectForm
           app={app}
+          noList
           onClose={() => setCreating(false)}
           onSave={(info) => {
             const id = actions.create(info);

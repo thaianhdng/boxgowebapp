@@ -79,6 +79,10 @@ export default function EquipmentManifest({ session }) {
   const [view, setView] = useState(() => (isCatalogOwner ? "x" : "projects")); // "projects" | "manifest" | "catalog" | "preview" | "x"
   const [xRoute, setXRoute] = useState({ screen: "projects" });
   const [xSaveState, setXSaveState] = useState("idle");
+  // Owner only: Calendar projects with no equipment list yet, shown greyed
+  // in the project list; tapping one opens Create New prefilled from it.
+  const [xGhosts, setXGhosts] = useState([]);
+  const [ghostDraft, setGhostDraft] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [cameFromUrl, setCameFromUrl] = useState(false);
@@ -583,11 +587,12 @@ export default function EquipmentManifest({ session }) {
   const visibleDays = activeDay === "all" ? days : days.filter((d) => d.id === activeDay);
 
   const filteredProjects = useMemo(() => {
+    const all = isCatalogOwner ? [...projects, ...xGhosts] : projects;
     const base = projectFilter
-      ? projects.filter((p) => (p[projectFilter.field] || "") === projectFilter.value)
-      : projects;
+      ? all.filter((p) => (p[projectFilter.field] || "") === projectFilter.value)
+      : all;
     return [...base].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }, [projects, projectFilter]);
+  }, [projects, projectFilter, isCatalogOwner, xGhosts]);
 
   const recentProjectNames = useMemo(() => {
     const seen = new Set();
@@ -1508,14 +1513,18 @@ export default function EquipmentManifest({ session }) {
     reportSaveState: setXSaveState,
     openEquipmentList: (id) => { openProject(id); window.scrollTo(0, 0); },
     previewEquipmentList: goToPreview,
-    createEquipmentList: (id, fields, templateId) => {
-      addProject({ ...fields, id, templateId });
-      // The Project's info wins over anything the template carries.
-      updateProject(id, fields);
-    },
+    // `data` is what the Create New window returns (it includes the
+    // template choice and quantity mode).
+    createEquipmentList: (id, data) => { addProject({ ...data, id }); window.scrollTo(0, 0); },
     updateEquipmentList: updateProject,
     deleteEquipmentList: deleteProject,
     addHouses: ({ productionHouse, rentalHouse }) => { addProductionHouse(productionHouse); addRentalHouse(rentalHouse); },
+    reportGhosts: setXGhosts,
+    // What the shared Create New / Edit window needs.
+    recentProjectNames,
+    recentProjectLabels,
+    saveAsTemplate: (id, name) => saveAsTemplate(projects.find((p) => p.id === id), name),
+    openSettings: () => setShowTagManager(true),
   } : null;
 
   const shownSaveState = [saveState, xSaveState].includes("error") ? "error"
@@ -1906,6 +1915,7 @@ export default function EquipmentManifest({ session }) {
                     onDelete={deleteProject}
                     onFilterAttr={(field, value) => setProjectFilter({ field, value })}
                     onCreateNew={() => { setEditingProjectId(null); setShowProjectForm(true); }}
+                    onCreateFromGhost={setGhostDraft}
                   />
                 </>
               )}
@@ -2191,6 +2201,21 @@ export default function EquipmentManifest({ session }) {
               setLastCatalogDraft({ brand: data.brand, model: data.model, department: data.department, subcategory: data.subcategory });
             }
           }}
+        />
+      )}
+
+      {ghostDraft && (
+        <ProjectFormModal
+          prefill={ghostDraft}
+          productionHouses={productionHouses}
+          rentalHouses={rentalHouses}
+          recentProjectNames={recentProjectNames}
+          recentProjectLabels={recentProjectLabels}
+          projectTags={projectTags}
+          templates={templates}
+          onManageTags={() => setShowTagManager(true)}
+          onClose={() => setGhostDraft(null)}
+          onSave={(data) => { addProject({ ...data, id: ghostDraft.id }); setGhostDraft(null); }}
         />
       )}
 

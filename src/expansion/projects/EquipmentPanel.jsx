@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { FileSpreadsheet, Plus, SquarePen } from "lucide-react";
 import { Section } from "../shared/ui.jsx";
 import { formatShootDateRange } from "../../lib/utils.js";
@@ -17,8 +16,6 @@ const label = { width: 62, flexShrink: 0, fontSize: 10, fontWeight: 700, color: 
 // The project's equipment list, as a summary, with a way into the
 // Equipment List Composer — or a button to start one.
 export function EquipmentPanel({ app, list, hasShootSteps, onCreate }) {
-  const [templateId, setTemplateId] = useState("");
-  const templates = app.templates || [];
 
   if (!list) {
     return (
@@ -26,18 +23,10 @@ export function EquipmentPanel({ app, list, hasShootSteps, onCreate }) {
         <div style={{ border: "1px dashed var(--border2)", borderRadius: 4, padding: 14 }}>
           <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 10 }}>
             No equipment list yet. {hasShootSteps
-              ? "Its day columns will be this project's Shooting days."
-              : "Its day columns come from this project's Shooting steps — add those first, or it starts with one day for tomorrow."}
+              ? "Its shoot days start from this project's Shooting steps."
+              : "Its shoot days become Shooting steps in this project's schedule."}
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            {templates.length > 0 && (
-              <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} style={{ fontSize: 13, padding: "6px 8px", maxWidth: "100%" }}>
-                <option value="">Start empty</option>
-                {templates.map((t) => <option key={t.id} value={t.id}>Start from "{t.name}"</option>)}
-              </select>
-            )}
-            <button className="btn btn-primary" onClick={() => onCreate(templateId || undefined)}><Plus size={13} /> Create equipment list</button>
-          </div>
+          <button className="btn btn-primary" onClick={onCreate}><Plus size={13} /> Create equipment list</button>
         </div>
       </Section>
     );

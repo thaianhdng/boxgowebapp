@@ -88,7 +88,17 @@ Start of each conversation, the owner should say which one it is:
      multi-day step's days have ids `<stepId>`, `<stepId>~1`… so quantities
      stay attached; if the list breaks a multi-day step's run, it splits
      into single-day steps keeping those ids. New lists (Create New,
-     Duplicate) get a Project automatically. A Project with a list must
+     Duplicate) get a Project automatically. **One Create New / Edit
+     window for both modules:** BOXGO's `ProjectFormModal` (owner-only
+     props: `prefill` = new from given values, `noList` = hide template,
+     shoot days, quantity mode), wrapped by `src/expansion/shared/
+     ProjectForm.jsx`. A project created in Calendar has **no** equipment
+     list; it shows greyed in Equipment's project list (`ghost: true`,
+     reported via `app.reportGhosts`). Its list is created either from the
+     Project page ("Create equipment list") or by tapping the greyed card
+     — both open Create New prefilled. Both modules' main pages start
+     with the same search bar + Create New (phone: full-width button;
+     desktop: dashed card); Calendar's search also filters its calendar. A Project with a list must
      keep at least one Shooting step. Schedule steps: date or range,
      optional time, online/offline, note, confirmed per step. Calendars
      colour by step type; tentative is faded; Google Calendar (not built

@@ -20,7 +20,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useXStore, load, refresh, putProject, setStepTypes, getState } from "./store.js";
 import { projectActions } from "./projects/actions.js";
-import { projectFromList, projectWithList } from "./projects/sync.js";
+import { listLike, projectFromList, projectWithList } from "./projects/sync.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
 import { ProjectPage } from "./projects/ProjectPage.jsx";
 import { StepTypesModal } from "./schedule/StepTypesModal.jsx";
@@ -77,6 +77,16 @@ function Sync({ app }) {
       checked.current.set(list.id, [list, getState().projects[list.id]]);
     }
   }, [x.status, app.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Projects with no equipment list show greyed in the equipment list
+  // composer's project list.
+  useEffect(() => {
+    if (x.status !== "ready") return;
+    const lists = new Set(app.projects.map((p) => p.id));
+    app.reportGhosts(Object.entries(x.projects)
+      .filter(([id]) => !lists.has(id))
+      .map(([id, p]) => ({ ...listLike(id, p, types), ghost: true })));
+  }, [x.status, x.projects, app.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 }

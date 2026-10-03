@@ -152,3 +152,21 @@ export function projectFromList(list, types) {
     types,
   ) || { name: "", tag: "", productionHouse: "", rentalHouse: "", notes: "", people: [], steps: [], createdAt: Date.now() };
 }
+
+// What the shared Create New / Edit window shows for a Project (the same
+// fields an equipment list has). Used to prefill it, and for the greyed
+// "no equipment list yet" cards in the equipment list composer.
+export function listLike(id, project, types) {
+  const f = equipmentFields(project, types, null);
+  return { id, ...f, days: f.days || [], createdAt: project.createdAt || 0 };
+}
+
+// The Project with info from the shared window applied (name, tag,
+// houses, Producer / Gaffer) — for Projects that have no equipment list.
+export function projectWithInfo(project, info) {
+  return {
+    ...project,
+    name: info.name, tag: info.tag || "", productionHouse: info.productionHouse || "", rentalHouse: info.rentalHouse || "",
+    people: withRole(withRole(project.people, PRODUCER, (info.producer || "").trim()), GAFFER, (info.gaffer || "").trim()),
+  };
+}
