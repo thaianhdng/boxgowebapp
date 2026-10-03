@@ -29,27 +29,13 @@ export function ScheduleSection({ steps, types, onChange, onManageTypes, highlig
               <CheckCheck size={12} /> Confirm all
             </button>
           )}
-          <button className="btn btn-ghost" style={smallBtn} onClick={onManageTypes}><Palette size={12} /> Step types</button>
+          <button className="btn btn-ghost" style={smallBtn} onClick={onManageTypes} title="Step types and colours" aria-label="Step types"><Palette size={12} /></button>
+          <button className="btn btn-primary" style={smallBtn} onClick={() => setEditing({ isNew: true, step: newStep("") })}><Plus size={12} /> Add step</button>
         </>
       }
     >
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-        {types.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setEditing({ isNew: true, step: newStep(t.id) })}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 3, padding: "4px 8px", borderRadius: 3,
-              fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-              border: `1px solid ${t.color}`, background: "transparent", color: "var(--text)",
-            }}
-          >
-            <Plus size={11} style={{ color: t.color }} /> {t.name}
-          </button>
-        ))}
-      </div>
       {list.length === 0 ? (
-        <div style={{ fontSize: 12, color: "var(--muted2)" }}>No steps yet — tap a step above to add it.</div>
+        <div style={{ fontSize: 12, color: "var(--muted2)" }}>No steps yet — tap + Add step.</div>
       ) : (
         <div style={{ borderTop: "1px solid var(--border)" }}>
           {sortSteps(list).map((s) => (

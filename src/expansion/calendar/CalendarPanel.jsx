@@ -4,7 +4,7 @@ import { monthKey, todayStr, wdm } from "../shared/dates.js";
 import { typeOf } from "../schedule/stepTypes.js";
 import { occurrences } from "../schedule/steps.js";
 import { StepRow } from "../schedule/StepRow.jsx";
-import { MonthGrid, MonthHeader, clashDates } from "./MonthGrid.jsx";
+import { MonthGrid, MonthHeader, MonthKey, clashDates } from "./MonthGrid.jsx";
 
 // Every step of every project on one calendar, coloured by step type,
 // tentative ones faded, and clashes marked. Tap a day for its steps, or
@@ -36,17 +36,10 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
           </>
         }
       />
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px", marginBottom: 10 }}>
-        {types.map((t) => (
-          <span key={t.id} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-            <span style={{ width: 9, height: 9, borderRadius: 2, background: t.color }} />{t.name}
-          </span>
-        ))}
-      </div>
       <MonthGrid month={month} occ={occ} types={types} selected={selDate} onSelect={setSelDate} />
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 6, marginBottom: 12 }}>
-        <div style={{ fontSize: 11, color: "var(--muted2)", flex: 1 }}>
-          Faded = tentative · red dot = more than one project that day · tap a day to see it
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 3 }}>
+          <MonthKey month={month} occ={occ} types={types} />
         </div>
         {selDate ? (
           <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11, flexShrink: 0 }} onClick={() => setSelDate(null)}>Close day</button>

@@ -3,7 +3,7 @@ import { Section } from "../shared/ui.jsx";
 import { monthKey, todayStr, wdm } from "../shared/dates.js";
 import { typeOf, shootTypeId } from "../schedule/stepTypes.js";
 import { occurrences } from "../schedule/steps.js";
-import { MonthGrid, MonthHeader } from "../calendar/MonthGrid.jsx";
+import { MonthGrid, MonthHeader, MonthKey } from "../calendar/MonthGrid.jsx";
 import { ScheduleSection } from "../schedule/ScheduleSection.jsx";
 import { InfoStrip } from "./InfoStrip.jsx";
 import { EquipmentPanel } from "./EquipmentPanel.jsx";
@@ -47,8 +47,8 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
       <Section title="Calendar">
         <MonthHeader month={month} onChange={(m) => { setMonth(m); setSelDate(null); }} />
         <MonthGrid month={month} occ={occ} types={types} focusProjectId={id} compact selected={selDate} onSelect={setSelDate} />
-        <div style={{ fontSize: 11, color: "var(--muted2)", marginTop: 6 }}>
-          Faded = tentative · grey dot = another project that day · red dot = clash
+        <div style={{ marginTop: 6 }}>
+          <MonthKey month={month} occ={occ} types={types} focusProjectId={id} />
         </div>
         {selDate && (
           <div style={{ marginTop: 10, padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 4 }}>

@@ -71,7 +71,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
     byDate.get(o.date).push(o);
   }
   const showLabels = wide && !compact;
-  const cellH = compact ? 40 : wide ? 86 : 58;
+  const cellH = compact ? 40 : wide ? 86 : 48;
   const maxBars = compact ? 2 : wide ? 3 : 4;
 
   return (
@@ -143,4 +143,25 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
       </div>
     </div>
   );
+}
+
+// A one-line key under a calendar: only the step types on screen this
+// month, plus tentative / other project / clash when they appear.
+export function MonthKey({ month, occ, types, focusProjectId }) {
+  const inMonth = occ.filter((o) => o.date.startsWith(month));
+  const mine = focusProjectId ? inMonth.filter((o) => o.projectId === focusProjectId) : inMonth;
+  const used = types.filter((t) => mine.some((o) => o.step.typeId === t.id));
+  const clashes = clashDates(inMonth);
+  const hasClash = focusProjectId ? mine.some((o) => clashes.has(o.date)) : clashes.size > 0;
+  const item = (key, swatch, label) => (
+    <span key={key} style={{ display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>{swatch}{label}</span>
+  );
+  const items = [
+    ...used.map((t) => item(t.id, <span style={{ width: 8, height: 8, borderRadius: 2, background: t.color }} />, t.name)),
+    mine.some((o) => !o.step.confirmed) && item("tent", <span style={{ width: 8, height: 8, borderRadius: 2, border: "1px dashed var(--muted)" }} />, "tentative"),
+    focusProjectId && inMonth.some((o) => o.projectId !== focusProjectId) && item("other", <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--muted2)" }} />, "other project"),
+    hasClash && item("clash", <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--danger)" }} />, "clash"),
+  ].filter(Boolean);
+  if (!items.length) return <span style={{ fontSize: 10.5, color: "var(--muted2)" }}>Nothing this month</span>;
+  return <span style={{ display: "flex", flexWrap: "wrap", gap: "3px 10px", fontSize: 10.5, color: "var(--muted)" }}>{items}</span>;
 }

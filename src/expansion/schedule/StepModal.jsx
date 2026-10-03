@@ -3,8 +3,10 @@ import { Trash2 } from "lucide-react";
 import { Field } from "../../components/Field.jsx";
 import { Modal, Toggle } from "../shared/ui.jsx";
 import { uid } from "../../lib/utils.js";
+import { addDays, todayStr } from "../shared/dates.js";
 
-export function newStep(typeId, start = "") {
+// A new step starts today; its type is picked in the window.
+export function newStep(typeId, start = todayStr()) {
   return { id: uid(), typeId, start, end: "", time: "", endTime: "", mode: "offline", location: "", link: "", note: "", confirmed: false };
 }
 
@@ -12,9 +14,16 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
   const [s, setS] = useState(initial);
   const [multi, setMulti] = useState(!!initial.end && initial.end > initial.start);
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
+  // Multi-day needs an end date: start with the day after the start.
+  function chooseMulti(on) {
+    setMulti(on);
+    if (on && (!s.end || s.end <= s.start)) set({ end: addDays(s.start || todayStr(), 1) });
+  }
+  const ready = !!s.typeId;
 
   function save() {
     const end = multi && s.end && s.start && s.end > s.start ? s.end : "";
+    if (!ready) return;
     onSave({ ...s, end, endTime: s.time ? s.endTime : "" });
   }
 
@@ -29,7 +38,7 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
           ) : <span />}
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-            <button className="btn btn-primary" onClick={save}>{isNew ? "Add" : "Save"}</button>
+            <button className="btn btn-primary" onClick={save} disabled={!ready} style={{ opacity: ready ? 1 : 0.5 }}>{isNew ? "Add" : "Save"}</button>
           </div>
         </>
       }
@@ -55,7 +64,7 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
       </Field>
 
       <Field label="Days">
-        <Toggle options={[[false, "Single day"], [true, "Multi-day"]]} value={multi} onChange={setMulti} />
+        <Toggle options={[[false, "Single day"], [true, "Multi-day"]]} value={multi} onChange={chooseMulti} />
         <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
           <input type="date" value={s.start} onChange={(e) => set({ start: e.target.value })} style={{ width: 150 }} />
           {multi && (
