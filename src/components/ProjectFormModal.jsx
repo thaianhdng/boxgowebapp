@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { Combobox } from "./Combobox.jsx";
 import { Field } from "./Field.jsx";
-import { uid, tomorrowStr, addOneDay, cascadeDates } from "../lib/utils.js";
+import { uid, todayStr, addOneDay, cascadeDates } from "../lib/utils.js";
 
 
 // `initial` edits an existing project. Two extras, used only by the
@@ -27,7 +27,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
   const [dayRows, setDayRows] = useState(
     start?.days?.length
       ? start.days.map((d) => ({ id: d.id, date: d.date, location: d.location || "", projectLabel: d.projectLabel || "" }))
-      : [{ id: uid(), date: tomorrowStr(), location: "", projectLabel: "" }]
+      : [{ id: uid(), date: todayStr(), location: "", projectLabel: "" }]
   );
 
   function handleDayCount(n) {
@@ -36,7 +36,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
       const next = [...prev];
       while (next.length < n) {
         const prevDate = next.length > 0 ? next[next.length - 1].date : "";
-        next.push({ id: uid(), date: prevDate ? addOneDay(prevDate) : tomorrowStr(), location: "", projectLabel: "" });
+        next.push({ id: uid(), date: prevDate ? addOneDay(prevDate) : todayStr(), location: "", projectLabel: "" });
       }
       while (next.length > n) next.pop();
       return next;

@@ -84,10 +84,9 @@ export function fmtDate(d) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export function tomorrowStr() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return fmtDate(d);
+// The default for any empty date field.
+export function todayStr() {
+  return fmtDate(new Date());
 }
 
 export function addOneDay(dateStr) {

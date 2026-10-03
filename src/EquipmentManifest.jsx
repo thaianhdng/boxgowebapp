@@ -19,7 +19,7 @@ import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_T
 import { buildPdf } from "./lib/pdf.js";
 import { DEFAULT_PDF_FONT, pdfFontFor } from "./lib/font.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
-import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, formatDMY, fmtDate, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
+import { uid, newProjectId, relabelDays, todayStr, addOneDay, cascadeDates, formatDM, formatDMY, fmtDate, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
 
 
 // Gives every day an explicit number for every item that has any. A day
@@ -736,7 +736,7 @@ export default function EquipmentManifest({ session }) {
         if (p.id !== activeProjectId) return p;
         const days = p.days || [];
         const prevDate = days.length > 0 ? days[days.length - 1].date : "";
-        const date = prevDate ? addOneDay(prevDate) : tomorrowStr();
+        const date = prevDate ? addOneDay(prevDate) : todayStr();
         const newDay = { id: `day${Date.now()}`, date, location: "", projectLabel: "" };
         const nextDays = relabelDays([...days, newDay]);
         if (p.perDayQty) return { ...p, days: nextDays };
@@ -779,7 +779,7 @@ export default function EquipmentManifest({ session }) {
       collapsedDepts[d] = true;
       (subs || []).forEach((s) => { collapsedSubcats[`${d}::${s}`] = true; });
     });
-    const newDays = data.days && data.days.length ? data.days : [{ id: "day1", label: "Day 1", date: tomorrowStr(), location: "", projectLabel: "" }];
+    const newDays = data.days && data.days.length ? data.days : [{ id: "day1", label: "Day 1", date: todayStr(), location: "", projectLabel: "" }];
     const template = data.templateId ? templates.find((t) => t.id === data.templateId) : null;
     const itemData = {};
     if (template) {
