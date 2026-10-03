@@ -9,8 +9,9 @@ import { uid, todayStr, addOneDay, cascadeDates } from "../lib/utils.js";
 
 // `initial` edits an existing project. Two extras, used only by the
 // owner's Calendar module (src/expansion/): `prefill` starts a *new*
-// project from given values, and `noList` hides the equipment-only parts
-// (template, shoot days, quantity mode) for a project without a list.
+// project from given values, and `noList` is for a project without an
+// equipment list — it hides the list-only parts (template, quantity mode,
+// save as template) and requires every shoot day to have a date.
 export function ProjectFormModal({ initial, prefill, noList, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
   const start = initial || prefill;
   const [name, setName] = useState(start?.name || "");
@@ -22,6 +23,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
   const [templateId, setTemplateId] = useState("");
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const [missingDate, setMissingDate] = useState(false);
   const [dayCount, setDayCount] = useState(start?.days?.length || 1);
   const [perDayQty, setPerDayQty] = useState(start?.perDayQty || false);
   const [dayRows, setDayRows] = useState(
@@ -62,6 +64,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
 
   function submit() {
     if (!name.trim()) return;
+    if (noList && dayRows.some((d) => !d.date)) { setMissingDate(true); return; }
     const days = dayRows.map((d, i) => ({
       id: d.id, label: `Day ${i + 1}`, date: d.date, location: d.location, projectLabel: d.projectLabel,
     }));
@@ -151,7 +154,6 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
           <Pencil size={11} /> Manage tags, production houses and rental houses
         </button>
 
-        {!noList && (<>
         <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
           <Field label="Shooting Days" style={{ flex: "0 0 auto", marginBottom: 0 }}>
             <div style={{ display: "flex", gap: 4, background: "var(--surface2)", borderRadius: 4, padding: 3, maxWidth: 280 }}>
@@ -171,6 +173,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
               ))}
             </div>
           </Field>
+          {!noList && (
           <Field label="Equipment Quantities" style={{ flex: 1, minWidth: 180, marginBottom: 0 }}>
             <div style={{ display: "flex", gap: 4, background: "var(--surface2)", borderRadius: 4, padding: 3 }} title="Whether every shoot day uses the same gear quantities, or each day is entered separately">
               <button
@@ -197,6 +200,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
               </button>
             </div>
           </Field>
+          )}
         </div>
 
         <Field label={dayRows.length > 1 ? "Shoot days" : "Shoot day"}>
@@ -208,7 +212,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
                   type="date"
                   style={{ width: 118, flexShrink: 0, fontSize: 12, padding: "5px 6px" }}
                   value={d.date}
-                  onChange={(e) => updateDayRow(d.id, { date: e.target.value })}
+                  onChange={(e) => { updateDayRow(d.id, { date: e.target.value }); setMissingDate(false); }}
                 />
                 <Combobox
                   value={d.projectLabel}
@@ -226,8 +230,8 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
               />
             </div>
           ))}
+          {missingDate && <div style={{ fontSize: 12, color: "var(--danger)" }}>Every shoot day needs a date.</div>}
         </Field>
-        </>)}
 
         {initial && !noList && (
           <div style={{ marginBottom: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>

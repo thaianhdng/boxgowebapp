@@ -16,7 +16,8 @@ function openUrl(url) {
 }
 
 // One schedule step. `projectName` is shown on the all-projects calendar.
-export function StepRow({ step, type, projectName, dayLabel, onClick, onToggleConfirmed }) {
+// `hideLinks` drops the Map / Join buttons (a folded run of shoot days).
+export function StepRow({ step, type, projectName, dayLabel, hideLinks, onClick, onToggleConfirmed }) {
   const faded = !step.confirmed;
   const where = step.mode === "online" ? step.link : step.location;
   return (
@@ -37,6 +38,7 @@ export function StepRow({ step, type, projectName, dayLabel, onClick, onToggleCo
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
           <span style={{ fontSize: 13, fontWeight: 800, color: type.color }}>{type.name}</span>
           {dayLabel && <span style={{ fontSize: 11, color: "var(--muted)" }}>{dayLabel}</span>}
+          {step.label && <span style={{ fontSize: 11.5, color: "var(--text)", fontWeight: 600 }}>{step.label}</span>}
           {projectName && <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{projectName}</span>}
         </div>
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>{stepWhen(step)}</div>
@@ -45,7 +47,7 @@ export function StepRow({ step, type, projectName, dayLabel, onClick, onToggleCo
             {step.mode === "online" ? <Video size={12} style={{ flexShrink: 0 }} /> : <MapPin size={12} style={{ flexShrink: 0 }} />}
             {step.mode === "online" && !step.link && <span>Online</span>}
             {where && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{where}</span>}
-            {where && (
+            {where && !hideLinks && (
               <a
                 href={step.mode === "online" ? openUrl(where) : `https://maps.google.com/?q=${encodeURIComponent(where)}`}
                 target="_blank"

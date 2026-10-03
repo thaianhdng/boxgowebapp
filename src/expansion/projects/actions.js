@@ -1,6 +1,6 @@
 import { newProjectId } from "../../lib/utils.js";
 import { putProject, updateProject, removeProject } from "../store.js";
-import { equipmentPatch, projectWithInfo } from "./sync.js";
+import { equipmentPatch, projectFromList, projectWithList } from "./sync.js";
 
 // Everything that changes a Project goes through here, so its equipment
 // list (if it has one) always gets the latest name, houses, people and
@@ -17,12 +17,19 @@ export function projectActions(app, types) {
 
   return {
     // A new Project without an equipment list, from the shared Create New
-    // window (its producer / gaffer become People).
+    // window: its producer / gaffer become People, its shoot days become
+    // (tentative) Shooting steps.
     create(info) {
       const id = newProjectId();
-      putProject(id, projectWithInfo({ notes: "", people: [], steps: [], createdAt: Date.now() }, info));
+      putProject(id, projectFromList({ ...info, createdAt: Date.now() }, types));
       app.addHouses(info);
       return id;
+    },
+    // The shared Edit window, for a Project without an equipment list.
+    editInfo(id, info) {
+      const next = updateProject(id, (p) => projectWithList(p, info, types) || p);
+      push(id, next);
+      app.addHouses(info);
     },
     update(id, updater) {
       const next = updateProject(id, updater);

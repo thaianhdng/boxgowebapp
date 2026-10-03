@@ -84,14 +84,22 @@ Start of each conversation, the owner should say which one it is:
      `src/expansion/store.js`. `src/expansion/projects/sync.js` is the only
      bridge: Project edits push into the list (`equipmentPatch`, from
      `projects/actions.js`); list changes pull into the Project
-     (`projectWithList`, from the sync part). Shooting steps = list days; a
-     multi-day step's days have ids `<stepId>`, `<stepId>~1`… so quantities
-     stay attached; if the list breaks a multi-day step's run, it splits
-     into single-day steps keeping those ids. New lists (Create New,
+     (`projectWithList`, from the sync part). **Shoot dates are the
+     fundamental detail of a project:** one Shooting step per shoot day
+     (single date, location, type of shooting in `step.label`), exactly
+     one-to-one with the list's days (same ids; `label` ↔ `projectLabel`);
+     non-consecutive days are just separate steps. Older multi-day
+     Shooting steps are split into days (ids `<id>`, `<id>~1`…) by
+     `splitShootRanges`. A Shooting range in the step window creates one
+     day per date. The schedule numbers shoot days D1… and folds
+     consecutive ones (same status) into one line. New shoot days (from
+     either module) start tentative. Every project keeps at least one
+     shoot day; Calendar's Create New requires them; projects without
+     any show "⚠ No shoot dates" and sort first. New lists (Create New,
      Duplicate) get a Project automatically. **One Create New / Edit
      window for both modules:** BOXGO's `ProjectFormModal` (owner-only
      props: `prefill` = new from given values, `noList` = hide template,
-     shoot days, quantity mode), wrapped by `src/expansion/shared/
+     quantity mode, save as template, and require shoot-day dates), wrapped by `src/expansion/shared/
      ProjectForm.jsx`. A project created in Calendar has **no** equipment
      list; it shows greyed in Equipment's project list (`ghost: true`,
      reported via `app.reportGhosts`). Its list is created either from the

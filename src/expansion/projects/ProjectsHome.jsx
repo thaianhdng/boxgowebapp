@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { Logo } from "../../components/Logo.jsx";
-import { dm, todayStr, wdm } from "../shared/dates.js";
-import { typeOf } from "../schedule/stepTypes.js";
-import { sortSteps, projectSpan } from "../schedule/steps.js";
+import { todayStr, wdm } from "../shared/dates.js";
+import { formatShootDateRange } from "../../lib/utils.js";
+import { typeOf, shootTypeId } from "../schedule/stepTypes.js";
+import { sortSteps } from "../schedule/steps.js";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { CalendarPanel } from "../calendar/CalendarPanel.jsx";
 import { useWide } from "../calendar/MonthGrid.jsx";
@@ -12,10 +13,17 @@ function nextStep(project, today) {
   return sortSteps(project.steps).find((s) => s.start && (s.end || s.start) >= today);
 }
 
+// A project's shoot dates, sorted — the headline of every project.
+function shootDates(project, types) {
+  const shootId = shootTypeId(types);
+  return (project.steps || []).filter((s) => s.typeId === shootId && s.start).map((s) => s.start).sort();
+}
+
 function ProjectCard({ project, types, today, hasList, onOpen }) {
   const next = nextStep(project, today);
   const nextType = next && typeOf(types, next.typeId);
-  const span = projectSpan(project);
+  const dates = shootDates(project, types);
+  const range = formatShootDateRange(dates.map((date) => ({ date })));
   const tentative = (project.steps || []).filter((s) => !s.confirmed && s.start).length;
   const typeIds = [...new Set(sortSteps(project.steps).map((s) => s.typeId))];
   return (
@@ -30,21 +38,19 @@ function ProjectCard({ project, types, today, hasList, onOpen }) {
         {project.tag && (
           <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px", flexShrink: 0 }}>{project.tag}</span>
         )}
-        <span style={{ fontSize: 14, fontWeight: 800, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project.name || "Untitled"}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project.name || "Untitled"}</span>
+        {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", flexShrink: 0 }}>{range}</span>}
+        <span style={{ flex: 1 }} />
         {hasList && <span title="Has an equipment list" style={{ color: "var(--muted)", flexShrink: 0 }}><Logo size={12} /></span>}
       </div>
-      {project.productionHouse && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>{project.productionHouse}</div>}
-      <div style={{ fontSize: 12, marginTop: 6, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-        {next ? (
-          <span style={{ opacity: next.confirmed ? 1 : 0.6 }}>
-            <b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
-          </span>
-        ) : (
-          <span style={{ color: "var(--muted2)" }}>{span ? `Ended ${dm(span.last)}` : "No dates yet"}</span>
-        )}
-        {span && span.first !== span.last && <span style={{ color: "var(--muted2)" }}>· {dm(span.first)} → {dm(span.last)}</span>}
-      </div>
-      <div style={{ display: "flex", gap: 4, marginTop: 7, alignItems: "center" }}>
+      {!dates.length && <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 3 }}>⚠ No shoot dates</div>}
+      {project.productionHouse && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text)", marginTop: 3 }}>{project.productionHouse}</div>}
+      {next && (
+        <div style={{ fontSize: 11.5, marginTop: 5, opacity: next.confirmed ? 1 : 0.6 }}>
+          <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 4, marginTop: 6, alignItems: "center" }}>
         {typeIds.map((tid) => <span key={tid} title={typeOf(types, tid).name} style={{ width: 8, height: 8, borderRadius: 2, background: typeOf(types, tid).color }} />)}
         {tentative > 0 && <span style={{ fontSize: 10.5, color: "var(--muted)", marginLeft: typeIds.length ? 4 : 0 }}>{tentative} tentative</span>}
       </div>
@@ -52,21 +58,21 @@ function ProjectCard({ project, types, today, hasList, onOpen }) {
   );
 }
 
-// Upcoming projects first (soonest next step at the top), then past ones
-// (most recent first), then ones with no dates.
-function arrange(entries, today) {
+// Sorted by shoot dates: projects missing them first (to fix), then
+// upcoming shoots (soonest first), then past ones (most recent first).
+function arrange(entries, today, types) {
   const upcoming = [], past = [], undated = [];
   for (const e of entries) {
-    const next = nextStep(e.project, today);
-    const span = projectSpan(e.project);
-    if (next) upcoming.push({ ...e, key: next.start });
-    else if (span) past.push({ ...e, key: span.last });
-    else undated.push({ ...e, key: String(e.project.createdAt || 0) });
+    const dates = shootDates(e.project, types);
+    const nextShoot = dates.find((d) => d >= today);
+    if (!dates.length) undated.push({ ...e, key: String(e.project.createdAt || 0) });
+    else if (nextShoot) upcoming.push({ ...e, key: nextShoot });
+    else past.push({ ...e, key: dates[dates.length - 1] });
   }
   upcoming.sort((a, b) => a.key.localeCompare(b.key));
   past.sort((a, b) => b.key.localeCompare(a.key));
   undated.sort((a, b) => b.key.localeCompare(a.key));
-  return [["Upcoming", upcoming], ["No dates yet", undated], ["Past", past]].filter(([, l]) => l.length);
+  return [["No shoot dates", undated], ["Upcoming", upcoming], ["Past", past]].filter(([, l]) => l.length);
 }
 
 // The owner's home: every project's steps on one calendar, and the list
@@ -85,8 +91,8 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
         .some((v) => (v || "").toLowerCase().includes(query))));
   }, [projects, q]);
   const groups = useMemo(
-    () => arrange(Object.entries(matching).map(([id, project]) => ({ id, project })), today),
-    [matching, today],
+    () => arrange(Object.entries(matching).map(([id, project]) => ({ id, project })), today, types),
+    [matching, today, types],
   );
 
   const list = (

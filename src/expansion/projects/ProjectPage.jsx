@@ -8,7 +8,7 @@ import { ScheduleSection } from "../schedule/ScheduleSection.jsx";
 import { InfoStrip } from "./InfoStrip.jsx";
 import { EquipmentPanel } from "./EquipmentPanel.jsx";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
-import { listLike, projectWithInfo } from "./sync.js";
+import { listLike } from "./sync.js";
 import { Trash2 } from "lucide-react";
 
 // Which month the project's calendar opens on: the month of its next
@@ -79,14 +79,15 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         steps={project.steps}
         types={types}
         onChange={(steps) => {
-          // The equipment list's days are its Shooting steps, so a project
-          // with a list keeps at least one.
-          if (list && !steps.some((s) => s.typeId === shootTypeId(types)) && (project.steps || []).some((s) => s.typeId === shootTypeId(types))) {
-            window.alert("This project has an equipment list, and its shoot days come from the Shooting steps — keep at least one Shooting step.");
+          // Shoot days are what a project is built on (and its equipment
+          // list's days), so every project keeps at least one.
+          if (!steps.some((s) => s.typeId === shootTypeId(types)) && (project.steps || []).some((s) => s.typeId === shootTypeId(types))) {
+            window.alert("Every project needs at least one shoot day — keep at least one Shooting step.");
             return;
           }
           update({ steps });
         }}
+        labels={app.recentProjectLabels}
         onManageTypes={onManageTypes}
         highlightDate={selDate}
       />
@@ -142,7 +143,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
           noList
           initial={listLike(id, project, types)}
           onClose={() => setShowInfo(false)}
-          onSave={(info) => { actions.update(id, (p) => projectWithInfo(p, info)); app.addHouses(info); setShowInfo(false); }}
+          onSave={(info) => { actions.editInfo(id, info); setShowInfo(false); }}
         />
       ))}
     </div>

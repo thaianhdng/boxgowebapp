@@ -20,7 +20,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useXStore, load, refresh, putProject, setStepTypes, getState } from "./store.js";
 import { projectActions } from "./projects/actions.js";
-import { listLike, projectFromList, projectWithList } from "./projects/sync.js";
+import { listLike, projectFromList, projectWithList, splitShootRanges } from "./projects/sync.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
 import { ProjectPage } from "./projects/ProjectPage.jsx";
 import { StepTypesModal } from "./schedule/StepTypesModal.jsx";
@@ -77,6 +77,16 @@ function Sync({ app }) {
       checked.current.set(list.id, [list, getState().projects[list.id]]);
     }
   }, [x.status, app.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Older Projects could have a multi-day Shooting step: split it into one
+  // Shooting step per day (lists' day ids are unchanged by this).
+  useEffect(() => {
+    if (x.status !== "ready") return;
+    for (const [id, p] of Object.entries(x.projects)) {
+      const steps = splitShootRanges(p.steps, types);
+      if (steps) putProject(id, { ...p, steps });
+    }
+  }, [x.status, x.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Projects with no equipment list show greyed in the equipment list
   // composer's project list.
