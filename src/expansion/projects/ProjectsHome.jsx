@@ -111,9 +111,8 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
 
   const list = (
     <div style={{ minWidth: 0 }}>
-      {/* Desktop: the dashed Create New card, as in the equipment list. */}
-      <button
-        className="new-project-card"
+      {/* Side by side: the dashed Create New card, as in the equipment list. */}
+      {wide && <button
         onClick={() => setCreating(true)}
         style={{
           width: "100%", border: "1px dashed var(--border2)", borderRadius: 4, background: "none", cursor: "pointer",
@@ -122,7 +121,7 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
         }}
       >
         <Plus size={18} /> Create New
-      </button>
+      </button>}
 
       {Object.keys(projects).length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--muted)", fontSize: 13 }}>No projects yet. Create your first one.</div>
@@ -157,14 +156,19 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
 
   return (
     <div ref={boxRef}>
-      {/* Same search bar and Create New as the equipment list's project list. */}
-      <div style={{ position: "relative", marginBottom: 14 }}>
-        <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects…" style={{ width: "100%", paddingLeft: 30, fontSize: 13 }} />
+      {/* Search bar, with a compact + New beside it when the project
+          column (and its Create New card) isn't on screen. */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+          <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects…" style={{ width: "100%", paddingLeft: 30, fontSize: 13 }} />
+        </div>
+        {!wide && (
+          <button className="btn btn-primary" onClick={() => setCreating(true)} style={{ flexShrink: 0 }}>
+            <Plus size={14} /> New
+          </button>
+        )}
       </div>
-      <button className="new-project-row-btn btn btn-primary" onClick={() => setCreating(true)} style={{ width: "100%", justifyContent: "center", marginBottom: 14 }}>
-        <Plus size={14} /> Create New
-      </button>
 
       {wide ? (
         <div style={{ display: "grid", gridTemplateColumns: `minmax(0, 1fr) ${LIST_W}px`, gap: GAP, alignItems: "start" }}>
