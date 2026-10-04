@@ -47,7 +47,8 @@ export function StepRow({ step, type, projectName, dayLabel, hideLinks, onClick,
             {step.mode === "online" ? <Video size={12} style={{ flexShrink: 0 }} /> : <MapPin size={12} style={{ flexShrink: 0 }} />}
             {step.mode === "online" && !step.link && <span>Online</span>}
             {where && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{where}</span>}
-            {where && !hideLinks && (
+            {/* No Map / Join button on shoot days (their location is just text). */}
+            {where && !hideLinks && !type.shoot && (
               <a
                 href={step.mode === "online" ? openUrl(where) : `https://maps.google.com/?q=${encodeURIComponent(where)}`}
                 target="_blank"
