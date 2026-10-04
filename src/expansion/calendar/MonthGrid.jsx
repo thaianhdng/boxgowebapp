@@ -74,7 +74,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
   }
   const named = !!focusProjectId;
   const showLabels = named || (wide && !compact);
-  const cellH = named ? (wide ? 62 : 50) : compact ? 40 : wide ? 86 : 48;
+  const cellH = named ? (wide ? 92 : 80) : compact ? 40 : wide ? 86 : 48;
   const maxBars = named ? 2 : compact ? 2 : wide ? 3 : 4;
   // Shoot day numbers for the focused project, in date order.
   const shootIds = new Set(types.filter((t) => t.shoot).map((t) => t.id));
@@ -127,13 +127,17 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                 const faded = !o.step.confirmed;
                 return showLabels ? (
                   <span key={k} title={t.name} style={{
-                    fontSize: named && !wide ? 9 : 10, fontWeight: 700, lineHeight: named && !wide ? "13px" : "14px",
-                    padding: named && !wide ? "0 2px" : "0 4px", borderRadius: 2,
-                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    fontSize: named && !wide ? 8 : 10, fontWeight: 700, lineHeight: named && !wide ? "10px" : "14px",
+                    padding: named && !wide ? "1px 2px" : "0 4px", borderRadius: 2, flexShrink: 0,
+                    // On a phone a project's own calendar lets names wrap
+                    // onto two lines, between words ("Shooting / D1").
+                    ...(named && !wide
+                      ? { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "normal", overflowWrap: "normal" }
+                      : { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }),
                     background: faded ? "transparent" : t.color, color: faded ? t.color : "#111",
                     border: `1px ${faded ? "dashed" : "solid"} ${t.color}`, opacity: faded ? 0.75 : 1,
                   }}>
-                    {named ? (dayNo.has(o.step.id) ? `D${dayNo.get(o.step.id)}` : t.name) : (o.project.name || t.name)}
+                    {named ? (dayNo.has(o.step.id) ? `${t.name} D${dayNo.get(o.step.id)}` : t.name).replace(/-/g, "\u2011") : (o.project.name || t.name)}
                   </span>
                 ) : (
                   <span key={k} style={{
