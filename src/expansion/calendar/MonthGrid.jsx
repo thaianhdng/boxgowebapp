@@ -5,6 +5,24 @@ import { typeOf } from "../schedule/eventTypes.js";
 
 const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
 
+// Height of a day box on the all-projects calendar on wider screens.
+export const DAY_HEIGHT = 86;
+
+// Width of an element, kept up to date (in the page's own units, so the
+// UI size setting is accounted for).
+export function useWidth(ref) {
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setW(el.clientWidth));
+    ro.observe(el);
+    setW(el.clientWidth);
+    return () => ro.disconnect();
+  }, [ref]);
+  return w;
+}
+
 export function useWide(min = 700) {
   const [wide, setWide] = useState(() => window.innerWidth >= min);
   useEffect(() => {
@@ -74,13 +92,12 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
   }
   const named = !!focusProjectId;
   const showLabels = named || (wide && !compact);
-  // On wider screens day boxes are slightly wider than tall (5:4). On a
-  // phone: 48px on the all-projects calendar (about as wide), and 80px on
-  // a project's own calendar, to fit two wrapped names.
-  const cellSize = !wide
-    ? { height: named ? 80 : compact ? 40 : 48 }
-    : compact && !named ? { height: 40 } : { aspectRatio: "5 / 4", overflow: "hidden" };
-  const maxBars = named ? (wide ? 3 : 2) : compact ? 2 : 4;
+  // Day boxes have a fixed height and take whatever width there is. The
+  // Calendar home switches to a stacked layout before they'd get narrower
+  // than they are tall (see ProjectsHome), so they stay wider than tall.
+  const cellH = named ? (wide ? 92 : 80) : compact ? 40 : wide ? DAY_HEIGHT : 48;
+  const cellSize = { height: cellH };
+  const maxBars = named ? (wide ? 3 : 2) : compact ? 2 : wide ? 3 : 4;
   // Shoot day numbers for the focused project, in date order.
   const shootIds = new Set(types.filter((t) => t.shoot).map((t) => t.id));
   const dayNo = new Map(

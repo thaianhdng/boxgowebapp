@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { Logo } from "../../components/Logo.jsx";
 import { todayStr, wdm } from "../shared/dates.js";
@@ -7,7 +7,7 @@ import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
 import { sortEvents } from "../schedule/events.js";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { CalendarPanel } from "../calendar/CalendarPanel.jsx";
-import { useWide } from "../calendar/MonthGrid.jsx";
+import { DAY_HEIGHT, useWide, useWidth } from "../calendar/MonthGrid.jsx";
 
 function nextEvent(project, today, types) {
   return sortEvents(project.events, types).find((s) => s.start && (s.end || s.start) >= today);
@@ -78,7 +78,14 @@ function arrange(entries, today, types) {
 // The owner's home: every project's events on one calendar, and the list
 // of projects. Side by side on a wide screen, calendar first on a phone.
 export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
-  const wide = useWide(1000);
+  // Calendar and project list side by side only while the calendar's day
+  // boxes stay clearly wider than tall; before they'd turn square, stack
+  // them (calendar on top) instead.
+  const LIST_W = 320, GAP = 24;
+  const boxRef = useRef(null);
+  const width = useWidth(boxRef);
+  const phone = !useWide(700);
+  const wide = !phone && (width - LIST_W - GAP) / 7 >= DAY_HEIGHT * 1.1;
   const [creating, setCreating] = useState(false);
   const [q, setQ] = useState("");
   const today = todayStr();
@@ -143,7 +150,7 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
   );
 
   return (
-    <div>
+    <div ref={boxRef}>
       {/* Same search bar and Create New as the equipment list's project list. */}
       <div style={{ position: "relative", marginBottom: 14 }}>
         <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
@@ -154,7 +161,7 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
       </button>
 
       {wide ? (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px", gap: 24, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `minmax(0, 1fr) ${LIST_W}px`, gap: GAP, alignItems: "start" }}>
           {calendar}
           {list}
         </div>
