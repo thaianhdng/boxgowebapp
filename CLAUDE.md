@@ -94,8 +94,13 @@ Start of each conversation, the owner should say which one it is:
      project's Create New / Edit window (the step window has no Shooting
      type; tapping a shoot day opens Edit project; its Tentative /
      Confirmed switch still works in the schedule). A project's own
-     calendar names each day's step (shoot days as D1, D2…). The schedule numbers shoot days D1… and folds
-     consecutive ones (same status) into one line. New shoot days (from
+     calendar names each day's step (shoot days as "Shooting D1"…). The
+     schedule lists every shoot day on its own line (D1, D2…). Steps are
+     always ordered date → time (all-day first) → the Step types list
+     order → order added (`compareSteps` in `schedule/steps.js`). Times
+     are picked as hour : minute in 5-minute steps. The People feature is
+     removed for now: a project's Producer / Gaffer (set in Create New /
+     Edit) still live in `people` and show in the info strip. New shoot days (from
      either module) start tentative. Every project keeps at least one
      shoot day; Calendar's Create New requires them; projects without
      any show "⚠ No shoot dates" and sort first. New lists (Create New,

@@ -22,6 +22,31 @@ function Row({ label, children, top }) {
 
 const small = { fontSize: 13, padding: "6px 7px" };
 
+const pad = (n) => String(n).padStart(2, "0");
+const HOURS = Array.from({ length: 24 }, (_, i) => pad(i));
+const MINUTES = Array.from({ length: 12 }, (_, i) => pad(i * 5));
+
+// Hour : minute pickers, minutes in 5-minute steps ("HH:MM"). A time saved
+// earlier on another minute keeps that minute in the list. `optional` adds
+// "--" for no time (the end time).
+function TimePick({ value, onChange, optional }) {
+  const [h, m] = value ? value.split(":") : [optional ? "" : "09", "00"];
+  const minutes = MINUTES.includes(m) ? MINUTES : [...MINUTES, m].sort();
+  const sel = { ...small, flex: 1, minWidth: 0, textAlign: "center", padding: "6px 2px" };
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0 }}>
+      <select value={h} onChange={(e) => onChange(e.target.value ? `${e.target.value}:${m}` : "")} style={sel} aria-label="Hour">
+        {optional && <option value="">--</option>}
+        {HOURS.map((x) => <option key={x} value={x}>{x}</option>)}
+      </select>
+      <span style={{ color: "var(--muted)" }}>:</span>
+      <select value={m} disabled={!h} onChange={(e) => onChange(`${h}:${e.target.value}`)} style={{ ...sel, opacity: h ? 1 : 0.5 }} aria-label="Minutes">
+        {minutes.map((x) => <option key={x} value={x}>{x}</option>)}
+      </select>
+    </div>
+  );
+}
+
 // For every step except shoot days: those are set in the project's Create
 // New / Edit window, like the equipment list's days. onSave gets [step].
 export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) {
@@ -110,9 +135,9 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
       </Row>
       {timed && (
         <Row label="">
-          <input type="time" value={s.time} onChange={(e) => set({ time: e.target.value })} style={{ ...small, flex: 1, minWidth: 0 }} />
+          <TimePick value={s.time} onChange={(time) => set({ time })} />
           <span style={{ color: "var(--muted)", flexShrink: 0 }}>–</span>
-          <input type="time" value={s.endTime} onChange={(e) => set({ endTime: e.target.value })} style={{ ...small, flex: 1, minWidth: 0 }} />
+          <TimePick value={s.endTime} onChange={(endTime) => set({ endTime })} optional />
         </Row>
       )}
 

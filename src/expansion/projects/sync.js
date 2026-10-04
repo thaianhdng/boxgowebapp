@@ -45,7 +45,7 @@ export function splitShootRanges(steps, types) {
 export function shootDaysOf(project, types) {
   const shootId = shootTypeId(types);
   const steps = splitShootRanges(project.steps, types) || project.steps || [];
-  return sortSteps(steps).filter((s) => s.typeId === shootId).map((s) => ({
+  return sortSteps(steps, types).filter((s) => s.typeId === shootId).map((s) => ({
     id: s.id, date: s.start || "", location: s.mode === "online" ? "" : (s.location || ""), label: s.label,
   }));
 }

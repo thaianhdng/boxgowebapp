@@ -9,8 +9,8 @@ import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { CalendarPanel } from "../calendar/CalendarPanel.jsx";
 import { useWide } from "../calendar/MonthGrid.jsx";
 
-function nextStep(project, today) {
-  return sortSteps(project.steps).find((s) => s.start && (s.end || s.start) >= today);
+function nextStep(project, today, types) {
+  return sortSteps(project.steps, types).find((s) => s.start && (s.end || s.start) >= today);
 }
 
 // A project's shoot dates, sorted — the headline of every project.
@@ -20,12 +20,12 @@ function shootDates(project, types) {
 }
 
 function ProjectCard({ project, types, today, hasList, onOpen }) {
-  const next = nextStep(project, today);
+  const next = nextStep(project, today, types);
   const nextType = next && typeOf(types, next.typeId);
   const dates = shootDates(project, types);
   const range = formatShootDateRange(dates.map((date) => ({ date })));
   const tentative = (project.steps || []).filter((s) => !s.confirmed && s.start).length;
-  const typeIds = [...new Set(sortSteps(project.steps).map((s) => s.typeId))];
+  const typeIds = [...new Set(sortSteps(project.steps, types).map((s) => s.typeId))];
   return (
     <div
       onClick={onOpen}

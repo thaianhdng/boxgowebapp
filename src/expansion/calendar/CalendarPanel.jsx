@@ -13,7 +13,7 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
   const [month, setMonth] = useState(() => monthKey(todayStr()));
   const [selDate, setSelDate] = useState(null);
   const [listMonth, setListMonth] = useState(false);
-  const occ = useMemo(() => occurrences(projects), [projects]);
+  const occ = useMemo(() => occurrences(projects, types), [projects, types]);
   const clashes = useMemo(() => clashDates(occ), [occ]);
 
   const shown = selDate ? occ.filter((o) => o.date === selDate) : listMonth ? occ.filter((o) => o.date.startsWith(month)) : [];

@@ -35,7 +35,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
     if (intent === "edit") setShowInfo(true);
   }, [intent, app.route.t]);
 
-  const occ = useMemo(() => occurrences(allProjects), [allProjects]);
+  const occ = useMemo(() => occurrences(allProjects, types), [allProjects, types]);
   const onSel = selDate ? occ.filter((o) => o.date === selDate) : [];
 
   return (
@@ -43,7 +43,6 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
       <InfoStrip
         project={project}
         onEditInfo={() => setShowInfo(true)}
-        onPeopleChange={(people) => update({ people })}
         onNotesChange={(notes) => update({ notes })}
       />
 

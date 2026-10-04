@@ -1,35 +1,15 @@
 import { useEffect, useState } from "react";
 import { CheckCheck, Palette, Plus } from "lucide-react";
 import { Section, smallBtn } from "../shared/ui.jsx";
-import { addDays } from "../shared/dates.js";
 import { typeOf, shootTypeId } from "./stepTypes.js";
 import { sortSteps } from "./steps.js";
 import { StepRow } from "./StepRow.jsx";
 import { StepModal, newStep } from "./StepModal.jsx";
 
-// Shoot days numbered D1, D2… in date order (as in the equipment list),
-// and runs of consecutive ones (same status) folded into one line.
-function shootGroups(sorted, shootId) {
-  const groups = [];
-  sorted.filter((s) => s.typeId === shootId).forEach((s, i) => {
-    const day = { step: s, n: i + 1 };
-    const last = groups[groups.length - 1];
-    const prev = last?.days[last.days.length - 1].step;
-    if (last && prev.start && s.start === addDays(prev.start, 1) && !!prev.confirmed === !!s.confirmed) last.days.push(day);
-    else groups.push({ days: [day] });
-  });
-  return groups;
-}
-
-const uniq = (xs) => [...new Set(xs.filter(Boolean))];
-
-// A project's schedule: every step in date (then time) order, any type as
-// many times as needed.
 // Shoot days are listed here but changed in the project's Edit window
 // (onEditShootDays); their Tentative / Confirmed switch works here.
 export function ScheduleSection({ steps, types, request, onChange, onManageTypes, onEditShootDays, highlightDate }) {
   const [editing, setEditing] = useState(null); // { step, isNew }
-  const [open, setOpen] = useState({}); // first shoot day id -> group unfolded
   const list = steps || [];
 
   // From the project's calendar: edit a step tapped there.
@@ -41,9 +21,9 @@ export function ScheduleSection({ steps, types, request, onChange, onManageTypes
   }, [request?.n]);
   const tentative = list.filter((s) => !s.confirmed).length;
   const shootId = shootTypeId(types);
-  const sorted = sortSteps(list);
-  const groups = shootGroups(sorted, shootId);
-  const groupOf = new Map(groups.flatMap((g) => g.days.map((d) => [d.step.id, g])));
+  const sorted = sortSteps(list, types);
+  // Shoot days numbered D1, D2… in date order, as in the equipment list.
+  const dayNo = new Map(sorted.filter((s) => s.typeId === shootId).map((s, i) => [s.id, i + 1]));
   const lit = (s) => highlightDate && s.start && s.start <= highlightDate && (s.end || s.start) >= highlightDate;
 
   // The step window returns an array (a Shooting range gives one per date).
@@ -54,8 +34,8 @@ export function ScheduleSection({ steps, types, request, onChange, onManageTypes
   const openStep = (s) => (s.typeId === shootId ? onEditShootDays() : setEditing({ isNew: false, step: s }));
   const setConfirmed = (ids, confirmed) => onChange(list.map((x) => (ids.includes(x.id) ? { ...x, confirmed } : x)));
 
-  const row = (s, dayLabel, extra = {}) => (
-    <div key={s.id} style={{ background: lit(s) ? "var(--surface2)" : "transparent", ...extra.style }}>
+  const row = (s, dayLabel) => (
+    <div key={s.id} style={{ background: lit(s) ? "var(--surface2)" : "transparent" }}>
       <StepRow
         step={s}
         type={typeOf(types, s.typeId)}
@@ -66,38 +46,7 @@ export function ScheduleSection({ steps, types, request, onChange, onManageTypes
     </div>
   );
 
-  const items = [];
-  for (const s of sorted) {
-    if (s.typeId !== shootId) { items.push(row(s)); continue; }
-    const g = groupOf.get(s.id);
-    if (g.days[0].step.id !== s.id) continue; // shown with its group
-    if (g.days.length === 1) { items.push(row(s, `D${g.days[0].n}`)); continue; }
-    const first = g.days[0], last = g.days[g.days.length - 1];
-    const key = first.step.id;
-    const ids = g.days.map((d) => d.step.id);
-    const summary = {
-      ...first.step,
-      id: `group-${key}`,
-      end: last.step.start,
-      time: "",
-      location: uniq(g.days.map((d) => d.step.location)).join(" · "),
-      label: uniq(g.days.map((d) => d.step.label)).join(" · "),
-      note: "",
-    };
-    items.push(
-      <div key={summary.id} style={{ background: g.days.some((d) => lit(d.step)) ? "var(--surface2)" : "transparent" }}>
-        <StepRow
-          step={summary}
-          type={typeOf(types, shootId)}
-          dayLabel={`D${first.n}–D${last.n} ${open[key] ? "▾" : "▸"}`}
-          hideLinks
-          onClick={() => setOpen((o) => ({ ...o, [key]: !o[key] }))}
-          onToggleConfirmed={() => setConfirmed(ids, !first.step.confirmed)}
-        />
-      </div>,
-    );
-    if (open[key]) g.days.forEach((d) => items.push(row(d.step, `D${d.n}`, { style: { paddingLeft: 14 } })));
-  }
+  const items = sorted.map((s) => row(s, dayNo.has(s.id) ? `D${dayNo.get(s.id)}` : ""));
 
   return (
     <Section

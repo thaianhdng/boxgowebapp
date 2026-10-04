@@ -4,13 +4,23 @@ import { eachDay } from "../shared/dates.js";
 //           location, link, note, confirmed }
 // `end` is "" for a single-day step.
 
-export function sortKey(step) {
-  // No date sorts last; an all-day step sorts before timed ones that day.
-  return `${step.start || "9999-99-99"} ${step.time || ""}`;
+// Steps are ordered by date, then time (all-day first), then the order of
+// step types in the Step types list (so Prelight comes before Shooting on
+// the same day), then the order they were added. No date sorts last.
+function typeRank(types) {
+  const rank = new Map((types || []).map((t, i) => [t.id, i]));
+  return (typeId) => (rank.has(typeId) ? rank.get(typeId) : 999);
 }
 
-export function sortSteps(steps) {
-  return [...(steps || [])].sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+export function compareSteps(a, b, types, dateA = a.start, dateB = b.start) {
+  const rank = typeRank(types);
+  return (dateA || "9999-99-99").localeCompare(dateB || "9999-99-99") ||
+    (a.time || "").localeCompare(b.time || "") ||
+    rank(a.typeId) - rank(b.typeId);
+}
+
+export function sortSteps(steps, types) {
+  return [...(steps || [])].sort((a, b) => compareSteps(a, b, types));
 }
 
 export function stepDays(step) {
@@ -19,7 +29,7 @@ export function stepDays(step) {
 
 // Every step of every project, one entry per calendar day it covers:
 // { date, step, project, projectId, dayIndex, dayCount }
-export function occurrences(projectsById) {
+export function occurrences(projectsById, types) {
   const out = [];
   for (const [projectId, project] of Object.entries(projectsById)) {
     for (const step of project.steps || []) {
@@ -27,9 +37,7 @@ export function occurrences(projectsById) {
       days.forEach((date, i) => out.push({ date, step, project, projectId, dayIndex: i, dayCount: days.length }));
     }
   }
-  return out.sort((a, b) =>
-    a.date.localeCompare(b.date) || (a.step.time || "").localeCompare(b.step.time || "")
-  );
+  return out.sort((a, b) => compareSteps(a.step, b.step, types, a.date, b.date));
 }
 
 // Date span of a project's dated steps: { first, last } or null.
