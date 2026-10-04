@@ -23,6 +23,19 @@ export function useWidth(ref) {
   return w;
 }
 
+// A phone, upright or sideways (narrow, or short like a phone in landscape).
+// Calendars then use small two-line labels.
+const isPhone = () => window.innerWidth < 700 || window.innerHeight < 500;
+export function usePhone() {
+  const [phone, setPhone] = useState(isPhone);
+  useEffect(() => {
+    const on = () => setPhone(isPhone());
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  return phone;
+}
+
 export function useWide(min = 700) {
   const [wide, setWide] = useState(() => window.innerWidth >= min);
   useEffect(() => {
@@ -82,7 +95,7 @@ export function clashDates(occ) {
 // shoot days as D1, D2… like the equipment list — and other projects show
 // as a grey dot.
 export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectId, compact }) {
-  const wide = useWide();
+  const wide = !usePhone();
   const today = todayStr();
   const clashes = clashDates(occ);
   const byDate = new Map();
@@ -91,13 +104,18 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
     byDate.get(o.date).push(o);
   }
   const named = !!focusProjectId;
-  const showLabels = named || (wide && !compact);
+  // Every day names what's on it: a project's own calendar names its events
+  // (shoot days as "Shooting D1"); the all-projects calendar names the
+  // project, coloured by event type. On a phone names wrap onto two small
+  // lines, so day boxes there are taller.
+  const showLabels = named || !compact;
+  const small = !wide;
   // Day boxes have a fixed height and take whatever width there is. The
   // Calendar home switches to a stacked layout before they'd get narrower
   // than they are tall (see ProjectsHome), so they stay wider than tall.
-  const cellH = named ? (wide ? 92 : 80) : compact ? 40 : wide ? DAY_HEIGHT : 48;
+  const cellH = named ? (wide ? 92 : 80) : compact ? 40 : wide ? DAY_HEIGHT : 84;
   const cellSize = { height: cellH };
-  const maxBars = named ? (wide ? 3 : 2) : compact ? 2 : wide ? 3 : 4;
+  const maxBars = named ? (wide ? 3 : 2) : compact ? 2 : 3;
   // Shoot day numbers for the focused project, in date order.
   const shootIds = new Set(types.filter((t) => t.shoot).map((t) => t.id));
   const dayNo = new Map(
@@ -148,18 +166,18 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                 const t = typeOf(types, o.event.typeId);
                 const faded = !o.event.confirmed;
                 return showLabels ? (
-                  <span key={k} title={t.name} style={{
-                    fontSize: named && !wide ? 8 : 10, fontWeight: 700, lineHeight: named && !wide ? "10px" : "14px",
-                    padding: named && !wide ? "1px 2px" : "0 4px", borderRadius: 2, flexShrink: 0,
-                    // On a phone a project's own calendar lets names wrap
-                    // onto two lines, between words ("Shooting / D1").
-                    ...(named && !wide
+                  <span key={k} title={named ? t.name : `${o.project.name} · ${t.name}`} style={{
+                    fontSize: small ? 8 : 10, fontWeight: 700, lineHeight: small ? "10px" : "14px",
+                    padding: small ? "1px 2px" : "0 4px", borderRadius: 2, flexShrink: 0,
+                    // On a phone names wrap onto two lines, between words
+                    // ("Shooting / D1").
+                    ...(small
                       ? { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "normal", overflowWrap: "normal" }
                       : { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }),
                     background: faded ? "transparent" : t.color, color: faded ? t.color : "#111",
                     border: `1px ${faded ? "dashed" : "solid"} ${t.color}`, opacity: faded ? 0.75 : 1,
                   }}>
-                    {named ? (dayNo.has(o.event.id) ? `${t.name} D${dayNo.get(o.event.id)}` : t.name).replace(/-/g, "\u2011") : (o.project.name || t.name)}
+                    {(named ? (dayNo.has(o.event.id) ? `${t.name} D${dayNo.get(o.event.id)}` : t.name) : (o.project.name || t.name)).replace(/-/g, "\u2011")}
                   </span>
                 ) : (
                   <span key={k} style={{

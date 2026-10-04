@@ -6,7 +6,7 @@ import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
 import { sortEvents } from "../schedule/events.js";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { CalendarPanel } from "../calendar/CalendarPanel.jsx";
-import { DAY_HEIGHT, useWide, useWidth } from "../calendar/MonthGrid.jsx";
+import { DAY_HEIGHT, usePhone, useWidth } from "../calendar/MonthGrid.jsx";
 
 function nextEvent(project, today, types) {
   return sortEvents(project.events, types).find((s) => s.start && (s.end || s.start) >= today);
@@ -79,11 +79,13 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
   // Calendar and project list side by side only while the calendar's day
   // boxes stay clearly wider than tall; before they'd turn square, stack
   // them (calendar on top) instead.
-  const LIST_W = 320, GAP = 24;
+  // A phone held sideways also gets them side by side, with a narrower list.
+  const phone = usePhone();
+  const landscape = phone && window.innerWidth > window.innerHeight;
+  const LIST_W = landscape ? 240 : 320, GAP = landscape ? 14 : 24;
   const boxRef = useRef(null);
   const width = useWidth(boxRef);
-  const phone = !useWide(700);
-  const wide = !phone && (width - LIST_W - GAP) / 7 >= DAY_HEIGHT * 1.1;
+  const wide = phone ? landscape && width >= 560 : (width - LIST_W - GAP) / 7 >= DAY_HEIGHT * 1.1;
   const [creating, setCreating] = useState(false);
   const [q, setQ] = useState("");
   const today = todayStr();
