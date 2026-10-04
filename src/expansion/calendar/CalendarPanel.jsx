@@ -70,7 +70,7 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
                 type={typeOf(types, o.event.typeId)}
                 projectName={o.project.name}
                 dayLabel={o.dayCount > 1 ? `Day ${o.dayIndex + 1}/${o.dayCount}` : ""}
-                onClick={() => app.go({ screen: "project", projectId: o.projectId })}
+                onClick={() => app.go({ screen: "project", projectId: o.projectId, from: "calendar" })}
               />
             ))}
           </div>

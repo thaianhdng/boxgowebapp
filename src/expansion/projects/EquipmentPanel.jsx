@@ -19,7 +19,7 @@ export function EquipmentPanel({ app, list, hasShootEvents, onCreate }) {
 
   if (!list) {
     return (
-      <Section title="Equipment list">
+      <Section title="Equipment list" id="x-equipment">
         <div style={{ border: "1px dashed var(--border2)", borderRadius: 4, padding: 14 }}>
           <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 10 }}>
             No equipment list yet. {hasShootEvents
@@ -45,7 +45,7 @@ export function EquipmentPanel({ app, list, hasShootEvents, onCreate }) {
   ].filter(Boolean);
 
   return (
-    <Section title="Equipment list">
+    <Section title="Equipment list" id="x-equipment">
       <div style={{ border: "1px solid var(--border)", borderLeft: "3px solid var(--accent)", borderRadius: 4, padding: "10px 12px", background: "var(--surface)" }}>
         {lines.map(([k, v]) => (
           <div key={k} style={{ display: "flex", gap: 10, fontSize: 12.5, marginBottom: 4 }}>

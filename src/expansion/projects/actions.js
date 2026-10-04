@@ -21,7 +21,7 @@ export function projectActions(app, types) {
     // (tentative) Shooting events.
     create(info) {
       const id = newProjectId();
-      putProject(id, projectFromList({ ...info, createdAt: Date.now() }, types));
+      putProject(id, { ...projectFromList({ ...info, createdAt: Date.now() }, types), status: "softlock" });
       app.addHouses(info);
       return id;
     },

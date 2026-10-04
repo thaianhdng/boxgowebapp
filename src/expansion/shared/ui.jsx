@@ -66,3 +66,16 @@ export function Toggle({ options, value, onChange, style }) {
 }
 
 export const smallBtn = { padding: "3px 8px", fontSize: 11 };
+
+// One compact line of a pop-up form: a narrow label column on the left,
+// like BOXGO's Create New window.
+export function FieldRow({ label, children, top, width = 42 }) {
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: top ? "flex-start" : "center", marginBottom: 10 }}>
+      <span style={{ width, flexShrink: 0, fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em", paddingTop: top ? 7 : 0 }}>{label}</span>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", gap: 6, alignItems: "center" }}>{children}</div>
+    </div>
+  );
+}
+
+export const fieldInput = { fontSize: 13, padding: "6px 7px" };

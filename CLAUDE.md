@@ -66,15 +66,37 @@ Start of each conversation, the owner should say which one it is:
      owner-only rule.
    - Keep each expansion feature self-contained (its own files/folder in
      `src/expansion/`) so it can be promoted or removed cleanly later.
-   - How it's wired: the owner has two modules sharing one projects
-     database — **Calendar** (the expansion) and **Equipment** (v1.0
-     composer). BOXGO's header top row has a CALENDAR | EQUIPMENT switch
-     (instead of the "Equipment List Composer" caption). `EquipmentManifest`
-     starts on view `"x"` (Calendar): BOXGO's header (crumb CALENDAR /
-     <project>, Edit project, Settings,
-     one save tick) with `<Expansion part="screen">` under it (Projects
-     home = calendar of all projects + project list; Project page) and
-     `<Expansion part="crumb">` for the name. EQUIPMENT is the v1.0
+   - How it's wired: the owner has three modules sharing one projects
+     database — **Projects** and **Calendar** (the expansion) and
+     **Equipment** (v1.0 composer). BOXGO's header top row has a
+     PROJECTS | CALENDAR | EQUIPMENT switch (instead of the "Equipment List
+     Composer" caption; on the owner's phone the BOXGO wordmark hides and
+     the name shrinks so it fits). `EquipmentManifest` starts on view `"x"`,
+     route `{ screen: "projects" }`: BOXGO's header (crumb PROJECTS or
+     CALENDAR / <project>, Edit project, Settings, one save tick) with
+     `<Expansion part="screen">` under it — `screen` "projects" = Projects
+     home (search, Create New, status filter chips, projects grouped by
+     status; Done / Cancelled folded, remembered per device), "calendar" =
+     Calendar home (`calendar/CalendarHome.jsx`: search + full-width
+     calendar of every project, cancelled ones left out), "project" = the
+     Project page (`route.from = "calendar"` when opened from the Calendar,
+     so its crumb and switch stay on Calendar) — and
+     `<Expansion part="crumb">` for the name. **Project status**
+     (`projects/status.js`): the owner sets Soft lock / Confirmed /
+     Cancelled (`project.status`; new projects Soft lock); a Confirmed
+     project shows Shooting from its first shoot day to its last and Done
+     after. Projects without a status count as Done if their shoot days
+     are all past, else Soft lock. A Soft lock whose dates have passed gets
+     a "confirm or cancel?" warning. Setting Confirmed offers to confirm
+     all shoot days. Status is Project-only (not in the equipment list).
+     The Project page: jump bar (Calendar · Schedule · Equipment · Budget
+     · Files), status, info strip, calendar, schedule, equipment list,
+     **Budget** (`budget/`: `project.budget = { currency: VND|USD, lines:
+     [{ item, qty, rate, note }] }`, total) and **Files** (`files/`:
+     `project.files = [{ kind: script|treatment|recce|other, name, url }]`,
+     pasted links, open in a new tab; real Google Drive picking later).
+     Project cards show status and which parts exist (List, Budget,
+     Files). EQUIPMENT is the v1.0
      composer untouched, except the owner can tap the project name in its
      crumb to open the Project page. `<Expansion part="sync">` is always
      mounted for the owner (renders nothing): loads the store, reports
@@ -112,9 +134,9 @@ Start of each conversation, the owner should say which one it is:
      list; it shows greyed in Equipment's project list (`ghost: true`,
      reported via `app.reportGhosts`). Its list is created either from the
      Project page ("Create equipment list") or by tapping the greyed card
-     — both open Create New prefilled. Both modules' main pages start
+     — both open Create New prefilled. Projects' and Equipment's main pages start
      with the same search bar + Create New (phone: full-width button;
-     desktop: dashed card); Calendar's search also filters its calendar. Its colour key is tap-to-filter (tap event
+     desktop: dashed card); Calendar has the search bar only. Its colour key is tap-to-filter (tap event
      types to show only those; tap again to drop one). A Project with a list must
      keep at least one Shooting event. Schedule events: date or range,
      optional time, online/offline, note, confirmed per event. Calendars

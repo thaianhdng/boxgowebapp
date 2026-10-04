@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Section } from "../shared/ui.jsx";
+import { Section, Toggle } from "../shared/ui.jsx";
 import { monthKey, todayStr, wdm } from "../shared/dates.js";
 import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
 import { occurrences } from "../schedule/events.js";
@@ -9,7 +9,42 @@ import { InfoStrip } from "./InfoStrip.jsx";
 import { EquipmentPanel } from "./EquipmentPanel.jsx";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { listLike } from "./sync.js";
+import { SET_STATUSES, setStatus, staleSoftLock, statusInfo, statusOf } from "./status.js";
+import { BudgetSection } from "../budget/BudgetSection.jsx";
+import { FilesSection } from "../files/FilesSection.jsx";
 import { Trash2 } from "lucide-react";
+
+// Jump bar at the top of the page: each section of the job.
+const JUMPS = [["Calendar", "x-calendar"], ["Schedule", "x-schedule"], ["Equipment", "x-equipment"], ["Budget", "x-budget"], ["Files", "x-files"]];
+
+// Soft lock / Confirmed / Cancelled, set here; a Confirmed project shows
+// Shooting during its shoot days and Done after them.
+function StatusBar({ project, types, onChange }) {
+  const set = setStatus(project, types);
+  const shown = statusOf(project, types);
+  const auto = shown !== set && statusInfo(shown);
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <span className="stencil" style={{ fontSize: 11, color: "var(--muted)" }}>Status</span>
+        <Toggle
+          options={SET_STATUSES.map((id) => [id, statusInfo(id).name])}
+          value={set}
+          onChange={onChange}
+          style={{ flex: "0 1 340px", minWidth: 0 }}
+        />
+        {auto && (
+          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: auto.color }}>
+            {auto.id === "shooting" ? "● Shooting now" : "✓ Done"}
+          </span>
+        )}
+      </div>
+      {staleSoftLock(project, types) && (
+        <div style={{ fontSize: 11.5, color: "var(--accent)", marginTop: 6 }}>⚠ Its shoot dates have passed: confirm or cancel it?</div>
+      )}
+    </div>
+  );
+}
 
 // Which month the project's calendar opens on: the month of its next
 // event from today, else its last one, else this month.
@@ -37,18 +72,45 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
     if (intent === "edit") { setShowInfo(true); app.clearIntent(); }
   }, [intent, app.route.t]);
 
-  const occ = useMemo(() => occurrences(allProjects, types), [allProjects, types]);
+  // Other projects' events show greyed in this calendar, except cancelled ones.
+  const occ = useMemo(() => occurrences(
+    Object.fromEntries(Object.entries(allProjects).filter(([pid, p]) => pid === id || statusOf(p, types) !== "cancelled")),
+    types,
+  ), [allProjects, types, id]);
+
+  function changeStatus(status) {
+    const tentativeShoots = (project.events || []).some((s) => s.typeId === shootTypeId(types) && !s.confirmed);
+    if (status === "confirmed" && tentativeShoots && window.confirm("Also mark all shoot days as confirmed?")) {
+      update({ status, events: (project.events || []).map((s) => (s.typeId === shootTypeId(types) ? { ...s, confirmed: true } : s)) });
+    } else update({ status });
+  }
   const onSel = selDate ? occ.filter((o) => o.date === selDate) : [];
 
   return (
     <div>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 12 }}>
+        {JUMPS.map(([label, target]) => (
+          <button
+            key={target}
+            type="button"
+            className="stencil"
+            onClick={() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, letterSpacing: "0.06em", color: "var(--muted)" }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <StatusBar project={project} types={types} onChange={changeStatus} />
+
       <InfoStrip
         project={project}
         onEditInfo={() => setShowInfo(true)}
         onNotesChange={(notes) => update({ notes })}
       />
 
-      <Section title="Calendar">
+      <Section title="Calendar" id="x-calendar">
         <MonthHeader month={month} onChange={(m) => { setMonth(m); setSelDate(null); }} />
         <MonthGrid month={month} occ={occ} types={types} focusProjectId={id} compact selected={selDate} onSelect={setSelDate} />
         <div style={{ marginTop: 6 }}>
@@ -67,7 +129,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
                 <div
                   key={i}
                   className="row"
-                  onClick={() => (mine ? setEventRequest({ event: o.event, n: Date.now() }) : app.go({ screen: "project", projectId: o.projectId }))}
+                  onClick={() => (mine ? setEventRequest({ event: o.event, n: Date.now() }) : app.go({ screen: "project", projectId: o.projectId, from: app.route.from }))}
                   style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center", padding: "4px 2px", cursor: "pointer", opacity: o.event.confirmed ? 1 : 0.55 }}
                 >
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: mine ? t.color : "var(--muted2)", flexShrink: 0 }} />
@@ -107,17 +169,21 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         onCreate={() => setCreatingList(true)}
       />
 
+      <BudgetSection budget={project.budget} onChange={(budget) => update({ budget })} />
+
+      <FilesSection files={project.files} onChange={(files) => update({ files })} />
+
       <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14, marginTop: 6 }}>
         <button
           className="btn btn-ghost"
           style={{ padding: "3px 8px", fontSize: 11, color: "var(--danger)" }}
           onClick={() => {
             const msg = list
-              ? `Delete "${project.name}" — its schedule, people and its equipment list? This can't be undone.`
-              : `Delete "${project.name}" — its schedule and people? This can't be undone.`;
+              ? `Delete "${project.name}" — its schedule, budget, files and its equipment list? This can't be undone.`
+              : `Delete "${project.name}" — its schedule, budget and files? This can't be undone.`;
             if (!window.confirm(msg)) return;
             actions.remove(id);
-            app.go({ screen: "projects" });
+            app.go({ screen: app.route.from === "calendar" ? "calendar" : "projects" });
           }}
         >
           <Trash2 size={12} /> Delete project

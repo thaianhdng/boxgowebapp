@@ -13,8 +13,11 @@
 //                             equipment list in step (projects/sync.js)
 //   <Expansion part="crumb">  the project's name in the breadcrumb
 //                             (PROJECTS / HONDA TVC)
-//   <Expansion part="screen"> under BOXGO's header: the Projects home
-//                             (calendar + projects) and each Project page
+//   <Expansion part="screen"> under BOXGO's header, by app.route.screen:
+//                             "projects" the Projects home (every project
+//                             by status), "calendar" the Calendar (every
+//                             project's events), "project" a Project page
+//                             (route.from = "calendar" when opened there)
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -23,6 +26,7 @@ import { projectActions } from "./projects/actions.js";
 import { listLike, projectFromList, projectWithList, splitShootRanges } from "./projects/sync.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
 import { ProjectPage } from "./projects/ProjectPage.jsx";
+import { CalendarHome } from "./calendar/CalendarHome.jsx";
 import { EventTypesModal } from "./schedule/EventTypesModal.jsx";
 
 export default function Expansion({ app, part }) {
@@ -140,8 +144,10 @@ function Screen({ app }) {
         onManageTypes={() => setShowTypes(true)}
       />
     );
+  } else if (screen === "calendar") {
+    body = <CalendarHome app={app} projects={x.projects} types={types} onManageTypes={() => setShowTypes(true)} />;
   } else {
-    body = <ProjectsHome app={app} projects={x.projects} types={types} actions={actions} onManageTypes={() => setShowTypes(true)} />;
+    body = <ProjectsHome app={app} projects={x.projects} types={types} actions={actions} />;
   }
 
   return (

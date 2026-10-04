@@ -1493,6 +1493,9 @@ export default function EquipmentManifest({ session }) {
   // composer works exactly as in v1.0; each list is linked to a Project
   // (same id) and the expansion keeps their shared details in step both
   // ways (<Expansion part="sync">). Null for everyone else.
+  // Which of the owner's modules is showing: a Project page opened from
+  // the Calendar stays under Calendar (its crumb leads back there).
+  const xModule = xRoute.screen === "calendar" || xRoute.from === "calendar" ? "calendar" : "projects";
   function goX(route) {
     setXRoute({ ...route, t: Date.now() });
     setActiveProjectId(null);
@@ -1645,6 +1648,7 @@ export default function EquipmentManifest({ session }) {
         .pop-item { background: transparent; }
         .pop-item:hover { background: var(--surface2); }
         .new-project-row-btn { display: none; }
+        @media (max-width: 600px) { .hdr-wordmark-x { display: none; } .hdr-name-x { font-size: 12px !important; } }
         .back-to-top-btn { display: none !important; }
         .category-fab { display: none !important; }
         .category-fab-menu { display: none !important; }
@@ -1690,16 +1694,21 @@ export default function EquipmentManifest({ session }) {
             padding: "12px 20px", borderBottom: "2px solid var(--border)",
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, ...(isCatalogOwner ? { flexShrink: 0 } : {}) }}>
                 <Logo size={20} />
-                <span className="stencil" style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
+                {/* The owner's phone: the logo alone, to leave room for three modules. */}
+                <span className={isCatalogOwner ? "stencil hdr-wordmark-x" : "stencil"} style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
                   BOXGO
                 </span>
                 {isCatalogOwner ? (
-                  // The owner's two modules, sharing one projects database: Calendar (src/expansion/) and
-                  // the equipment list composer, which works exactly as v1.0.
+                  // The owner's three modules, sharing one projects database: Projects and Calendar
+                  // (src/expansion/), and the equipment list composer, which works exactly as v1.0.
                   <span style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 2 }}>
-                    {[["Calendar", view === "x", () => goX({ screen: "projects" })], ["Equipment", view !== "x", () => { setActiveProjectId(null); setView("projects"); }]].map(([label, on, go], i) => (
+                    {[
+                      ["Projects", view === "x" && xModule === "projects", () => goX({ screen: "projects" })],
+                      ["Calendar", view === "x" && xModule === "calendar", () => goX({ screen: "calendar" })],
+                      ["Equipment", view !== "x", () => { setActiveProjectId(null); setView("projects"); }],
+                    ].map(([label, on, go], i) => (
                       <span key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         {i > 0 && <span style={{ color: "var(--border2)", fontSize: 10 }}>|</span>}
                         <button
@@ -1718,8 +1727,9 @@ export default function EquipmentManifest({ session }) {
                   </span>
                 )}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, ...(isCatalogOwner ? { minWidth: 0 } : {}) }}>
                 <input
+                  className={isCatalogOwner ? "hdr-name-x" : undefined}
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="+ Add your name"
@@ -1740,14 +1750,14 @@ export default function EquipmentManifest({ session }) {
               <div className="hdr-crumb" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                 <button
                   className="stencil"
-                  onClick={() => (view === "x" ? goX({ screen: "projects" }) : (setActiveProjectId(null), setView("projects")))}
+                  onClick={() => (view === "x" ? goX({ screen: xModule }) : (setActiveProjectId(null), setView("projects")))}
                   style={{
                     background: "none", border: "none", cursor: "pointer", padding: 0, whiteSpace: "nowrap", flexShrink: 0,
                     fontSize: 15, letterSpacing: "0.08em",
                     color: view === "projects" || (view === "x" && xRoute.screen !== "project") ? "var(--accent)" : "var(--text)",
                   }}
                 >
-                  {view === "x" ? "Calendar" : "Project Manager"}
+                  {view === "x" ? (xModule === "calendar" ? "Calendar" : "Projects") : "Project Manager"}
                 </button>
                 {view === "x" && xRoute.screen === "project" && (
                   <>
@@ -1764,7 +1774,7 @@ export default function EquipmentManifest({ session }) {
                       className="stencil"
                       // The owner can tap the name to open this job's Project page.
                       onClick={isCatalogOwner ? () => goX({ screen: "project", projectId: activeProjectId }) : undefined}
-                      title={isCatalogOwner ? "Open this project's page (schedule, people, calendar)" : undefined}
+                      title={isCatalogOwner ? "Open this project's page (status, schedule, budget, files)" : undefined}
                       style={{
                         fontSize: 15, display: "flex", alignItems: "center", gap: 6,
                         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200,
