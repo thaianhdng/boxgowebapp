@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Palette } from "lucide-react";
 import { MONTHS, monthKey, todayStr, wdm } from "../shared/dates.js";
 import { typeOf } from "../schedule/eventTypes.js";
 import { occurrences } from "../schedule/events.js";
@@ -13,7 +12,11 @@ import { MonthGrid, MonthHeader, MonthKey, clashDates } from "./MonthGrid.jsx";
 export function CalendarPanel({ app, projects, types, onManageTypes }) {
   const [month, setMonth] = useState(() => monthKey(todayStr()));
   const [selDate, setSelDate] = useState(null);
-  const occ = useMemo(() => occurrences(projects, types), [projects, types]);
+  const allOcc = useMemo(() => occurrences(projects, types), [projects, types]);
+  // Tapping event types in the key shows only those (empty = all).
+  const [typeFilter, setTypeFilter] = useState(() => new Set());
+  const toggleType = (id) => setTypeFilter((f) => { const n = new Set(f); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const occ = useMemo(() => (typeFilter.size ? allOcc.filter((o) => typeFilter.has(o.event.typeId)) : allOcc), [allOcc, typeFilter]);
   const clashes = useMemo(() => clashDates(occ), [occ]);
 
   const today = todayStr();
@@ -39,13 +42,12 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
         right={
           <>
             <button className="btn btn-ghost" style={{ padding: "4px 8px", fontSize: 11 }} onClick={() => { setMonth(monthKey(todayStr())); setSelDate(null); }}>Today</button>
-            <button className="btn btn-ghost" style={{ padding: "4px 8px", fontSize: 11 }} onClick={onManageTypes} aria-label="Event types"><Palette size={12} /></button>
           </>
         }
       />
       <MonthGrid month={month} occ={occ} types={types} selected={selDate} onSelect={setSelDate} />
       <div style={{ marginTop: 6, marginBottom: 16 }}>
-        <MonthKey month={month} occ={occ} types={types} />
+        <MonthKey month={month} occ={allOcc} types={types} filter={typeFilter} onToggle={toggleType} onEditColours={onManageTypes} />
       </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, minHeight: 24 }}>
