@@ -114,15 +114,7 @@ Start of each conversation, the owner should say which one it is:
      Project page ("Create equipment list") or by tapping the greyed card
      — both open Create New prefilled. Both modules' main pages start
      with the same search bar + Create New (phone: full-width button;
-     desktop: dashed card); Calendar's search also filters its calendar. Calendar home layout:
-     calendar + project column side by side when day boxes stay wider than
-     tall (or on a sideways phone); otherwise a Calendar | Projects switch
-     (remembered per device) and a compact "+ New" beside the search. Under
-     the calendar: an always-visible event list (rest of this month / a
-     whole other month / the tapped day), and a key whose event types are
-     tap-to-filter, with "✎ Colours" for Event types. These four were added
-     as separate commits ("Calendar home (1/4)…(4/4)") so any can be
-     reverted on its own. A Project with a list must
+     desktop: dashed card); Calendar's search also filters its calendar. A Project with a list must
      keep at least one Shooting event. Schedule events: date or range,
      optional time, online/offline, note, confirmed per event. Calendars
      colour by event type; tentative is faded; Google Calendar (not built
