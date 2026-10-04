@@ -5,6 +5,9 @@ import { typeOf } from "../schedule/eventTypes.js";
 
 const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
 
+// Grid line for days outside the month shown: the normal line, faded.
+const FAINT_LINE = "color-mix(in srgb, var(--border) 35%, transparent)";
+
 // Height of a day box on the all-projects calendar on wider screens.
 export const DAY_HEIGHT = 86;
 
@@ -146,13 +149,18 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
               style={{
                 position: "relative", minWidth: 0, ...cellSize, padding: "3px 3px 4px", textAlign: "left",
                 display: "flex", flexDirection: "column", gap: 2, cursor: "pointer", fontFamily: "inherit",
-                border: "none", borderTop: "1px solid var(--border)", borderLeft: i % 7 ? "1px solid var(--border)" : "none",
+                // Days of other months have faint lines. The current month's
+                // days also draw their right / bottom edge over a faint
+                // neighbour's line, so each of them stays a complete box.
+                border: "none",
+                borderTop: `1px solid ${inMonth ? "var(--border)" : FAINT_LINE}`,
+                borderLeft: i % 7 ? `1px solid ${inMonth ? "var(--border)" : FAINT_LINE}` : "none",
+                ...(inMonth ? { zIndex: 1, boxShadow: "1px 0 0 var(--border), 0 1px 0 var(--border)" } : {}),
                 background: isSel ? "var(--surface2)" : "transparent",
                 outline: isSel ? "2px solid var(--accent)" : "none", outlineOffset: -2,
               }}
             >
-              {/* Days of the next / previous month are faded, but not their
-                  grid lines, so the current month's boxes stay complete. */}
+              {/* Days of the next / previous month: contents faded too. */}
               <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, opacity: inMonth ? 1 : 0.35 }}>
               <span style={{
                 fontSize: 11, fontWeight: 700, lineHeight: "16px", width: 18, height: 16, textAlign: "center", borderRadius: 3,
