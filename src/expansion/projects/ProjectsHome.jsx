@@ -154,7 +154,7 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
       </button>
 
       {wide ? (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)", gap: 28, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px", gap: 24, alignItems: "start" }}>
           {calendar}
           {list}
         </div>
