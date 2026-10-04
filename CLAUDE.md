@@ -80,24 +80,24 @@ Start of each conversation, the owner should say which one it is:
      mounted for the owner (renders nothing): loads the store, reports
      save state (`app.reportSaveState`) and runs the list → Project link.
      Data: `x_projects` (id = the list's `projects.id`) and `x_settings`
-     (step types), SQL in `supabase/004_…`, loaded and saved by
+     (event types), SQL in `supabase/004_…`, loaded and saved by
      `src/expansion/store.js`. `src/expansion/projects/sync.js` is the only
      bridge: Project edits push into the list (`equipmentPatch`, from
      `projects/actions.js`); list changes pull into the Project
      (`projectWithList`, from the sync part). **Shoot dates are the
-     fundamental detail of a project:** one Shooting step per shoot day
-     (single date, location, type of shooting in `step.label`), exactly
+     fundamental detail of a project:** one Shooting event per shoot day
+     (single date, location, type of shooting in `event.label`), exactly
      one-to-one with the list's days (same ids; `label` ↔ `projectLabel`);
-     non-consecutive days are just separate steps. Older multi-day
-     Shooting steps are split into days (ids `<id>`, `<id>~1`…) by
+     non-consecutive days are just separate events. Older multi-day
+     Shooting events are split into days (ids `<id>`, `<id>~1`…) by
      `splitShootRanges`. Shoot days are added / changed **only** in the
-     project's Create New / Edit window (the step window has no Shooting
+     project's Create New / Edit window (the event window has no Shooting
      type; tapping a shoot day opens Edit project; its Tentative /
      Confirmed switch still works in the schedule). A project's own
-     calendar names each day's step (shoot days as "Shooting D1"…). The
-     schedule lists every shoot day on its own line (D1, D2…). Steps are
-     always ordered date → time (all-day first) → the Step types list
-     order → order added (`compareSteps` in `schedule/steps.js`). Times
+     calendar names each day's event (shoot days as "Shooting D1"…). The
+     schedule lists every shoot day on its own line (D1, D2…). Events are
+     always ordered date → time (all-day first) → the Event types list
+     order → order added (`compareEvents` in `schedule/events.js`). Times
      are picked as hour : minute in 5-minute steps. The People feature is
      removed for now: a project's Producer / Gaffer (set in Create New /
      Edit) still live in `people` and show in the info strip. New shoot days (from
@@ -115,10 +115,14 @@ Start of each conversation, the owner should say which one it is:
      — both open Create New prefilled. Both modules' main pages start
      with the same search bar + Create New (phone: full-width button;
      desktop: dashed card); Calendar's search also filters its calendar. A Project with a list must
-     keep at least one Shooting step. Schedule steps: date or range,
-     optional time, online/offline, note, confirmed per step. Calendars
-     colour by step type; tentative is faded; Google Calendar (not built
-     yet) should get confirmed steps only.
+     keep at least one Shooting event. Schedule events: date or range,
+     optional time, online/offline, note, confirmed per event. Calendars
+     colour by event type; tentative is faded; Google Calendar (not built
+     yet) should get confirmed events only.
+   - **Naming:** a schedule item is an **event** (UI and code: `events`,
+     `EventModal`, `eventTypes`, "+ Add event", "Event types"). Data saved
+     before the rename used `steps` (project) / `stepTypes` (settings);
+     `store.js` reads those and re-saves them under the new names.
 
 ## Architecture
 

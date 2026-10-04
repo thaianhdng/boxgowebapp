@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MONTHS, parse, toStr, todayStr } from "../shared/dates.js";
-import { typeOf } from "../schedule/stepTypes.js";
+import { typeOf } from "../schedule/eventTypes.js";
 
 const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -49,7 +49,7 @@ function gridDates(month) {
   return out;
 }
 
-// A day has a clash when steps from two or more projects fall on it.
+// A day has a clash when events from two or more projects fall on it.
 export function clashDates(occ) {
   const byDate = new Map();
   for (const o of occ) {
@@ -59,8 +59,8 @@ export function clashDates(occ) {
   return new Set([...byDate].filter(([, s]) => s.size > 1).map(([d]) => d));
 }
 
-// occ: occurrences (see schedule/steps.js). With `focusProjectId` (a
-// project's own calendar), that project's steps are named in each day —
+// occ: occurrences (see schedule/events.js). With `focusProjectId` (a
+// project's own calendar), that project's events are named in each day —
 // shoot days as D1, D2… like the equipment list — and other projects show
 // as a grey dot.
 export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectId, compact }) {
@@ -79,7 +79,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
   // Shoot day numbers for the focused project, in date order.
   const shootIds = new Set(types.filter((t) => t.shoot).map((t) => t.id));
   const dayNo = new Map(
-    [...new Map(occ.filter((o) => o.projectId === focusProjectId && shootIds.has(o.step.typeId)).map((o) => [o.step.id, o.date])).entries()]
+    [...new Map(occ.filter((o) => o.projectId === focusProjectId && shootIds.has(o.event.typeId)).map((o) => [o.event.id, o.date])).entries()]
       .sort((a, b) => a[1].localeCompare(b[1]))
       .map(([sid], i) => [sid, i + 1]),
   );
@@ -123,8 +123,8 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                 <span title="Clash: more than one project on this day" style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7, borderRadius: "50%", background: "var(--danger)" }} />
               )}
               {mine.slice(0, maxBars).map((o, k) => {
-                const t = typeOf(types, o.step.typeId);
-                const faded = !o.step.confirmed;
+                const t = typeOf(types, o.event.typeId);
+                const faded = !o.event.confirmed;
                 return showLabels ? (
                   <span key={k} title={t.name} style={{
                     fontSize: named && !wide ? 8 : 10, fontWeight: 700, lineHeight: named && !wide ? "10px" : "14px",
@@ -137,7 +137,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                     background: faded ? "transparent" : t.color, color: faded ? t.color : "#111",
                     border: `1px ${faded ? "dashed" : "solid"} ${t.color}`, opacity: faded ? 0.75 : 1,
                   }}>
-                    {named ? (dayNo.has(o.step.id) ? `${t.name} D${dayNo.get(o.step.id)}` : t.name).replace(/-/g, "\u2011") : (o.project.name || t.name)}
+                    {named ? (dayNo.has(o.event.id) ? `${t.name} D${dayNo.get(o.event.id)}` : t.name).replace(/-/g, "\u2011") : (o.project.name || t.name)}
                   </span>
                 ) : (
                   <span key={k} style={{
@@ -160,12 +160,12 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
   );
 }
 
-// A one-line key under a calendar: only the step types on screen this
+// A one-line key under a calendar: only the event types on screen this
 // month, plus tentative / other project / clash when they appear.
 export function MonthKey({ month, occ, types, focusProjectId }) {
   const inMonth = occ.filter((o) => o.date.startsWith(month));
   const mine = focusProjectId ? inMonth.filter((o) => o.projectId === focusProjectId) : inMonth;
-  const used = types.filter((t) => mine.some((o) => o.step.typeId === t.id));
+  const used = types.filter((t) => mine.some((o) => o.event.typeId === t.id));
   const clashes = clashDates(inMonth);
   const hasClash = focusProjectId ? mine.some((o) => clashes.has(o.date)) : clashes.size > 0;
   const item = (key, swatch, label) => (
@@ -173,7 +173,7 @@ export function MonthKey({ month, occ, types, focusProjectId }) {
   );
   const items = [
     ...used.map((t) => item(t.id, <span style={{ width: 8, height: 8, borderRadius: 2, background: t.color }} />, t.name)),
-    mine.some((o) => !o.step.confirmed) && item("tent", <span style={{ width: 8, height: 8, borderRadius: 2, border: "1px dashed var(--muted)" }} />, "tentative"),
+    mine.some((o) => !o.event.confirmed) && item("tent", <span style={{ width: 8, height: 8, borderRadius: 2, border: "1px dashed var(--muted)" }} />, "tentative"),
     focusProjectId && inMonth.some((o) => o.projectId !== focusProjectId) && item("other", <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--muted2)" }} />, "other project"),
     hasClash && item("clash", <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--danger)" }} />, "clash"),
   ].filter(Boolean);

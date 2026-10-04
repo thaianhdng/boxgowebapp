@@ -15,16 +15,16 @@ const label = { width: 62, flexShrink: 0, fontSize: 10, fontWeight: 700, color: 
 
 // The project's equipment list, as a summary, with a way into the
 // Equipment List Composer — or a button to start one.
-export function EquipmentPanel({ app, list, hasShootSteps, onCreate }) {
+export function EquipmentPanel({ app, list, hasShootEvents, onCreate }) {
 
   if (!list) {
     return (
       <Section title="Equipment list">
         <div style={{ border: "1px dashed var(--border2)", borderRadius: 4, padding: 14 }}>
           <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 10 }}>
-            No equipment list yet. {hasShootSteps
-              ? "Its shoot days start from this project's Shooting steps."
-              : "Its shoot days become Shooting steps in this project's schedule."}
+            No equipment list yet. {hasShootEvents
+              ? "Its shoot days start from this project's Shooting events."
+              : "Its shoot days become Shooting events in this project's schedule."}
           </div>
           <button className="btn btn-primary" onClick={onCreate}><Plus size={13} /> Create equipment list</button>
         </div>

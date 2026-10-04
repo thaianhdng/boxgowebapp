@@ -1,13 +1,13 @@
 import { MapPin, Video } from "lucide-react";
 import { wdm } from "../shared/dates.js";
-import { stepDays } from "./steps.js";
+import { eventDays } from "./events.js";
 
-export function stepWhen(step) {
-  if (!step.start) return "Date TBC";
-  const days = stepDays(step).length;
-  let s = wdm(step.start);
-  if (days > 1) s += ` → ${wdm(step.end)} · ${days} days`;
-  if (step.time) s += ` · ${step.time}${step.endTime ? `–${step.endTime}` : ""}`;
+export function eventWhen(event) {
+  if (!event.start) return "Date TBC";
+  const days = eventDays(event).length;
+  let s = wdm(event.start);
+  if (days > 1) s += ` → ${wdm(event.end)} · ${days} days`;
+  if (event.time) s += ` · ${event.time}${event.endTime ? `–${event.endTime}` : ""}`;
   return s;
 }
 
@@ -24,13 +24,13 @@ export function linkIn(text) {
 
 const isMapsLink = (url) => /(maps\.google\.|google\.[a-z.]+\/maps|goo\.gl\/maps|maps\.app\.goo\.gl)/i.test(url);
 
-// One schedule step. `projectName` is shown on the all-projects calendar.
+// One schedule event. `projectName` is shown on the all-projects calendar.
 // A MAP button shows when the location / link field holds a Google Maps
 // link, LINK for any other link; plain text gets no button. `hideLinks`
 // drops it.
-export function StepRow({ step, type, projectName, dayLabel, hideLinks, onClick, onToggleConfirmed }) {
-  const faded = !step.confirmed;
-  const where = step.mode === "online" ? step.link : step.location;
+export function EventRow({ event, type, projectName, dayLabel, hideLinks, onClick, onToggleConfirmed }) {
+  const faded = !event.confirmed;
+  const where = event.mode === "online" ? event.link : event.location;
   const href = linkIn(where);
   return (
     <div
@@ -50,14 +50,14 @@ export function StepRow({ step, type, projectName, dayLabel, hideLinks, onClick,
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
           <span style={{ fontSize: 13, fontWeight: 800, color: type.color }}>{type.name}</span>
           {dayLabel && <span style={{ fontSize: 11, color: "var(--muted)" }}>{dayLabel}</span>}
-          {step.label && <span style={{ fontSize: 11.5, color: "var(--text)", fontWeight: 600 }}>{step.label}</span>}
+          {event.label && <span style={{ fontSize: 11.5, color: "var(--text)", fontWeight: 600 }}>{event.label}</span>}
           {projectName && <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{projectName}</span>}
         </div>
-        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>{stepWhen(step)}</div>
-        {(where || step.mode === "online") && (
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>{eventWhen(event)}</div>
+        {(where || event.mode === "online") && (
           <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 4, minWidth: 0 }}>
-            {step.mode === "online" ? <Video size={12} style={{ flexShrink: 0 }} /> : <MapPin size={12} style={{ flexShrink: 0 }} />}
-            {step.mode === "online" && !step.link && <span>Online</span>}
+            {event.mode === "online" ? <Video size={12} style={{ flexShrink: 0 }} /> : <MapPin size={12} style={{ flexShrink: 0 }} />}
+            {event.mode === "online" && !event.link && <span>Online</span>}
             {where && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{where}</span>}
             {href && !hideLinks && (
               <a
@@ -72,7 +72,7 @@ export function StepRow({ step, type, projectName, dayLabel, hideLinks, onClick,
             )}
           </div>
         )}
-        {step.note && <div style={{ fontSize: 12, color: "var(--text)", marginTop: 4, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{step.note}</div>}
+        {event.note && <div style={{ fontSize: 12, color: "var(--text)", marginTop: 4, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{event.note}</div>}
       </div>
       {onToggleConfirmed && (
         <button

@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { Palette } from "lucide-react";
 import { monthKey, todayStr, wdm } from "../shared/dates.js";
-import { typeOf } from "../schedule/stepTypes.js";
-import { occurrences } from "../schedule/steps.js";
-import { StepRow } from "../schedule/StepRow.jsx";
+import { typeOf } from "../schedule/eventTypes.js";
+import { occurrences } from "../schedule/events.js";
+import { EventRow } from "../schedule/EventRow.jsx";
 import { MonthGrid, MonthHeader, MonthKey, clashDates } from "./MonthGrid.jsx";
 
-// Every step of every project on one calendar, coloured by step type,
-// tentative ones faded, and clashes marked. Tap a day for its steps, or
+// Every event of every project on one calendar, coloured by event type,
+// tentative ones faded, and clashes marked. Tap a day for its events, or
 // list the whole month.
 export function CalendarPanel({ app, projects, types, onManageTypes }) {
   const [month, setMonth] = useState(() => monthKey(todayStr()));
@@ -32,7 +32,7 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
         right={
           <>
             <button className="btn btn-ghost" style={{ padding: "4px 8px", fontSize: 11 }} onClick={() => { setMonth(monthKey(todayStr())); setSelDate(null); }}>Today</button>
-            <button className="btn btn-ghost" style={{ padding: "4px 8px", fontSize: 11 }} onClick={onManageTypes} aria-label="Step types"><Palette size={12} /></button>
+            <button className="btn btn-ghost" style={{ padding: "4px 8px", fontSize: 11 }} onClick={onManageTypes} aria-label="Event types"><Palette size={12} /></button>
           </>
         }
       />
@@ -60,10 +60,10 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
           </div>
           <div style={{ borderTop: "1px solid var(--border)" }}>
             {items.map((o, i) => (
-              <StepRow
-                key={`${o.projectId}-${o.step.id}-${i}`}
-                step={o.step}
-                type={typeOf(types, o.step.typeId)}
+              <EventRow
+                key={`${o.projectId}-${o.event.id}-${i}`}
+                event={o.event}
+                type={typeOf(types, o.event.typeId)}
                 projectName={o.project.name}
                 dayLabel={o.dayCount > 1 ? `Day ${o.dayIndex + 1}/${o.dayCount}` : ""}
                 onClick={() => app.go({ screen: "project", projectId: o.projectId })}

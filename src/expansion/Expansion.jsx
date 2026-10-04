@@ -18,12 +18,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { useXStore, load, refresh, putProject, setStepTypes, getState } from "./store.js";
+import { useXStore, load, refresh, putProject, setEventTypes, getState } from "./store.js";
 import { projectActions } from "./projects/actions.js";
 import { listLike, projectFromList, projectWithList, splitShootRanges } from "./projects/sync.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
 import { ProjectPage } from "./projects/ProjectPage.jsx";
-import { StepTypesModal } from "./schedule/StepTypesModal.jsx";
+import { EventTypesModal } from "./schedule/EventTypesModal.jsx";
 
 export default function Expansion({ app, part }) {
   if (part === "sync") return <Sync app={app} />;
@@ -44,7 +44,7 @@ function Crumb({ app }) {
 
 function Sync({ app }) {
   const x = useXStore();
-  const types = x.settings.stepTypes;
+  const types = x.settings.eventTypes;
   const checked = useRef(new Map()); // list id -> [list, project] last compared
 
   useEffect(() => {
@@ -78,13 +78,13 @@ function Sync({ app }) {
     }
   }, [x.status, app.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Older Projects could have a multi-day Shooting step: split it into one
-  // Shooting step per day (lists' day ids are unchanged by this).
+  // Older Projects could have a multi-day Shooting event: split it into one
+  // Shooting event per day (lists' day ids are unchanged by this).
   useEffect(() => {
     if (x.status !== "ready") return;
     for (const [id, p] of Object.entries(x.projects)) {
-      const steps = splitShootRanges(p.steps, types);
-      if (steps) putProject(id, { ...p, steps });
+      const events = splitShootRanges(p.events, types);
+      if (events) putProject(id, { ...p, events });
     }
   }, [x.status, x.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -104,7 +104,7 @@ function Sync({ app }) {
 function Screen({ app }) {
   const x = useXStore();
   const [showTypes, setShowTypes] = useState(false);
-  const types = x.settings.stepTypes;
+  const types = x.settings.eventTypes;
   const actions = useMemo(() => projectActions(app, types), [app, types]);
   const { screen, projectId, intent } = app.route;
 
@@ -112,7 +112,7 @@ function Screen({ app }) {
 
   const usage = useMemo(() => {
     const u = {};
-    for (const p of Object.values(x.projects)) for (const s of p.steps || []) u[s.typeId] = (u[s.typeId] || 0) + 1;
+    for (const p of Object.values(x.projects)) for (const s of p.events || []) u[s.typeId] = (u[s.typeId] || 0) + 1;
     return u;
   }, [x.projects]);
 
@@ -151,7 +151,7 @@ function Screen({ app }) {
         {body}
       </main>
       {showTypes && (
-        <StepTypesModal types={types} usage={usage} onChange={setStepTypes} onClose={() => setShowTypes(false)} />
+        <EventTypesModal types={types} usage={usage} onChange={setEventTypes} onClose={() => setShowTypes(false)} />
       )}
     </>
   );

@@ -3,29 +3,29 @@ import { Plus, Search } from "lucide-react";
 import { Logo } from "../../components/Logo.jsx";
 import { todayStr, wdm } from "../shared/dates.js";
 import { formatShootDateRange } from "../../lib/utils.js";
-import { typeOf, shootTypeId } from "../schedule/stepTypes.js";
-import { sortSteps } from "../schedule/steps.js";
+import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
+import { sortEvents } from "../schedule/events.js";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { CalendarPanel } from "../calendar/CalendarPanel.jsx";
 import { useWide } from "../calendar/MonthGrid.jsx";
 
-function nextStep(project, today, types) {
-  return sortSteps(project.steps, types).find((s) => s.start && (s.end || s.start) >= today);
+function nextEvent(project, today, types) {
+  return sortEvents(project.events, types).find((s) => s.start && (s.end || s.start) >= today);
 }
 
 // A project's shoot dates, sorted — the headline of every project.
 function shootDates(project, types) {
   const shootId = shootTypeId(types);
-  return (project.steps || []).filter((s) => s.typeId === shootId && s.start).map((s) => s.start).sort();
+  return (project.events || []).filter((s) => s.typeId === shootId && s.start).map((s) => s.start).sort();
 }
 
 function ProjectCard({ project, types, today, hasList, onOpen }) {
-  const next = nextStep(project, today, types);
+  const next = nextEvent(project, today, types);
   const nextType = next && typeOf(types, next.typeId);
   const dates = shootDates(project, types);
   const range = formatShootDateRange(dates.map((date) => ({ date })));
-  const tentative = (project.steps || []).filter((s) => !s.confirmed && s.start).length;
-  const typeIds = [...new Set(sortSteps(project.steps, types).map((s) => s.typeId))];
+  const tentative = (project.events || []).filter((s) => !s.confirmed && s.start).length;
+  const typeIds = [...new Set(sortEvents(project.events, types).map((s) => s.typeId))];
   return (
     <div
       onClick={onOpen}
@@ -75,7 +75,7 @@ function arrange(entries, today, types) {
   return [["No shoot dates", undated], ["Upcoming", upcoming], ["Past", past]].filter(([, l]) => l.length);
 }
 
-// The owner's home: every project's steps on one calendar, and the list
+// The owner's home: every project's events on one calendar, and the list
 // of projects. Side by side on a wide screen, calendar first on a phone.
 export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
   const wide = useWide(1000);

@@ -4,8 +4,8 @@ import { Modal, Toggle } from "../shared/ui.jsx";
 import { uid } from "../../lib/utils.js";
 import { addDays, todayStr } from "../shared/dates.js";
 
-// A new step starts today; its type is picked in the window.
-export function newStep(typeId, start = todayStr()) {
+// A new event starts today; its type is picked in the window.
+export function newEvent(typeId, start = todayStr()) {
   return { id: uid(), typeId, start, end: "", time: "", endTime: "", mode: "offline", location: "", link: "", note: "", confirmed: false };
 }
 
@@ -26,7 +26,7 @@ const pad = (n) => String(n).padStart(2, "0");
 const HOURS = Array.from({ length: 24 }, (_, i) => pad(i));
 const MINUTES = Array.from({ length: 12 }, (_, i) => pad(i * 5));
 
-// Hour : minute pickers, minutes in 5-minute steps ("HH:MM"). A time saved
+// Hour : minute pickers, minutes in 5-minute events ("HH:MM"). A time saved
 // earlier on another minute keeps that minute in the list. `optional` adds
 // "--" for no time (the end time).
 function TimePick({ value, onChange, optional }) {
@@ -47,13 +47,13 @@ function TimePick({ value, onChange, optional }) {
   );
 }
 
-// For every step except shoot days: those are set in the project's Create
-// New / Edit window, like the equipment list's days. onSave gets [step].
-export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) {
+// For every event except shoot days: those are set in the project's Create
+// New / Edit window, like the equipment list's days. onSave gets [event].
+export function EventModal({ initial, isNew, types, onSave, onDelete, onClose }) {
   const [s, setS] = useState(initial);
   const [multi, setMulti] = useState(!!initial.end && initial.end > initial.start);
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
-  const stepTypes = types.filter((t) => !t.shoot);
+  const eventTypes = types.filter((t) => !t.shoot);
   const ready = !!s.typeId;
   // All day unless switched to a specific time (which starts at 09:00–10:00).
   const [timed, setTimed] = useState(!!initial.time);
@@ -77,7 +77,7 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
 
   return (
     <Modal
-      title={isNew ? "Add step" : "Edit step"}
+      title={isNew ? "Add event" : "Edit event"}
       onClose={onClose}
       footer={
         <>
@@ -91,9 +91,9 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
         </>
       }
     >
-      {/* Step type: an even grid, each with its colour. */}
+      {/* Event type: an even grid, each with its colour. */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 5, marginBottom: 6 }}>
-        {stepTypes.map((t) => {
+        {eventTypes.map((t) => {
           const on = s.typeId === t.id;
           return (
             <button

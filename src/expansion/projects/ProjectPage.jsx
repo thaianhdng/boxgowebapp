@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Section } from "../shared/ui.jsx";
 import { monthKey, todayStr, wdm } from "../shared/dates.js";
-import { typeOf, shootTypeId } from "../schedule/stepTypes.js";
-import { occurrences } from "../schedule/steps.js";
+import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
+import { occurrences } from "../schedule/events.js";
 import { MonthGrid, MonthHeader, MonthKey } from "../calendar/MonthGrid.jsx";
 import { ScheduleSection } from "../schedule/ScheduleSection.jsx";
 import { InfoStrip } from "./InfoStrip.jsx";
@@ -12,10 +12,10 @@ import { listLike } from "./sync.js";
 import { Trash2 } from "lucide-react";
 
 // Which month the project's calendar opens on: the month of its next
-// step from today, else its last one, else this month.
+// event from today, else its last one, else this month.
 function startMonth(project) {
   const today = todayStr();
-  const dates = (project.steps || []).flatMap((s) => [s.start, s.end]).filter(Boolean).sort();
+  const dates = (project.events || []).flatMap((s) => [s.start, s.end]).filter(Boolean).sort();
   return monthKey(dates.find((d) => d >= today) || dates[dates.length - 1] || today);
 }
 
@@ -24,9 +24,9 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
   const [creatingList, setCreatingList] = useState(false); // Create New, prefilled
   const [month, setMonth] = useState(() => startMonth(project));
   const [selDate, setSelDate] = useState(null);
-  // Opens the schedule's step window from the calendar to edit a step:
-  // { step, n } (`n` so the same request can repeat).
-  const [stepRequest, setStepRequest] = useState(null);
+  // Opens the schedule's event window from the calendar to edit an event:
+  // { event, n } (`n` so the same request can repeat).
+  const [eventRequest, setEventRequest] = useState(null);
   const list = actions.listOf(id);
   const update = (patch) => actions.update(id, (p) => ({ ...p, ...patch }));
 
@@ -55,25 +55,25 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
           <MonthKey month={month} occ={occ} types={types} focusProjectId={id} />
         </div>
         {selDate && (
-          // The tapped day: this project's steps (tap to edit) and other
-          // projects that day. Schedule's + Add step then starts on it.
+          // The tapped day: this project's events (tap to edit) and other
+          // projects that day. Schedule's + Add event then starts on it.
           <div style={{ marginTop: 10, padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 4 }}>
             <div className="stencil" style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>{wdm(selDate)}</div>
             {onSel.length === 0 && <div style={{ fontSize: 12, color: "var(--muted2)" }}>Nothing scheduled.</div>}
             {onSel.map((o, i) => {
-              const t = typeOf(types, o.step.typeId);
+              const t = typeOf(types, o.event.typeId);
               const mine = o.projectId === id;
               return (
                 <div
                   key={i}
                   className="row"
-                  onClick={() => (mine ? setStepRequest({ step: o.step, n: Date.now() }) : app.go({ screen: "project", projectId: o.projectId }))}
-                  style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center", padding: "4px 2px", cursor: "pointer", opacity: o.step.confirmed ? 1 : 0.55 }}
+                  onClick={() => (mine ? setEventRequest({ event: o.event, n: Date.now() }) : app.go({ screen: "project", projectId: o.projectId }))}
+                  style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center", padding: "4px 2px", cursor: "pointer", opacity: o.event.confirmed ? 1 : 0.55 }}
                 >
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: mine ? t.color : "var(--muted2)", flexShrink: 0 }} />
                   <b style={{ color: mine ? t.color : "var(--muted)", flexShrink: 0 }}>{t.name}</b>
                   <span style={{ color: mine ? "var(--text)" : "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {mine ? [o.step.label, o.step.time, o.step.location].filter(Boolean).join(" · ") : o.project.name}
+                    {mine ? [o.event.label, o.event.time, o.event.location].filter(Boolean).join(" · ") : o.project.name}
                   </span>
                 </div>
               );
@@ -83,18 +83,18 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
       </Section>
 
       <ScheduleSection
-        steps={project.steps}
+        events={project.events}
         types={types}
-        onChange={(steps) => {
+        onChange={(events) => {
           // Shoot days are what a project is built on (and its equipment
           // list's days), so every project keeps at least one.
-          if (!steps.some((s) => s.typeId === shootTypeId(types)) && (project.steps || []).some((s) => s.typeId === shootTypeId(types))) {
-            window.alert("Every project needs at least one shoot day — keep at least one Shooting step.");
+          if (!events.some((s) => s.typeId === shootTypeId(types)) && (project.events || []).some((s) => s.typeId === shootTypeId(types))) {
+            window.alert("Every project needs at least one shoot day — keep at least one.");
             return;
           }
-          update({ steps });
+          update({ events });
         }}
-        request={stepRequest}
+        request={eventRequest}
         onEditShootDays={() => setShowInfo(true)}
         onManageTypes={onManageTypes}
         highlightDate={selDate}
@@ -103,7 +103,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
       <EquipmentPanel
         app={app}
         list={list}
-        hasShootSteps={(project.steps || []).some((s) => s.typeId === shootTypeId(types))}
+        hasShootEvents={(project.events || []).some((s) => s.typeId === shootTypeId(types))}
         onCreate={() => setCreatingList(true)}
       />
 

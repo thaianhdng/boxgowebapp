@@ -18,7 +18,7 @@ export function projectActions(app, types) {
   return {
     // A new Project without an equipment list, from the shared Create New
     // window: its producer / gaffer become People, its shoot days become
-    // (tentative) Shooting steps.
+    // (tentative) Shooting events.
     create(info) {
       const id = newProjectId();
       putProject(id, projectFromList({ ...info, createdAt: Date.now() }, types));

@@ -9,10 +9,10 @@
 
 import { useSyncExternalStore } from "react";
 import { supabase } from "../lib/supabaseClient.js";
-import { DEFAULT_STEP_TYPES } from "./schedule/stepTypes.js";
+import { DEFAULT_EVENT_TYPES } from "./schedule/eventTypes.js";
 
 const SETTINGS_ID = "owner";
-const defaultSettings = () => ({ stepTypes: DEFAULT_STEP_TYPES });
+const defaultSettings = () => ({ eventTypes: DEFAULT_EVENT_TYPES });
 
 let state = {
   status: "idle", // "idle" | "loading" | "ready" | "error"
@@ -57,13 +57,33 @@ async function fetchAll() {
   return { rows: rows || [], settingsRow };
 }
 
+// Data saved before "steps" were renamed "events" keeps them under the
+// old names (`steps` on a project, `stepTypes` in settings). They're read
+// under the new names and saved back that way: a renamed project isn't
+// marked as saved, so the next save writes it in the new form.
+function renamedProject(data) {
+  if (!data || !("steps" in data)) return null;
+  const { steps, ...rest } = data;
+  return { ...rest, events: rest.events || steps || [] };
+}
+
 function apply({ rows, settingsRow }) {
-  const projects = Object.fromEntries(rows.map((r) => [r.id, r.data || {}]));
   savedProjects.clear();
-  for (const [id, p] of Object.entries(projects)) savedProjects.set(id, p);
-  const settings = { ...defaultSettings(), ...(settingsRow?.data || {}) };
-  savedSettingsJson = JSON.stringify(settings);
+  let renamed = false;
+  const projects = {};
+  for (const r of rows) {
+    const data = r.data || {};
+    const fixed = renamedProject(data);
+    projects[r.id] = fixed || data;
+    if (fixed) renamed = true;
+    else savedProjects.set(r.id, data);
+  }
+  const raw = settingsRow?.data || {};
+  const { stepTypes, ...rawRest } = raw;
+  const settings = { ...defaultSettings(), ...rawRest, ...(stepTypes && !rawRest.eventTypes ? { eventTypes: stepTypes } : {}) };
+  savedSettingsJson = stepTypes ? JSON.stringify(raw) : JSON.stringify(settings);
   set({ projects, settings, status: "ready", error: "" });
+  if (renamed || stepTypes) scheduleSave();
 }
 
 export async function load() {
@@ -164,8 +184,8 @@ export async function removeProject(id) {
   }
 }
 
-export function setStepTypes(stepTypes) {
+export function setEventTypes(eventTypes) {
   if (state.status !== "ready") return;
-  set({ settings: { ...state.settings, stepTypes } });
+  set({ settings: { ...state.settings, eventTypes } });
   scheduleSave();
 }

@@ -7,8 +7,8 @@
 // These functions are the only bridge between the two.
 
 import { relabelDays, uid } from "../../lib/utils.js";
-import { shootTypeId } from "../schedule/stepTypes.js";
-import { sortSteps, stepDays } from "../schedule/steps.js";
+import { shootTypeId } from "../schedule/eventTypes.js";
+import { sortEvents, eventDays } from "../schedule/events.js";
 
 function roleIndex(people, exact, loose) {
   const list = people || [];
@@ -24,19 +24,19 @@ function findRole(people, exact, loose) {
 const PRODUCER = ["producer", /producer/i, "Producer"];
 const GAFFER = ["gaffer", /gaffer/i, "Gaffer"];
 
-// Shoot days work like the equipment list's days: one Shooting step per
+// Shoot days work like the equipment list's days: one Shooting event per
 // day (date, location, type of shooting in `label`), consecutive or not.
-// Older Projects could have a multi-day Shooting step; it splits into one
-// step per date with ids "<id>", "<id>~1", "<id>~2"… — the same ids its
+// Older Projects could have a multi-day Shooting event; it splits into one
+// event per date with ids "<id>", "<id>~1", "<id>~2"… — the same ids its
 // equipment list days already had, so quantities stay attached.
-export function splitShootRanges(steps, types) {
+export function splitShootRanges(events, types) {
   const shootId = shootTypeId(types);
   let changed = false;
   const out = [];
-  for (const s of steps || []) {
+  for (const s of events || []) {
     if (s.typeId === shootId && s.start && s.end && s.end > s.start) {
       changed = true;
-      stepDays(s).forEach((date, i) => out.push({ ...s, id: i === 0 ? s.id : `${s.id}~${i}`, start: date, end: "" }));
+      eventDays(s).forEach((date, i) => out.push({ ...s, id: i === 0 ? s.id : `${s.id}~${i}`, start: date, end: "" }));
     } else out.push(s);
   }
   return changed ? out : null;
@@ -44,14 +44,14 @@ export function splitShootRanges(steps, types) {
 
 export function shootDaysOf(project, types) {
   const shootId = shootTypeId(types);
-  const steps = splitShootRanges(project.steps, types) || project.steps || [];
-  return sortSteps(steps, types).filter((s) => s.typeId === shootId).map((s) => ({
+  const events = splitShootRanges(project.events, types) || project.events || [];
+  return sortEvents(events, types).filter((s) => s.typeId === shootId).map((s) => ({
     id: s.id, date: s.start || "", location: s.mode === "online" ? "" : (s.location || ""), label: s.label,
   }));
 }
 
 // What the equipment list should show for this Project. With no Shooting
-// steps, the list's days are left as they are.
+// events, the list's days are left as they are.
 export function equipmentFields(project, types, list) {
   const fields = {
     name: project.name || "",
@@ -64,7 +64,7 @@ export function equipmentFields(project, types, list) {
   const days = shootDaysOf(project, types);
   if (days.length) {
     const old = new Map((list?.days || []).map((d) => [d.id, d]));
-    // A step from before shoot days had a label keeps the list's own.
+    // An event from before shoot days had a label keeps the list's own.
     fields.days = relabelDays(days.map(({ label, ...d }) => ({ ...d, projectLabel: label ?? old.get(d.id)?.projectLabel ?? "" })));
   }
   return fields;
@@ -89,23 +89,23 @@ function withRole(people, [exact, loose, role], value) {
 }
 
 const peopleKey = (people) => JSON.stringify((people || []).map((p) => [p.id, p.role || "", p.name || "", p.phone || "", p.email || ""]));
-const stepsKey = (steps) => JSON.stringify((steps || []).map((s) => [
+const eventsKey = (events) => JSON.stringify((events || []).map((s) => [
   s.id, s.typeId, s.start || "", s.end || "", s.time || "", s.endTime || "", s.mode || "offline",
   s.location || "", s.link || "", s.note || "", !!s.confirmed, s.label || "",
 ]));
 
-// A day's location on a step: a location means it's offline; no location
-// keeps an online step online.
-function placeOf(step, day) {
+// A day's location on an event: a location means it's offline; no location
+// keeps an online event online.
+function placeOf(event, day) {
   const loc = day.location || "";
   if (loc) return { mode: "offline", location: loc };
-  return step.mode === "online" ? {} : { location: "" };
+  return event.mode === "online" ? {} : { location: "" };
 }
 
 // The Project updated with what its equipment list now says, or null when
-// they already agree. Each list day is the Shooting step with the same id:
+// they already agree. Each list day is the Shooting event with the same id:
 // its date, location and type of shooting are copied over. New days become
-// new Shooting steps (tentative until confirmed); steps whose day was
+// new Shooting events (tentative until confirmed); events whose day was
 // removed go.
 export function projectWithList(project, list, types) {
   const next = { ...project };
@@ -117,35 +117,35 @@ export function projectWithList(project, list, types) {
   const shootId = shootTypeId(types);
   const days = new Map((list.days || []).map((d) => [d.id, d]));
   const used = new Set();
-  const steps = [];
-  for (const s of splitShootRanges(project.steps, types) || project.steps || []) {
-    if (s.typeId !== shootId) { steps.push(s); continue; }
+  const events = [];
+  for (const s of splitShootRanges(project.events, types) || project.events || []) {
+    if (s.typeId !== shootId) { events.push(s); continue; }
     const d = days.get(s.id);
     if (!d) continue;
     used.add(s.id);
-    steps.push({ ...s, start: d.date || "", end: "", ...placeOf(s, d), label: d.projectLabel || "" });
+    events.push({ ...s, start: d.date || "", end: "", ...placeOf(s, d), label: d.projectLabel || "" });
   }
   for (const d of list.days || []) {
     if (used.has(d.id)) continue;
-    steps.push({
+    events.push({
       id: d.id, typeId: shootId, start: d.date || "", end: "", time: "", endTime: "",
       mode: "offline", location: d.location || "", link: "", note: "", confirmed: false, label: d.projectLabel || "",
     });
   }
-  next.steps = steps;
+  next.events = events;
 
   const same = ["name", "tag", "productionHouse", "rentalHouse"].every((k) => (next[k] || "") === (project[k] || "")) &&
     peopleKey(next.people) === peopleKey(project.people) &&
-    stepsKey(next.steps) === stepsKey(project.steps);
+    eventsKey(next.events) === eventsKey(project.events);
   return same ? null : next;
 }
 
-const EMPTY = () => ({ name: "", tag: "", productionHouse: "", rentalHouse: "", notes: "", people: [], steps: [], createdAt: Date.now() });
+const EMPTY = () => ({ name: "", tag: "", productionHouse: "", rentalHouse: "", notes: "", people: [], events: [], createdAt: Date.now() });
 
 // A Project made from an equipment list that doesn't have one yet (new
 // lists made in the equipment list composer), or from what the shared
 // Create New window returns (a Calendar project: its days become
-// tentative Shooting steps).
+// tentative Shooting events).
 export function projectFromList(list, types) {
   const base = { ...EMPTY(), createdAt: list.createdAt || Date.now() };
   return projectWithList(base, list, types) || base;

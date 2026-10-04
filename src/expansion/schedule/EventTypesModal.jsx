@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { Modal } from "../shared/ui.jsx";
-import { SWATCHES } from "./stepTypes.js";
+import { SWATCHES } from "./eventTypes.js";
 import { uid } from "../../lib/utils.js";
 
-// Add, rename, recolour, reorder and remove step types. The order here is
-// the order of the "add step" buttons; the schedule itself is always in
-// date order.
-export function StepTypesModal({ types, usage, onChange, onClose }) {
+// Add, rename, recolour, reorder and remove event types. The order here is
+// the order of the types in the event window, and breaks ties between
+// all-day events on the same day (see compareEvents in events.js).
+export function EventTypesModal({ types, usage, onChange, onClose }) {
   const [picking, setPicking] = useState(null); // type id whose colour palette is open
   const [newName, setNewName] = useState("");
   const [msg, setMsg] = useState("");
@@ -21,9 +21,9 @@ export function StepTypesModal({ types, usage, onChange, onClose }) {
     onChange(next);
   }
   function remove(t) {
-    if (t.shoot) return setMsg(`"${t.name}" can't be removed — its steps are the equipment list's shoot days.`);
+    if (t.shoot) return setMsg(`"${t.name}" can't be removed — its events are the equipment list's shoot days.`);
     const n = usage[t.id] || 0;
-    if (n) return setMsg(`"${t.name}" is used by ${n} step${n > 1 ? "s" : ""}. Change or delete those first.`);
+    if (n) return setMsg(`"${t.name}" is used by ${n} event${n > 1 ? "s" : ""}. Change or delete those first.`);
     setMsg("");
     onChange(types.filter((x) => x.id !== t.id));
   }
@@ -37,7 +37,7 @@ export function StepTypesModal({ types, usage, onChange, onClose }) {
   }
 
   return (
-    <Modal title="Step types" onClose={onClose} footer={<><span /><button className="btn btn-primary" onClick={onClose}>Done</button></>}>
+    <Modal title="Event types" onClose={onClose} footer={<><span /><button className="btn btn-primary" onClick={onClose}>Done</button></>}>
       {types.map((t, i) => (
         <div key={t.id} style={{ marginBottom: 6 }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -70,7 +70,7 @@ export function StepTypesModal({ types, usage, onChange, onClose }) {
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") add(); }}
-          placeholder="New step type…"
+          placeholder="New event type…"
           style={{ flex: 1, minWidth: 0, fontSize: 13 }}
         />
         <button className="btn btn-primary" onClick={add}><Plus size={13} /> Add</button>
