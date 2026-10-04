@@ -149,9 +149,11 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                 border: "none", borderTop: "1px solid var(--border)", borderLeft: i % 7 ? "1px solid var(--border)" : "none",
                 background: isSel ? "var(--surface2)" : "transparent",
                 outline: isSel ? "2px solid var(--accent)" : "none", outlineOffset: -2,
-                opacity: inMonth ? 1 : 0.35,
               }}
             >
+              {/* Days of the next / previous month are faded, but not their
+                  grid lines, so the current month's boxes stay complete. */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, opacity: inMonth ? 1 : 0.35 }}>
               <span style={{
                 fontSize: 11, fontWeight: 700, lineHeight: "16px", width: 18, height: 16, textAlign: "center", borderRadius: 3,
                 color: date === today ? "var(--accent-text)" : "var(--text)",
@@ -192,6 +194,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
               {others.length > 0 && (
                 <span title="Other projects on this day" style={{ position: "absolute", bottom: 4, right: 4, width: 6, height: 6, borderRadius: "50%", background: "var(--muted2)" }} />
               )}
+              </div>
             </button>
           );
         })}
