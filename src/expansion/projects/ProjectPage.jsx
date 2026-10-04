@@ -32,7 +32,9 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
 
   // The header's "Edit project" button.
   useEffect(() => {
-    if (intent === "edit") setShowInfo(true);
+    // One-shot: cleared once used, so returning from Preview doesn't
+    // open the window again.
+    if (intent === "edit") { setShowInfo(true); app.clearIntent(); }
   }, [intent, app.route.t]);
 
   const occ = useMemo(() => occurrences(allProjects, types), [allProjects, types]);

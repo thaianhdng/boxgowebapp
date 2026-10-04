@@ -1510,6 +1510,9 @@ export default function EquipmentManifest({ session }) {
     rentalHouses,
     route: xRoute,
     go: goX,
+    // A screen calls this once it has acted on route.intent (e.g. opened
+    // the Edit window), so coming back to it later doesn't repeat it.
+    clearIntent: () => setXRoute((r) => (r.intent ? { ...r, intent: undefined } : r)),
     reportSaveState: setXSaveState,
     openEquipmentList: (id) => { openProject(id); window.scrollTo(0, 0); },
     previewEquipmentList: goToPreview,
