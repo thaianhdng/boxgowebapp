@@ -74,9 +74,12 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
   }
   const named = !!focusProjectId;
   const showLabels = named || (wide && !compact);
-  // Day boxes are slightly taller than wide (6:7). A project's own
-  // calendar on a phone is a fixed 80px instead, to fit two wrapped names.
-  const cellSize = named && !wide ? { height: 80 } : compact && !named ? { height: 40 } : { aspectRatio: "6 / 7", overflow: "hidden" };
+  // On wider screens day boxes are slightly wider than tall (5:4). On a
+  // phone: 48px on the all-projects calendar (about as wide), and 80px on
+  // a project's own calendar, to fit two wrapped names.
+  const cellSize = !wide
+    ? { height: named ? 80 : compact ? 40 : 48 }
+    : compact && !named ? { height: 40 } : { aspectRatio: "5 / 4", overflow: "hidden" };
   const maxBars = named ? (wide ? 3 : 2) : compact ? 2 : 4;
   // Shoot day numbers for the focused project, in date order.
   const shootIds = new Set(types.filter((t) => t.shoot).map((t) => t.id));
