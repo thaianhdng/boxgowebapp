@@ -114,7 +114,8 @@ Start of each conversation, the owner should say which one it is:
      Project page ("Create equipment list") or by tapping the greyed card
      — both open Create New prefilled. Both modules' main pages start
      with the same search bar + Create New (phone: full-width button;
-     desktop: dashed card); Calendar's search also filters its calendar. A Project with a list must
+     desktop: dashed card); Calendar's search also filters its calendar. Its colour key is tap-to-filter (tap event
+     types to show only those; tap again to drop one). A Project with a list must
      keep at least one Shooting event. Schedule events: date or range,
      optional time, online/offline, note, confirmed per event. Calendars
      colour by event type; tentative is faded; Google Calendar (not built
