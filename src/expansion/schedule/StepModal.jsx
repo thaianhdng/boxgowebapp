@@ -67,7 +67,7 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
       }
     >
       {/* Step type: an even grid, each with its colour. */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 5, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 5, marginBottom: 6 }}>
         {stepTypes.map((t) => {
           const on = s.typeId === t.id;
           return (
@@ -90,6 +90,7 @@ export function StepModal({ initial, isNew, types, onSave, onDelete, onClose }) 
           );
         })}
       </div>
+      <div style={{ fontSize: 10.5, color: "var(--muted2)", marginBottom: 16 }}>Shoot dates are set in Edit project.</div>
 
       <Row label="Date">
         <input type="date" value={s.start} onChange={(e) => set({ start: e.target.value })} style={{ ...small, flex: "1 1 120px", minWidth: 0, maxWidth: 190 }} />
