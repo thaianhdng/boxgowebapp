@@ -5,6 +5,7 @@ import { formatShootDateRange } from "../../lib/utils.js";
 import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
 import { sortEvents } from "../schedule/events.js";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
+import { Toggle } from "../shared/ui.jsx";
 import { CalendarPanel } from "../calendar/CalendarPanel.jsx";
 import { DAY_HEIGHT, usePhone, useWidth } from "../calendar/MonthGrid.jsx";
 
@@ -73,6 +74,8 @@ function arrange(entries, today, types) {
   return [["No shoot dates", undated], ["Upcoming", upcoming], ["Past", past]].filter(([, l]) => l.length);
 }
 
+const VIEW_KEY = "boxgo-x-home-view";
+
 // The owner's home: every project's events on one calendar, and the list
 // of projects. Side by side on a wide screen, calendar first on a phone.
 export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
@@ -88,6 +91,10 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
   const wide = phone ? landscape && width >= 560 : (width - LIST_W - GAP) / 7 >= DAY_HEIGHT * 1.1;
   const [creating, setCreating] = useState(false);
   const [q, setQ] = useState("");
+  // When calendar and projects don't fit side by side (an upright phone),
+  // a switch shows one at a time. Remembered on this device.
+  const [view, setViewState] = useState(() => { try { return localStorage.getItem(VIEW_KEY) || "calendar"; } catch { return "calendar"; } });
+  const setView = (v) => { setViewState(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* private mode */ } };
   const today = todayStr();
 
   // One search for both the calendar and the project cards.
@@ -166,8 +173,8 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
         </div>
       ) : (
         <>
-          {calendar}
-          {list}
+          <Toggle options={[["calendar", "Calendar"], ["projects", "Projects"]]} value={view} onChange={setView} style={{ marginBottom: 14 }} />
+          {view === "calendar" ? calendar : list}
         </>
       )}
 
