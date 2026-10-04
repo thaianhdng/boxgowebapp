@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import { Plus, Search } from "lucide-react";
-import { Logo } from "../../components/Logo.jsx";
 import { todayStr, wdm } from "../shared/dates.js";
 import { formatShootDateRange } from "../../lib/utils.js";
 import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
@@ -19,7 +18,7 @@ function shootDates(project, types) {
   return (project.events || []).filter((s) => s.typeId === shootId && s.start).map((s) => s.start).sort();
 }
 
-function ProjectCard({ project, types, today, hasList, onOpen }) {
+function ProjectCard({ project, types, today, onOpen }) {
   const next = nextEvent(project, today, types);
   const nextType = next && typeOf(types, next.typeId);
   const dates = shootDates(project, types);
@@ -41,7 +40,6 @@ function ProjectCard({ project, types, today, hasList, onOpen }) {
         <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project.name || "Untitled"}</span>
         {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", flexShrink: 0 }}>{range}</span>}
         <span style={{ flex: 1 }} />
-        {hasList && <span title="Has an equipment list" style={{ color: "var(--muted)", flexShrink: 0 }}><Logo size={12} /></span>}
       </div>
       {!dates.length && <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 3 }}>⚠ No shoot dates</div>}
       {project.productionHouse && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text)", marginTop: 3 }}>{project.productionHouse}</div>}
@@ -134,7 +132,6 @@ export function ProjectsHome({ app, projects, types, actions, onManageTypes }) {
                 project={project}
                 types={types}
                 today={today}
-                hasList={actions.hasList(id)}
                 onOpen={() => app.go({ screen: "project", projectId: id })}
               />
             ))}
