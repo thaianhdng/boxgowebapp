@@ -11,15 +11,27 @@ export function stepWhen(step) {
   return s;
 }
 
-function openUrl(url) {
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+// The link in a location / meeting field, if it has one: a pasted URL
+// anywhere in the text, or the whole text being a web address
+// ("meet.google.com/abc-defg-hij"). Plain text like "Studio A" has none.
+export function linkIn(text) {
+  const t = (text || "").trim();
+  const url = t.match(/https?:\/\/\S+/i)?.[0];
+  if (url) return url;
+  if (/^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(t)) return `https://${t}`;
+  return null;
 }
 
+const isMapsLink = (url) => /(maps\.google\.|google\.[a-z.]+\/maps|goo\.gl\/maps|maps\.app\.goo\.gl)/i.test(url);
+
 // One schedule step. `projectName` is shown on the all-projects calendar.
-// `hideLinks` drops the Map / Join buttons (a folded run of shoot days).
+// A MAP button shows when the location / link field holds a Google Maps
+// link, LINK for any other link; plain text gets no button. `hideLinks`
+// drops it.
 export function StepRow({ step, type, projectName, dayLabel, hideLinks, onClick, onToggleConfirmed }) {
   const faded = !step.confirmed;
   const where = step.mode === "online" ? step.link : step.location;
+  const href = linkIn(where);
   return (
     <div
       onClick={onClick}
@@ -47,16 +59,15 @@ export function StepRow({ step, type, projectName, dayLabel, hideLinks, onClick,
             {step.mode === "online" ? <Video size={12} style={{ flexShrink: 0 }} /> : <MapPin size={12} style={{ flexShrink: 0 }} />}
             {step.mode === "online" && !step.link && <span>Online</span>}
             {where && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{where}</span>}
-            {/* No Map / Join button on shoot days (their location is just text). */}
-            {where && !hideLinks && !type.shoot && (
+            {href && !hideLinks && (
               <a
-                href={step.mode === "online" ? openUrl(where) : `https://maps.google.com/?q=${encodeURIComponent(where)}`}
+                href={href}
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text)", border: "1px solid var(--border2)", borderRadius: 3, padding: "1px 6px", textDecoration: "none", marginLeft: 2 }}
               >
-                {step.mode === "online" ? "Join" : "Map"}
+                {isMapsLink(href) ? "Map" : "Link"}
               </a>
             )}
           </div>
