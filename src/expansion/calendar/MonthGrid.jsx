@@ -213,7 +213,10 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
 
 // A one-line key under a calendar: only the event types on screen this
 // month, plus tentative / other project / clash when they appear.
-export function MonthKey({ month, occ, types, focusProjectId }) {
+// With `onToggle` (the Calendar page) the event types are buttons: tap to
+// show only those types (`filter`, a Set; empty = all), tap again to drop
+// one.
+export function MonthKey({ month, occ, types, focusProjectId, filter, onToggle }) {
   const inMonth = occ.filter((o) => o.date.startsWith(month));
   const mine = focusProjectId ? inMonth.filter((o) => o.projectId === focusProjectId) : inMonth;
   const used = types.filter((t) => mine.some((o) => o.event.typeId === t.id));
@@ -222,12 +225,33 @@ export function MonthKey({ month, occ, types, focusProjectId }) {
   const item = (key, swatch, label) => (
     <span key={key} style={{ display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>{swatch}{label}</span>
   );
+  const typeItem = (t) => {
+    if (!onToggle) return item(t.id, <span style={{ width: 8, height: 8, borderRadius: 2, background: t.color }} />, t.name);
+    const on = filter?.has(t.id);
+    const dim = filter?.size > 0 && !on;
+    return (
+      <button
+        key={t.id}
+        type="button"
+        onClick={() => onToggle(t.id)}
+        title={on ? "Show all event types again" : `Show only ${t.name}`}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit",
+          fontSize: 10.5, padding: "2px 6px", borderRadius: 3, opacity: dim ? 0.4 : 1,
+          border: `1px solid ${on ? t.color : "var(--border2)"}`, background: on ? "var(--surface2)" : "transparent",
+          color: on ? "var(--text)" : "var(--muted)",
+        }}
+      >
+        <span style={{ width: 8, height: 8, borderRadius: 2, background: t.color }} />{t.name}
+      </button>
+    );
+  };
   const items = [
-    ...used.map((t) => item(t.id, <span style={{ width: 8, height: 8, borderRadius: 2, background: t.color }} />, t.name)),
+    ...used.map(typeItem),
     mine.some((o) => !o.event.confirmed) && item("tent", <span style={{ width: 8, height: 8, borderRadius: 2, border: "1px dashed var(--muted)" }} />, "tentative"),
     focusProjectId && inMonth.some((o) => o.projectId !== focusProjectId) && item("other", <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--muted2)" }} />, "other project"),
     hasClash && item("clash", <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--danger)" }} />, "clash"),
   ].filter(Boolean);
   if (!items.length) return <span style={{ fontSize: 10.5, color: "var(--muted2)" }}>Nothing this month</span>;
-  return <span style={{ display: "flex", flexWrap: "wrap", gap: "3px 10px", fontSize: 10.5, color: "var(--muted)" }}>{items}</span>;
+  return <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: onToggle ? "5px 6px" : "3px 10px", fontSize: 10.5, color: "var(--muted)" }}>{items}</span>;
 }

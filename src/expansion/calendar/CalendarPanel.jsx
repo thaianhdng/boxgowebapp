@@ -13,7 +13,11 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
   const [month, setMonth] = useState(() => monthKey(todayStr()));
   const [selDate, setSelDate] = useState(null);
   const [listMonth, setListMonth] = useState(false);
-  const occ = useMemo(() => occurrences(projects, types), [projects, types]);
+  const allOcc = useMemo(() => occurrences(projects, types), [projects, types]);
+  // Tapping event types in the key shows only those (empty = all).
+  const [typeFilter, setTypeFilter] = useState(() => new Set());
+  const toggleType = (id) => setTypeFilter((f) => { const n = new Set(f); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const occ = useMemo(() => (typeFilter.size ? allOcc.filter((o) => typeFilter.has(o.event.typeId)) : allOcc), [allOcc, typeFilter]);
   const clashes = useMemo(() => clashDates(occ), [occ]);
 
   const shown = selDate ? occ.filter((o) => o.date === selDate) : listMonth ? occ.filter((o) => o.date.startsWith(month)) : [];
@@ -39,7 +43,7 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
       <MonthGrid month={month} occ={occ} types={types} selected={selDate} onSelect={setSelDate} />
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 6, marginBottom: 12 }}>
         <div style={{ flex: 1, minWidth: 0, paddingTop: 3 }}>
-          <MonthKey month={month} occ={occ} types={types} />
+          <MonthKey month={month} occ={allOcc} types={types} filter={typeFilter} onToggle={toggleType} />
         </div>
         {selDate ? (
           <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11, flexShrink: 0 }} onClick={() => setSelDate(null)}>Close day</button>
