@@ -82,6 +82,10 @@ export default function EquipmentManifest({ session }) {
   // Owner only: Calendar projects with no equipment list yet, shown greyed
   // in the project list; tapping one opens Create New prefilled from it.
   const [xGhosts, setXGhosts] = useState([]);
+  // Owner: ids of equipment lists whose job is Cancelled (from the
+  // expansion). Only marks the project card and the crumb.
+  const [xCancelled, setXCancelled] = useState([]);
+  const xCancelledSet = useMemo(() => new Set(xCancelled), [xCancelled]);
   const [ghostDraft, setGhostDraft] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
@@ -1526,6 +1530,7 @@ export default function EquipmentManifest({ session }) {
     deleteEquipmentList: deleteProject,
     addHouses: ({ productionHouse, rentalHouse }) => { addProductionHouse(productionHouse); addRentalHouse(rentalHouse); },
     reportGhosts: setXGhosts,
+    reportCancelled: (ids) => setXCancelled((cur) => (cur.join() === ids.join() ? cur : ids)),
     // What the shared Create New / Edit window needs.
     recentProjectNames,
     recentProjectLabels,
@@ -1757,7 +1762,7 @@ export default function EquipmentManifest({ session }) {
                     color: view === "projects" || (view === "x" && xRoute.screen !== "project") ? "var(--accent)" : "var(--text)",
                   }}
                 >
-                  {view === "x" ? (xModule === "calendar" ? "Calendar" : "Projects") : "Project Manager"}
+                  {view === "x" ? (xModule === "calendar" ? "Calendar" : "Projects") : isCatalogOwner ? "Equipment" : "Project Manager"}
                 </button>
                 {view === "x" && xRoute.screen === "project" && (
                   <>
@@ -1787,6 +1792,7 @@ export default function EquipmentManifest({ session }) {
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--accent)" }}>
                         {activeProject?.name || "Project"}
                       </span>
+                      {isCatalogOwner && xCancelledSet.has(activeProjectId) && <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px" }}>Cancelled</span>}
                       {isCatalogOwner && <CalendarDays size={13} style={{ flexShrink: 0, color: "var(--muted)" }} />}
                     </span>
                   </>
@@ -1935,6 +1941,7 @@ export default function EquipmentManifest({ session }) {
                     onCreateNew={() => { setEditingProjectId(null); setShowProjectForm(true); }}
                     onCreateFromGhost={setGhostDraft}
                     listOnly={isCatalogOwner}
+                    cancelledIds={isCatalogOwner ? xCancelledSet : null}
                   />
                 </>
               )}
@@ -2102,7 +2109,7 @@ export default function EquipmentManifest({ session }) {
               )}
               {showBackToTop && (
                 <button
-                  className="back-to-top-btn no-print"
+                  className={isCatalogOwner ? "no-print" : "back-to-top-btn no-print"}
                   onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                   title="Back to top"
                   style={{
@@ -2162,6 +2169,23 @@ export default function EquipmentManifest({ session }) {
             </div>
           )}
           </>)}
+          {view === "x" && showBackToTop && (
+            // The owner's Projects / Calendar pages: same floating button.
+            <button
+              className="no-print"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              title="Back to top"
+              style={{
+                position: "fixed", bottom: 20, right: 16, zIndex: 40,
+                width: 42, height: 42, borderRadius: "50%", border: "none",
+                background: "var(--accent)", color: "var(--accent-text)",
+                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+              }}
+            >
+              <ChevronUp size={20} />
+            </button>
+          )}
         </>
       )}
 

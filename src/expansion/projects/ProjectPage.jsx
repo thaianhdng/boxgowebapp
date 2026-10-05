@@ -12,10 +12,17 @@ import { listLike } from "./sync.js";
 import { SET_STATUSES, setStatus, staleSoftLock, statusInfo, statusOf } from "./status.js";
 import { BudgetSection } from "../budget/BudgetSection.jsx";
 import { FilesSection } from "../files/FilesSection.jsx";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 
 // Jump bar at the top of the page: each section of the job.
 const JUMPS = [["Calendar", "x-calendar"], ["Schedule", "x-schedule"], ["Equipment", "x-equipment"], ["Budget", "x-budget"], ["Files", "x-files"]];
+
+// The project's calendar starts folded (the schedule lists the same
+// events); opening or folding it is remembered on this device.
+const CAL_KEY = "boxgo-x-project-calendar-open";
+function readCalOpen() {
+  try { return localStorage.getItem(CAL_KEY) === "1"; } catch { return false; }
+}
 
 // Soft lock / Confirmed / Cancelled, set here; a Confirmed project shows
 // Shooting during its shoot days and Done after them.
@@ -59,6 +66,12 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
   const [creatingList, setCreatingList] = useState(false); // Create New, prefilled
   const [month, setMonth] = useState(() => startMonth(project));
   const [selDate, setSelDate] = useState(null);
+  const [calOpen, setCalOpenState] = useState(readCalOpen);
+  const setCalOpen = (open) => {
+    setCalOpenState(open);
+    if (!open) setSelDate(null);
+    try { localStorage.setItem(CAL_KEY, open ? "1" : "0"); } catch { /* ignore */ }
+  };
   // Opens the schedule's event window from the calendar to edit an event:
   // { event, n } (`n` so the same request can repeat).
   const [eventRequest, setEventRequest] = useState(null);
@@ -88,13 +101,18 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 12 }}>
+      {/* Stays at the top of the screen while scrolling. */}
+      <div className="x-jump sticky-top" style={{ position: "sticky", top: 0, zIndex: 5, background: "var(--bg)", display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 8 }}>
         {JUMPS.map(([label, target]) => (
           <button
             key={target}
             type="button"
             className="stencil"
-            onClick={() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            onClick={() => {
+              if (target === "x-calendar" && !calOpen) setCalOpen(true);
+              // After an opened calendar has drawn, so it lands in place.
+              requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+            }}
             style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 10.5, letterSpacing: "0.06em", color: "var(--muted)" }}
           >
             {label}
@@ -110,7 +128,16 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         onNotesChange={(notes) => update({ notes })}
       />
 
-      <Section title="Calendar" id="x-calendar">
+      <Section
+        title="Calendar"
+        id="x-calendar"
+        right={
+          <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => setCalOpen(!calOpen)}>
+            {calOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />} {calOpen ? "Hide" : "Show"}
+          </button>
+        }
+      >
+        {calOpen && (<>
         <MonthHeader month={month} onChange={(m) => { setMonth(m); setSelDate(null); }} />
         <MonthGrid month={month} occ={occ} types={types} focusProjectId={id} compact selected={selDate} onSelect={setSelDate} />
         <div style={{ marginTop: 6 }}>
@@ -142,6 +169,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
             })}
           </div>
         )}
+        </>)}
       </Section>
 
       <ScheduleSection

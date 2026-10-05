@@ -76,9 +76,12 @@ Start of each conversation, the owner should say which one it is:
      CALENDAR / <project>, Edit project, Settings, one save tick) with
      `<Expansion part="screen">` under it — `screen` "projects" = Projects
      home (search, Create New, status filter chips, projects grouped by
-     status; Done / Cancelled folded, remembered per device), "calendar" =
-     Calendar home (`calendar/CalendarHome.jsx`: search + full-width
-     calendar of every project, cancelled ones left out), "project" = the
+     status; Done / Cancelled folded, remembered per device; Done is split
+     by year, each foldable), "calendar" = Calendar home
+     (`calendar/CalendarHome.jsx`: search + full-width calendar of every
+     project, cancelled ones left out; a tapped day has "+ Add event": pick
+     the project — active ones, Done on request — then the event window),
+     "project" = the
      Project page (`route.from = "calendar"` when opened from the Calendar,
      so its crumb and switch stay on Calendar) — and
      `<Expansion part="crumb">` for the name. **Project status**
@@ -86,19 +89,29 @@ Start of each conversation, the owner should say which one it is:
      Cancelled (`project.status`; new projects Soft lock); a Confirmed
      project shows Shooting from its first shoot day to its last and Done
      after. Projects without a status count as Done if their shoot days
-     are all past, else Soft lock. A Soft lock whose dates have passed gets
+     are all past, else Soft lock; the sync part saves such past ones as
+     Confirmed with their events confirmed (so old jobs don't look
+     tentative). A Soft lock whose dates have passed gets
      a "confirm or cancel?" warning. Setting Confirmed offers to confirm
      all shoot days. Status is Project-only (not in the equipment list).
-     The Project page: jump bar (Calendar · Schedule · Equipment · Budget
-     · Files), status, info strip, calendar, schedule, equipment list,
+     The Project page: sticky jump bar (Calendar · Schedule · Equipment ·
+     Budget · Files), status, info strip, calendar (folded by default,
+     open/folded remembered per device), schedule, equipment list,
      **Budget** (`budget/`: `project.budget = { currency: VND|USD, lines:
      [{ item, qty, rate, note }] }`, total) and **Files** (`files/`:
      `project.files = [{ kind: script|treatment|recce|other, name, url }]`,
      pasted links, open in a new tab; real Google Drive picking later).
      Project cards show status and which parts exist (List, Budget,
-     Files). EQUIPMENT is the v1.0
-     composer untouched, except the owner can tap the project name in its
-     crumb to open the Project page. `<Expansion part="sync">` is always
+     Files). A clash (red dot) = two projects' shoots / prelights on one
+     day, or overlapping set times (`clashDates`); a full day box shows
+     "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
+     owner: its crumb root reads "Equipment" (others: "Project Manager"),
+     tapping the project name in its crumb opens the Project page,
+     Cancelled jobs' lists get a "Cancelled" mark on their card and crumb
+     (`app.reportCancelled`; never in the preview, PDF or share page),
+     Cancelled projects get no greyed card, and the floating back-to-top
+     button shows on every page at every size (others: phones only, as in
+     v1.0). `<Expansion part="sync">` is always
      mounted for the owner (renders nothing): loads the store, reports
      save state (`app.reportSaveState`) and runs the list → Project link.
      Data: `x_projects` (id = the list's `projects.id`) and `x_settings`

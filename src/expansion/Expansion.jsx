@@ -24,6 +24,8 @@ import { Loader2 } from "lucide-react";
 import { useXStore, load, refresh, putProject, setEventTypes, getState } from "./store.js";
 import { projectActions } from "./projects/actions.js";
 import { listLike, projectFromList, projectWithList, splitShootRanges } from "./projects/sync.js";
+import { shootDates, statusOf } from "./projects/status.js";
+import { todayStr } from "./shared/dates.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
 import { ProjectPage } from "./projects/ProjectPage.jsx";
 import { CalendarHome } from "./calendar/CalendarHome.jsx";
@@ -84,11 +86,19 @@ function Sync({ app }) {
 
   // Older Projects could have a multi-day Shooting event: split it into one
   // Shooting event per day (lists' day ids are unchanged by this).
+  // Projects from before statuses existed whose shoot days are all past
+  // (jobs that happened, mostly made in the equipment list) become
+  // Confirmed (so they show Done) with their events confirmed, instead of
+  // looking tentative forever.
   useEffect(() => {
     if (x.status !== "ready") return;
+    const today = todayStr();
     for (const [id, p] of Object.entries(x.projects)) {
       const events = splitShootRanges(p.events, types);
-      if (events) putProject(id, { ...p, events });
+      if (events) { putProject(id, { ...p, events }); continue; }
+      if (!p.status && shootDates(p, types).length && statusOf(p, types, today) === "done") {
+        putProject(id, { ...p, status: "confirmed", events: (p.events || []).map((s) => (s.confirmed ? s : { ...s, confirmed: true })) });
+      }
     }
   }, [x.status, x.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -97,9 +107,15 @@ function Sync({ app }) {
   useEffect(() => {
     if (x.status !== "ready") return;
     const lists = new Set(app.projects.map((p) => p.id));
+    const today = todayStr();
     app.reportGhosts(Object.entries(x.projects)
-      .filter(([id]) => !lists.has(id))
+      .filter(([id, p]) => !lists.has(id) && statusOf(p, types, today) !== "cancelled")
       .map(([id, p]) => ({ ...listLike(id, p, types), ghost: true })));
+    // Cancelled jobs' equipment lists get a "Cancelled" mark (owner's
+    // project list and crumb only — never the preview, PDF or share page).
+    app.reportCancelled(Object.entries(x.projects)
+      .filter(([id, p]) => lists.has(id) && statusOf(p, types, today) === "cancelled")
+      .map(([id]) => id));
   }, [x.status, x.projects, app.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
@@ -145,7 +161,7 @@ function Screen({ app }) {
       />
     );
   } else if (screen === "calendar") {
-    body = <CalendarHome app={app} projects={x.projects} types={types} onManageTypes={() => setShowTypes(true)} />;
+    body = <CalendarHome app={app} projects={x.projects} types={types} actions={actions} onManageTypes={() => setShowTypes(true)} />;
   } else {
     body = <ProjectsHome app={app} projects={x.projects} types={types} actions={actions} />;
   }
@@ -153,7 +169,13 @@ function Screen({ app }) {
   return (
     <>
       <main className="x-main" style={{ padding: "18px 22px 60px", maxWidth: screen === "project" ? 920 : 1280, width: "100%", margin: "0 auto" }}>
-        <style>{"@media (max-width: 600px) { .x-main { padding: 16px 14px 60px !important; } }"}</style>
+        <style>{`
+          .x-jump { margin-left: -22px; margin-right: -22px; padding: 8px 22px; border-bottom: 1px solid var(--border); }
+          @media (max-width: 600px) {
+            .x-main { padding: 16px 14px 60px !important; }
+            .x-jump { margin-left: -14px; margin-right: -14px; padding: 8px 14px; }
+          }
+        `}</style>
         {body}
       </main>
       {showTypes && (

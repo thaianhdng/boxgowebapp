@@ -7,9 +7,11 @@ import { formatShootDateRange } from "../lib/utils.js";
 
 // A project with `ghost: true` (owner only: a Calendar project that has no
 // equipment list yet) shows greyed out; tapping it calls onCreateFromGhost.
+// `cancelledIds` (owner only): lists whose job is Cancelled get a faded
+// card and a "Cancelled" mark (only here, never in the preview or PDF).
 // `listOnly` (owner only): Delete removes just the equipment list — the
 // project stays in Calendar — so the wording says so.
-export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost, listOnly }) {
+export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost, listOnly, cancelledIds }) {
   const [confirmId, setConfirmId] = useState(null);
   const [projSearch, setProjSearch] = useState("");
   const [menuId, setMenuId] = useState(null); // project whose ⋮ menu is open
@@ -105,6 +107,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             style={{
               position: "relative", minWidth: 0, border: "1px solid var(--border)", borderLeft: "3px solid var(--accent)", borderRadius: 4, background: "var(--surface)", cursor: "pointer", padding: "8px 12px 12px", display: "flex", flexDirection: "column",
               ...(p.ghost ? { opacity: 0.45, borderStyle: "dashed", borderLeftColor: "var(--border2)", background: "transparent" } : {}),
+              ...(cancelledIds?.has(p.id) ? { opacity: 0.6, borderLeftColor: "var(--danger)" } : {}),
             }}
             title={p.ghost ? "No equipment list yet — tap to create one" : undefined}
             onClick={() => (p.ghost ? onCreateFromGhost(p) : onOpen(p.id))}
@@ -133,6 +136,9 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               </span>
               {formatShootDateRange(p.days) && (
                 <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)" }}>{formatShootDateRange(p.days)}</span>
+              )}
+              {cancelledIds?.has(p.id) && (
+                <span style={{ flexShrink: 0, marginLeft: 6, alignSelf: "center", fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px" }}>Cancelled</span>
               )}
             </div>
             {p.ghost ? (

@@ -155,6 +155,49 @@ export function ProjectsHome({ app, projects, types, actions }) {
 
   const shown = groups.filter(([s, list]) => list.length && (!only || only === s.id));
 
+  const cards = (list) => (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+      {list.map(({ id, project, status }) => (
+        <ProjectCard
+          key={id}
+          project={project}
+          status={status}
+          hasList={actions.hasList(id)}
+          types={types}
+          today={today}
+          onOpen={() => app.go({ screen: "project", projectId: id })}
+        />
+      ))}
+    </div>
+  );
+  // Done projects by year of their last shoot day (newest year first), each
+  // year foldable.
+  const byYear = (list) => {
+    const years = [];
+    for (const e of list) {
+      const y = e.last ? e.last.slice(0, 4) : "No date";
+      const cur = years[years.length - 1];
+      if (cur && cur[0] === y) cur[1].push(e); else years.push([y, [e]]);
+    }
+    return years.map(([y, l]) => {
+      const key = `done-${y}`;
+      const closed = folded.has(key);
+      return (
+        <div key={y} style={{ marginBottom: 14 }}>
+          <button
+            type="button"
+            onClick={() => toggleFold(key)}
+            style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", padding: "0 0 0 18px", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 8 }}
+          >
+            {closed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+            {y} <span style={{ color: "var(--muted2)", fontWeight: 600 }}>{l.length}</span>
+          </button>
+          {!closed && cards(l)}
+        </div>
+      );
+    });
+  };
+
   return (
     <div>
       {/* Same search bar and Create New as the equipment list's project list. */}
@@ -207,21 +250,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
               <span style={{ width: 7, height: 7, borderRadius: 2, background: s.color }} />
               {s.name} <span style={{ color: "var(--muted2)" }}>{list.length}</span>
             </button>
-            {!closed && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
-                {list.map(({ id, project, status }) => (
-                  <ProjectCard
-                    key={id}
-                    project={project}
-                    status={status}
-                    hasList={actions.hasList(id)}
-                    types={types}
-                    today={today}
-                    onOpen={() => app.go({ screen: "project", projectId: id })}
-                  />
-                ))}
-              </div>
-            )}
+            {!closed && (s.id === "done" ? byYear(list) : cards(list))}
           </div>
         );
       })}

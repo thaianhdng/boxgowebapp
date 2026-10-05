@@ -83,14 +83,31 @@ function gridDates(month) {
   return out;
 }
 
-// A day has a clash when events from two or more projects fall on it.
-export function clashDates(occ) {
+// A day has a clash when two projects both need you there: a shoot or
+// prelight from each, or events with set times that overlap (no end time
+// counts as an hour). A kick-off call on another job's shoot day isn't one.
+const toMin = (t) => { const [h, m] = (t || "").split(":").map(Number); return h * 60 + (m || 0); };
+const BUSY = (types) => new Set(types.filter((t) => t.shoot || t.id === "prelight").map((t) => t.id));
+export function clashDates(occ, types = []) {
+  const busy = BUSY(types);
   const byDate = new Map();
   for (const o of occ) {
-    if (!byDate.has(o.date)) byDate.set(o.date, new Set());
-    byDate.get(o.date).add(o.projectId);
+    if (!byDate.has(o.date)) byDate.set(o.date, []);
+    byDate.get(o.date).push(o);
   }
-  return new Set([...byDate].filter(([, s]) => s.size > 1).map(([d]) => d));
+  const out = new Set();
+  for (const [date, list] of byDate) {
+    const heavy = new Set(list.filter((o) => busy.has(o.event.typeId)).map((o) => o.projectId));
+    if (heavy.size > 1) { out.add(date); continue; }
+    // Timed events (single-day) from different projects that overlap.
+    const timed = list.filter((o) => o.event.time && o.dayCount === 1).map((o) => {
+      const start = toMin(o.event.time);
+      const end = o.event.endTime ? toMin(o.event.endTime) : start + 60;
+      return { p: o.projectId, start, end: Math.max(end, start + 1) };
+    });
+    if (timed.some((a, i) => timed.some((b, j) => j > i && a.p !== b.p && a.start < b.end && b.start < a.end))) out.add(date);
+  }
+  return out;
 }
 
 // occ: occurrences (see schedule/events.js). With `focusProjectId` (a
@@ -100,7 +117,7 @@ export function clashDates(occ) {
 export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectId, compact }) {
   const wide = !usePhone();
   const today = todayStr();
-  const clashes = clashDates(occ);
+  const clashes = clashDates(occ, types);
   const byDate = new Map();
   for (const o of occ) {
     if (!byDate.has(o.date)) byDate.set(o.date, []);
@@ -170,9 +187,9 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                 {Number(date.slice(8))}
               </span>
               {clash && (
-                <span title="Clash: more than one project on this day" style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7, borderRadius: "50%", background: "var(--danger)" }} />
+                <span title="Clash: two projects need you this day" style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7, borderRadius: "50%", background: "var(--danger)" }} />
               )}
-              {mine.slice(0, maxBars).map((o, k) => {
+              {mine.slice(0, mine.length > maxBars ? maxBars - 1 : maxBars).map((o, k) => {
                 const t = typeOf(types, o.event.typeId);
                 const faded = !o.event.confirmed;
                 return showLabels ? (
@@ -197,7 +214,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                 );
               })}
               {mine.length > maxBars && (
-                <span style={{ fontSize: 9, color: "var(--muted)", lineHeight: "10px" }}>+{mine.length - maxBars}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)", lineHeight: "10px" }}>+{mine.length - (maxBars - 1)} more</span>
               )}
               {others.length > 0 && (
                 <span title="Other projects on this day" style={{ position: "absolute", bottom: 4, right: 4, width: 6, height: 6, borderRadius: "50%", background: "var(--muted2)" }} />
@@ -220,7 +237,7 @@ export function MonthKey({ month, occ, types, focusProjectId, filter, onToggle }
   const inMonth = occ.filter((o) => o.date.startsWith(month));
   const mine = focusProjectId ? inMonth.filter((o) => o.projectId === focusProjectId) : inMonth;
   const used = types.filter((t) => mine.some((o) => o.event.typeId === t.id));
-  const clashes = clashDates(inMonth);
+  const clashes = clashDates(inMonth, types);
   const hasClash = focusProjectId ? mine.some((o) => clashes.has(o.date)) : clashes.size > 0;
   const item = (key, swatch, label) => (
     <span key={key} style={{ display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>{swatch}{label}</span>

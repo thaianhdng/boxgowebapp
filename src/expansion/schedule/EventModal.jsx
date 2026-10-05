@@ -49,7 +49,7 @@ function TimePick({ value, onChange, optional }) {
 
 // For every event except shoot days: those are set in the project's Create
 // New / Edit window, like the equipment list's days. onSave gets [event].
-export function EventModal({ initial, isNew, types, onSave, onDelete, onClose }) {
+export function EventModal({ initial, isNew, types, onSave, onDelete, onClose, projectName }) {
   const [s, setS] = useState(initial);
   const [multi, setMulti] = useState(!!initial.end && initial.end > initial.start);
   const set = (patch) => setS((prev) => ({ ...prev, ...patch }));
@@ -60,6 +60,15 @@ export function EventModal({ initial, isNew, types, onSave, onDelete, onClose })
   function chooseTimed(on) {
     setTimed(on);
     if (on && !s.time) set({ time: "09:00", endTime: "10:00" });
+  }
+
+  // A start time moved past the end time pushes the end an hour later
+  // (so a time range can't end before it starts).
+  function setStart(time) {
+    if (!s.endTime || !time || s.endTime > time) return set({ time });
+    const [h, m] = time.split(":").map(Number);
+    const end = Math.min(h * 60 + m + 60, 23 * 60 + 55);
+    set({ time, endTime: `${pad(Math.floor(end / 60))}:${pad(end % 60)}` });
   }
 
   // Multi-day needs an end date: it starts as the day after the start.
@@ -77,7 +86,7 @@ export function EventModal({ initial, isNew, types, onSave, onDelete, onClose })
 
   return (
     <Modal
-      title={isNew ? "Add event" : "Edit event"}
+      title={`${isNew ? "Add event" : "Edit event"}${projectName ? ` · ${projectName}` : ""}`}
       onClose={onClose}
       footer={
         <>
@@ -135,7 +144,7 @@ export function EventModal({ initial, isNew, types, onSave, onDelete, onClose })
       </Row>
       {timed && (
         <Row label="">
-          <TimePick value={s.time} onChange={(time) => set({ time })} />
+          <TimePick value={s.time} onChange={setStart} />
           <span style={{ color: "var(--muted)", flexShrink: 0 }}>–</span>
           <TimePick value={s.endTime} onChange={(endTime) => set({ endTime })} optional />
         </Row>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Palette } from "lucide-react";
+import { Palette, Plus } from "lucide-react";
 import { monthKey, todayStr, wdm } from "../shared/dates.js";
 import { typeOf } from "../schedule/eventTypes.js";
 import { occurrences } from "../schedule/events.js";
@@ -9,7 +9,7 @@ import { MonthGrid, MonthHeader, MonthKey, clashDates } from "./MonthGrid.jsx";
 // Every event of every project on one calendar, coloured by event type,
 // tentative ones faded, and clashes marked. Tap a day for its events, or
 // list the whole month.
-export function CalendarPanel({ app, projects, types, onManageTypes }) {
+export function CalendarPanel({ app, projects, types, onManageTypes, onAddEvent }) {
   const [month, setMonth] = useState(() => monthKey(todayStr()));
   const [selDate, setSelDate] = useState(null);
   const [listMonth, setListMonth] = useState(false);
@@ -18,7 +18,7 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
   const [typeFilter, setTypeFilter] = useState(() => new Set());
   const toggleType = (id) => setTypeFilter((f) => { const n = new Set(f); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const occ = useMemo(() => (typeFilter.size ? allOcc.filter((o) => typeFilter.has(o.event.typeId)) : allOcc), [allOcc, typeFilter]);
-  const clashes = useMemo(() => clashDates(occ), [occ]);
+  const clashes = useMemo(() => clashDates(occ, types), [occ, types]);
 
   const shown = selDate ? occ.filter((o) => o.date === selDate) : listMonth ? occ.filter((o) => o.date.startsWith(month)) : [];
   const byDate = [];
@@ -46,7 +46,12 @@ export function CalendarPanel({ app, projects, types, onManageTypes }) {
           <MonthKey month={month} occ={allOcc} types={types} filter={typeFilter} onToggle={toggleType} />
         </div>
         {selDate ? (
-          <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11, flexShrink: 0 }} onClick={() => setSelDate(null)}>Close day</button>
+          <span style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            {onAddEvent && (
+              <button className="btn btn-primary" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => onAddEvent(selDate)} title="Add an event on this day to one of your projects"><Plus size={12} /> Add event</button>
+            )}
+            <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => setSelDate(null)}>Close day</button>
+          </span>
         ) : (
           <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11, flexShrink: 0 }} onClick={() => setListMonth((v) => !v)}>
             {listMonth ? "Hide month list" : "List this month"}

@@ -34,7 +34,7 @@ export function SectionTitle({ children, right }) {
 
 export function Section({ title, right, children, id }) {
   return (
-    <section id={id} style={{ marginBottom: 26 }}>
+    <section id={id} style={{ marginBottom: 26, scrollMarginTop: 44 }}>
       <SectionTitle right={right}>{title}</SectionTitle>
       {children}
     </section>
