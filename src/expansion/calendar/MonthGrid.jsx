@@ -135,7 +135,9 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
   // than they are tall (see ProjectsHome), so they stay wider than tall.
   const cellH = named ? (wide ? 92 : 80) : compact ? 40 : wide ? DAY_HEIGHT : 84;
   const cellSize = { height: cellH };
-  const maxBars = named ? (wide ? 3 : 2) : compact ? 2 : 3;
+  // As many names as fit the box with a "+N more" line under them (on a
+  // phone each name takes two lines, so two fit).
+  const maxBars = named ? (wide ? 3 : 2) : compact ? 2 : wide ? 3 : 2;
   // Shoot day numbers for the focused project, in date order.
   const shootIds = new Set(types.filter((t) => t.shoot).map((t) => t.id));
   const dayNo = new Map(
@@ -189,7 +191,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
               {clash && (
                 <span title="Clash: two projects need you this day" style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7, borderRadius: "50%", background: "var(--danger)" }} />
               )}
-              {mine.slice(0, mine.length > maxBars ? maxBars - 1 : maxBars).map((o, k) => {
+              {mine.slice(0, maxBars).map((o, k) => {
                 const t = typeOf(types, o.event.typeId);
                 const faded = !o.event.confirmed;
                 return showLabels ? (
@@ -214,7 +216,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                 );
               })}
               {mine.length > maxBars && (
-                <span style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)", lineHeight: "10px" }}>+{mine.length - (maxBars - 1)} more</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)", lineHeight: "10px" }}>+{mine.length - maxBars} more</span>
               )}
               {others.length > 0 && (
                 <span title="Other projects on this day" style={{ position: "absolute", bottom: 4, right: 4, width: 6, height: 6, borderRadius: "50%", background: "var(--muted2)" }} />

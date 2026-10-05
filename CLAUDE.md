@@ -104,7 +104,7 @@ Start of each conversation, the owner should say which one it is:
      Project cards show status and which parts exist (List, Budget,
      Files). A clash (red dot) = two projects' shoots / prelights on one
      day, or overlapping set times (`clashDates`); a full day box shows
-     "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
+     as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
      owner: its crumb root reads "Equipment" (others: "Project Manager"),
      tapping the project name in its crumb opens the Project page,
      Cancelled jobs' lists get a "Cancelled" mark on their card and crumb
@@ -197,6 +197,11 @@ Start of each conversation, the owner should say which one it is:
   zoom (pop-up menus position through `src/lib/fixedPos.js`).
 
 ## Testing
+
+- `testdata/`: made-up test data (ids start `7e57`) — a projects-only
+  backup safe for the real account, a full backup for a spare account,
+  owner Projects / Calendar extras SQL and a cleanup SQL. See its README;
+  regenerate with `node testdata/make-test-data.mjs`.
 
 - `npm install --no-save playwright` (gets pruned by other `--no-save`
   installs; reinstall if missing). Launch Chromium with
