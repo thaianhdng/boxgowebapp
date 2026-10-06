@@ -83,9 +83,11 @@ Start of each conversation, the owner should say which one it is:
      route `{ screen: "projects" }`: BOXGO's header (crumb PROJECTS or
      CALENDAR / <project>, Edit project, Settings, one save tick) with
      `<Expansion part="screen">` under it — `screen` "projects" = Projects
-     home (search, Create New, status filter chips, projects grouped by
-     status under bold headings; Done / Cancelled folded, remembered per
-     device; Done is split by year, each foldable), "calendar" = Calendar home
+     home (search, Create New, projects grouped by status under bold
+     headings — the heading and the card's coloured left edge are the only
+     status marks, no filter chips or per-card status label (owner's call);
+     Done / Cancelled folded, remembered per device; Done is split by year,
+     each foldable; while searching every group is open), "calendar" = Calendar home
      (`calendar/CalendarHome.jsx`: search + full-width calendar of every
      project, cancelled ones left out; "List this month" starts open; a
      tapped day has "+ Add event": pick the project — active ones, Done on
@@ -113,8 +115,8 @@ Start of each conversation, the owner should say which one it is:
      `project.files = [{ kind: script|treatment|recce|other, name, url }]`,
      pasted links, open in a new tab; real Google Drive picking later).
      Project cards copy the equipment list's card layout and size
-     (owner's call; 240px grid, same lines: tag · name · dates with the
-     status where the ⋮ sits, Production House + Producer, Rental House +
+     (owner's call; 240px grid, same lines: tag · name · dates, Production
+     House + Producer, Rental House +
      Gaffer, shoot locations), then the next event, what the job has
      ("List · 3 files", nothing when neither) and the notes; long names
      wrap. The Projects home keeps the list's 22px page margins on a phone

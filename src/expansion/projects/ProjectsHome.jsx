@@ -39,7 +39,7 @@ function roleName(people, exact, loose) {
 const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 
 // Laid out like the equipment list's project cards (same size and lines):
-// tag · name · shoot dates (status where the ⋮ menu sits), Production
+// tag · name · shoot dates, Production
 // House + Producer · Rental House + Gaffer, shoot locations, then the
 // next event, what the job has, and the notes.
 function ProjectCard({ project, status, hasList, types, today, onOpen }) {
@@ -76,7 +76,6 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
           <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", marginRight: 4, textDecoration: status === "cancelled" ? "line-through" : "none" }}>{project.name || "Untitled"}</span>
           {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)" }}>{range}</span>}
         </div>
-        <StatusChip status={status} style={{ flexShrink: 0, marginTop: 2 }} />
       </div>
       {(project.productionHouse || producer || project.rentalHouse || gaffer) && (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 3, fontSize: 11, color: "var(--muted)" }}>
@@ -134,7 +133,6 @@ function readFolded() {
 export function ProjectsHome({ app, projects, types, actions }) {
   const [creating, setCreating] = useState(false);
   const [q, setQ] = useState("");
-  const [only, setOnly] = useState(null); // a status id, or null for all
   const [folded, setFolded] = useState(readFolded);
   const today = todayStr();
 
@@ -153,30 +151,10 @@ export function ProjectsHome({ app, projects, types, actions }) {
       .map(([id, project]) => ({ id, project, status: statusOf(project, types, today) }));
   }, [projects, q, types, today]);
   const groups = useMemo(() => arrange(entries, today, types), [entries, today, types]);
-  const count = (id) => entries.filter((e) => e.status === id).length;
-
-  const chip = (id, label, n) => {
-    const on = only === id;
-    const color = id ? statusInfo(id).color : "var(--accent)";
-    return (
-      <button
-        key={id || "all"}
-        type="button"
-        onClick={() => setOnly(on ? null : id)}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit",
-          fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 3,
-          border: `1px solid ${on ? color : "var(--border2)"}`, background: on ? "var(--surface2)" : "transparent",
-          color: on ? "var(--text)" : "var(--muted)",
-        }}
-      >
-        {id && <span style={{ width: 7, height: 7, borderRadius: 2, background: color }} />}
-        {label} <span style={{ color: "var(--muted2)", fontWeight: 600 }}>{n}</span>
-      </button>
-    );
-  };
-
-  const shown = groups.filter(([s, list]) => list.length && (!only || only === s.id));
+  const shown = groups.filter(([, list]) => list.length);
+  // While searching, every group is open so no match hides in a folded one.
+  const searching = q.trim() !== "";
+  const isFolded = (key) => !searching && folded.has(key);
 
   const cards = (list) => (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
@@ -204,7 +182,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
     }
     return years.map(([y, l]) => {
       const key = `done-${y}`;
-      const closed = folded.has(key);
+      const closed = isFolded(key);
       return (
         <div key={y} style={{ marginBottom: 14 }}>
           <button
@@ -232,13 +210,6 @@ export function ProjectsHome({ app, projects, types, actions }) {
         <Plus size={14} /> Create New
       </button>
 
-      {Object.keys(projects).length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-          {chip(null, "All", entries.length)}
-          {STATUSES.filter((s) => count(s.id)).map((s) => chip(s.id, s.name, count(s.id)))}
-        </div>
-      )}
-
       {/* Desktop: the dashed Create New card, as in the equipment list. */}
       <button
         className="new-project-card"
@@ -260,16 +231,16 @@ export function ProjectsHome({ app, projects, types, actions }) {
       )}
 
       {shown.map(([s, list]) => {
-        const closed = !only && folded.has(s.id);
+        const closed = isFolded(s.id);
         return (
           <div key={s.id} style={{ marginBottom: 20 }}>
             <button
               type="button"
               className="stencil"
-              onClick={() => !only && toggleFold(s.id)}
-              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: only ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 10 }}
+              onClick={() => toggleFold(s.id)}
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 10 }}
             >
-              {!only && (closed ? <ChevronRight size={15} strokeWidth={2.5} /> : <ChevronDown size={15} strokeWidth={2.5} />)}
+              {closed ? <ChevronRight size={15} strokeWidth={2.5} /> : <ChevronDown size={15} strokeWidth={2.5} />}
               <span style={{ width: 9, height: 9, borderRadius: 2, background: s.color }} />
               {s.name} <span style={{ color: "var(--muted)", fontWeight: 700 }}>{list.length}</span>
             </button>
