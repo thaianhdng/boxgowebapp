@@ -8,8 +8,10 @@
 // is public by design (it's in every visitor's browser); what protects
 // the data is each table's row-level security.
 
-const TEST_URL = ""; // e.g. "https://abcdefghijklmnop.supabase.co"
-const TEST_ANON_KEY = "";
+// The owner's test project ("boxgo-test"). A publishable key (the new
+// form of the public anon key), used exactly as Supabase documents it.
+const TEST_URL = "https://sknqssjxtctadptwziqb.supabase.co";
+const TEST_ANON_KEY = "sb_publishable_tvOkNaXwbZJciph0xs6-fA_luQMHmak";
 const TEST_DB = {
   url: import.meta.env.VITE_SUPABASE_TEST_URL || TEST_URL,
   anonKey: import.meta.env.VITE_SUPABASE_TEST_ANON_KEY || TEST_ANON_KEY,
