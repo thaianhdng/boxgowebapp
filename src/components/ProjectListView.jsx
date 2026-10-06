@@ -130,7 +130,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               <span
                 onClick={(e) => attr(e, "name", p.name)}
                 title="Filter by this project name"
-                style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", cursor: "pointer", marginRight: 4 }}
+                style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", cursor: "pointer", marginRight: 4, ...wrapAnywhere }}
               >
                 {p.name}
               </span>
@@ -170,7 +170,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 3, fontSize: 11, color: "var(--muted)" }}>
               {(p.productionHouse || p.producer) && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
+                <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "baseline", columnGap: 5, ...wrapAnywhere }}>
                   {p.productionHouse && (
                     <span
                       onClick={(e) => attr(e, "productionHouse", p.productionHouse)}
@@ -184,7 +184,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 </span>
               )}
               {(p.rentalHouse || p.gaffer) && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
+                <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "baseline", columnGap: 5, ...wrapAnywhere }}>
                   {p.rentalHouse && (
                     <span
                       onClick={(e) => attr(e, "rentalHouse", p.rentalHouse)}
@@ -264,6 +264,9 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
 }
 
 const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+// Long names wrap inside the card (breaking mid-word only when a single
+// word is wider than the card) instead of running off its edge.
+const wrapAnywhere = { minWidth: 0, maxWidth: "100%", overflowWrap: "anywhere" };
 
 function MenuItem({ icon, label, onClick, danger }) {
   return (
