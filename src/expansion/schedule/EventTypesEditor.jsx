@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
-import { Modal } from "../shared/ui.jsx";
 import { SWATCHES } from "./eventTypes.js";
 import { uid } from "../../lib/utils.js";
 
-// Add, rename, recolour, reorder and remove event types. The order here is
-// the order of the types in the event window, and breaks ties between
-// all-day events on the same day (see compareEvents in events.js).
-export function EventTypesModal({ types, usage, onChange, onClose }) {
+// Add, rename, recolour, reorder and remove event types (Settings →
+// Calendar). The order here is the order of the types in the event window,
+// and breaks ties between events on the same day (see compareEvents in
+// events.js).
+export function EventTypesEditor({ types, usage, onChange }) {
   const [picking, setPicking] = useState(null); // type id whose colour palette is open
   const [newName, setNewName] = useState("");
   const [msg, setMsg] = useState("");
@@ -37,7 +37,9 @@ export function EventTypesModal({ types, usage, onChange, onClose }) {
   }
 
   return (
-    <Modal title="Event types" onClose={onClose} footer={<><span /><button className="btn btn-primary" onClick={onClose}>Done</button></>}>
+    <div>
+      <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 4 }}>Event types</div>
+      <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10 }}>Tap a colour to change it; arrows set the order (also the order on a shared day).</div>
       {types.map((t, i) => (
         <div key={t.id} style={{ marginBottom: 6 }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -75,6 +77,6 @@ export function EventTypesModal({ types, usage, onChange, onClose }) {
         />
         <button className="btn btn-primary" onClick={add}><Plus size={13} /> Add</button>
       </div>
-    </Modal>
+    </div>
   );
 }

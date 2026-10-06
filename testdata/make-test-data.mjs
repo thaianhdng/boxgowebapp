@@ -6,7 +6,7 @@
 //                             no dates, long names, Vietnamese text, every
 //                             PDF font, a full-catalog stress list… plus
 //                             (owner only, "Projects & Calendar" in Restore)
-//                             their status, events, budget and files and 4
+//                             their status, events and files and 4
 //                             Calendar-only projects. Projects only, so it's
 //                             safe to restore into a real account (nothing
 //                             else can be replaced).
@@ -242,12 +242,10 @@ function xFromList(n, status, extra = {}, shootConfirmed = status === "confirmed
       name: p.name, tag: p.tag, productionHouse: p.productionHouse, rentalHouse: p.rentalHouse,
       notes: extra.notes || "", people: people(p), status, createdAt: p.createdAt,
       events: [...shootEvents(p, shootConfirmed), ...(extra.events || [])],
-      ...(extra.budget ? { budget: extra.budget } : {}),
       ...(extra.files ? { files: extra.files } : {}),
     },
   };
 }
-const line = (id, item, qty, rate, note = "") => ({ id, item, qty, rate, note });
 const file = (id, kind, name, url) => ({ id, kind, name, url });
 
 const X = [
@@ -261,11 +259,6 @@ const X = [
       ev("x13e", "offline", "2026-10-14", { time: "15:00", mode: "online", link: "https://frame.io/test-review", confirmed: false }),
       ev("x13f", "grading", "2026-10-19", { time: "09:30", endTime: "18:00", location: "Grading suite – Q.3", confirmed: false }),
     ],
-    budget: { currency: "VND", lines: [
-      line("b1", "DOP fee", 3, 18000000), line("b2", "Prep / recce days", 2, 6000000, "Recce + camera test"), line("b3", "1st AC", 4, 3500000),
-      line("b4", "2nd AC", 4, 2500000), line("b5", "DIT", 3, 4000000), line("b6", "Camera package (Venice 2)", 3, 12000000, "Venice 2 + Cooke S7/i"),
-      line("b7", "Overtime", 1.5, 3500000, "Day 2 went 2.5 hrs over"),
-    ] },
     files: [
       file("f1", "script", "Script v4 (approved)", "https://drive.google.com/file/d/test-script"),
       file("f2", "treatment", "DOP treatment – look & lighting", "https://drive.google.com/file/d/test-treatment"),
@@ -294,7 +287,6 @@ const X = [
       ev("x17c", "travel", "2026-10-24", { location: "DLI → SGN", confirmed: true }),
       ev("x17d", "offline", "2026-10-30", { time: "20:00", mode: "online", link: "https://frame.io/test-mv" }),
     ],
-    budget: { currency: "USD", lines: [line("u1", "DOP fee", 3, 900), line("u2", "Travel days", 2, 300), line("u3", "Per diem", 5, 35.5, "Đà Lạt")] },
     files: [file("g1", "treatment", "MV treatment", "https://drive.google.com/file/d/test-mv"), file("g2", "recce", "Langbiang recce video", "https://drive.google.com/file/d/test-recce-video")],
   }),
   xFromList(18, "confirmed", {
@@ -305,7 +297,6 @@ const X = [
       ev("x18d", "offline", "2026-11-20", { time: "10:00", mode: "online", link: MEET }),
       ev("x18e", "grading", "2026-11-27", { end: "2026-11-28", location: "Grading suite – Q.3" }),
     ],
-    budget: { currency: "VND", lines: Array.from({ length: 14 }, (_, i) => line(`p${i}`, ["DOP fee", "Prep days", "Travel days", "1st AC", "2nd AC", "DIT", "Video assist", "Camera package A", "Camera package B", "Lenses", "Grip package", "Lighting package", "Overtime", "Per diem"][i], [10, 4, 2, 10, 10, 10, 10, 10, 6, 10, 10, 10, 2, 6][i], [18000000, 6000000, 3000000, 3500000, 2500000, 4000000, 2000000, 15000000, 9000000, 8000000, 12000000, 30000000, 3500000, 500000][i])) },
     files: [file("h1", "script", "Script v7", "https://drive.google.com/file/d/test-pepsi")],
   }),
   xFromList(19, "softlock"),

@@ -27,9 +27,9 @@ const isMapsLink = (url) => /(maps\.google\.|google\.[a-z.]+\/maps|goo\.gl\/maps
 // One schedule event. `projectName` is shown on the all-projects calendar.
 // A MAP button shows when the location / link field holds a Google Maps
 // link, LINK for any other link; plain text gets no button. `hideLinks`
-// drops it.
-export function EventRow({ event, type, projectName, dayLabel, hideLinks, onClick, onToggleConfirmed }) {
-  const faded = !event.confirmed;
+// drops it. `tentative`: its project is a Soft lock (drawn faded).
+export function EventRow({ event, type, projectName, dayLabel, hideLinks, onClick, tentative }) {
+  const faded = !!tentative;
   const where = event.mode === "online" ? event.link : event.location;
   const href = linkIn(where);
   return (
@@ -74,20 +74,6 @@ export function EventRow({ event, type, projectName, dayLabel, hideLinks, onClic
         )}
         {event.note && <div style={{ fontSize: 12, color: "var(--text)", marginTop: 4, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{event.note}</div>}
       </div>
-      {onToggleConfirmed && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onToggleConfirmed(); }}
-          title={faded ? "Tentative — tap to confirm" : "Confirmed — tap to mark tentative"}
-          style={{
-            flexShrink: 0, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em",
-            padding: "3px 7px", borderRadius: 3, cursor: "pointer", fontFamily: "inherit",
-            border: `1px ${faded ? "dashed" : "solid"} ${faded ? "var(--muted2)" : "var(--text)"}`,
-            background: faded ? "transparent" : "var(--text)", color: faded ? "var(--muted)" : "var(--bg)",
-          }}
-        >
-          {faded ? "Tentative" : "Confirmed"}
-        </button>
-      )}
     </div>
   );
 }

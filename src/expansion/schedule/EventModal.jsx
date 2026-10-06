@@ -6,7 +6,7 @@ import { addDays, todayStr } from "../shared/dates.js";
 
 // A new event starts today; its type is picked in the window.
 export function newEvent(typeId, start = todayStr()) {
-  return { id: uid(), typeId, start, end: "", time: "", endTime: "", mode: "offline", location: "", link: "", note: "", confirmed: false };
+  return { id: uid(), typeId, start, end: "", time: "", endTime: "", mode: "offline", location: "", link: "", note: "" };
 }
 
 // Laid out like BOXGO's Create New window: a narrow label column on the
@@ -163,9 +163,6 @@ export function EventModal({ initial, isNew, types, onSave, onDelete, onClose, p
         <textarea value={s.note} onChange={(e) => set({ note: e.target.value })} rows={2} placeholder="Anything to remember…" style={{ ...small, width: "100%", resize: "vertical" }} />
       </Row>
 
-      <Row label="Status">
-        <Toggle options={[[false, "Tentative"], [true, "Confirmed"]]} value={!!s.confirmed} onChange={(confirmed) => set({ confirmed })} style={{ flex: 1 }} />
-      </Row>
     </Modal>
   );
 }

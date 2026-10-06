@@ -57,7 +57,7 @@ function ProjectPicker({ projects, types, date, onPick, onClose }) {
 // The Calendar module's home: every project's events on one full-width
 // calendar (cancelled projects left out), with a search that narrows it to
 // matching projects. A tapped day can get a new event for any project.
-export function CalendarHome({ app, projects, types, actions, onManageTypes }) {
+export function CalendarHome({ app, projects, types, actions }) {
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState(null); // { date, projectId? }
   const shown = useMemo(() => {
@@ -72,7 +72,7 @@ export function CalendarHome({ app, projects, types, actions, onManageTypes }) {
         <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects…" style={{ width: "100%", paddingLeft: 30, fontSize: 13 }} />
       </div>
-      <CalendarPanel app={app} projects={shown} types={types} onManageTypes={onManageTypes} onAddEvent={(date) => setAdding({ date })} />
+      <CalendarPanel app={app} projects={shown} types={types} onAddEvent={(date) => setAdding({ date })} />
 
       {adding && !adding.projectId && (
         <ProjectPicker projects={projects} types={types} date={adding.date} onClose={() => setAdding(null)} onPick={(projectId) => setAdding({ ...adding, projectId })} />

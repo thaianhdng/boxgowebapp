@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCheck, Palette, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Section, smallBtn } from "../shared/ui.jsx";
 import { typeOf, shootTypeId } from "./eventTypes.js";
 import { sortEvents } from "./events.js";
@@ -7,8 +7,9 @@ import { EventRow } from "./EventRow.jsx";
 import { EventModal, newEvent } from "./EventModal.jsx";
 
 // Shoot days are listed here but changed in the project's Edit window
-// (onEditShootDays); their Tentative / Confirmed switch works here.
-export function ScheduleSection({ events, types, request, onChange, onManageTypes, onEditShootDays, highlightDate }) {
+// (onEditShootDays). `tentative`: the project is a Soft lock, so its events
+// are drawn faded. (Event types are edited in Settings → Calendar.)
+export function ScheduleSection({ events, types, request, onChange, onEditShootDays, highlightDate, tentative }) {
   const [editing, setEditing] = useState(null); // { event, isNew }
   const list = events || [];
 
@@ -19,7 +20,6 @@ export function ScheduleSection({ events, types, request, onChange, onManageType
     if (cur) openEvent(cur);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request?.n]);
-  const tentative = list.filter((s) => !s.confirmed).length;
   const shootId = shootTypeId(types);
   const sorted = sortEvents(list, types);
   // Shoot days numbered D1, D2… in date order, as in the equipment list.
@@ -32,7 +32,6 @@ export function ScheduleSection({ events, types, request, onChange, onManageType
     setEditing(null);
   }
   const openEvent = (s) => (s.typeId === shootId ? onEditShootDays() : setEditing({ isNew: false, event: s }));
-  const setConfirmed = (ids, confirmed) => onChange(list.map((x) => (ids.includes(x.id) ? { ...x, confirmed } : x)));
 
   const row = (s, dayLabel) => (
     <div key={s.id} style={{ background: lit(s) ? "var(--surface2)" : "transparent" }}>
@@ -41,7 +40,7 @@ export function ScheduleSection({ events, types, request, onChange, onManageType
         type={typeOf(types, s.typeId)}
         dayLabel={dayLabel}
         onClick={() => openEvent(s)}
-        onToggleConfirmed={() => setConfirmed([s.id], !s.confirmed)}
+        tentative={tentative}
       />
     </div>
   );
@@ -54,12 +53,6 @@ export function ScheduleSection({ events, types, request, onChange, onManageType
       title="Schedule"
       right={
         <>
-          {tentative > 0 && (
-            <button className="btn btn-ghost" style={smallBtn} onClick={() => onChange(list.map((s) => ({ ...s, confirmed: true })))}>
-              <CheckCheck size={12} /> Confirm all
-            </button>
-          )}
-          <button className="btn btn-ghost" style={smallBtn} onClick={onManageTypes} title="Event types and colours" aria-label="Event types"><Palette size={12} /></button>
           <button className="btn btn-primary" style={smallBtn} onClick={() => setEditing({ isNew: true, event: highlightDate ? newEvent("", highlightDate) : newEvent("") })} title={highlightDate ? "Add an event on the day picked in the calendar" : "Add an event"}><Plus size={12} /> Add event</button>
         </>
       }

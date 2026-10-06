@@ -23,20 +23,10 @@ export function StatusChip({ status, style }) {
   );
 }
 
-// Which parts of the job are filled in: equipment list, budget, files.
-function Parts({ hasList, project }) {
-  const budget = (project.budget?.lines || []).length;
+// What the job already has: "List · 3 files" (nothing when it has neither).
+function partsOf(hasList, project) {
   const files = (project.files || []).length;
-  const parts = [["List", hasList], ["Budget", budget > 0], [files ? `${files} file${files > 1 ? "s" : ""}` : "Files", files > 0]];
-  return (
-    <span style={{ display: "flex", gap: 8, marginLeft: "auto", flexShrink: 0 }}>
-      {parts.map(([label, on]) => (
-        <span key={label} style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.4, textTransform: "uppercase", color: on ? "var(--text)" : "var(--muted2)", opacity: on ? 1 : 0.55 }}>
-          {on ? "✓ " : ""}{label}
-        </span>
-      ))}
-    </span>
-  );
+  return [hasList && "List", files && `${files} file${files > 1 ? "s" : ""}`].filter(Boolean).join(" · ");
 }
 
 function ProjectCard({ project, status, hasList, types, today, onOpen }) {
@@ -44,8 +34,7 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
   const nextType = next && typeOf(types, next.typeId);
   const dates = shootDates(project, types);
   const range = formatShootDateRange(dates.map((date) => ({ date })));
-  const tentative = status !== "cancelled" ? (project.events || []).filter((s) => !s.confirmed && s.start).length : 0;
-  const typeIds = [...new Set(sortEvents(project.events, types).map((s) => s.typeId))];
+  const parts = partsOf(hasList, project);
   return (
     <div
       onClick={onOpen}
@@ -67,16 +56,16 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
       {!dates.length && <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 3 }}>⚠ No shoot dates</div>}
       {staleSoftLock(project, types, today) && <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 3 }}>⚠ Shoot dates have passed: confirm or cancel?</div>}
       {project.productionHouse && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text)", marginTop: 3 }}>{project.productionHouse}</div>}
-      {next && (
-        <div style={{ fontSize: 11.5, marginTop: 5, opacity: next.confirmed ? 1 : 0.6 }}>
-          <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
+      {(next || parts) && (
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 5, fontSize: 11.5, minWidth: 0 }}>
+          {next && (
+            <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
+            </span>
+          )}
+          {parts && <span style={{ marginLeft: "auto", flexShrink: 0, fontSize: 11, color: "var(--muted)" }}>{parts}</span>}
         </div>
       )}
-      <div style={{ display: "flex", gap: 4, marginTop: 6, alignItems: "center", minWidth: 0 }}>
-        {typeIds.map((tid) => <span key={tid} title={typeOf(types, tid).name} style={{ width: 8, height: 8, borderRadius: 2, background: typeOf(types, tid).color, flexShrink: 0 }} />)}
-        {tentative > 0 && <span style={{ fontSize: 10.5, color: "var(--muted)", marginLeft: typeIds.length ? 4 : 0, whiteSpace: "nowrap" }}>{tentative} tentative</span>}
-        <Parts hasList={hasList} project={project} />
-      </div>
     </div>
   );
 }
@@ -187,7 +176,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
           <button
             type="button"
             onClick={() => toggleFold(key)}
-            style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", padding: "0 0 0 18px", cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 8 }}
+            style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", padding: "0 0 0 18px", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 800, color: "var(--text)", marginBottom: 8 }}
           >
             {closed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
             {y} <span style={{ color: "var(--muted2)", fontWeight: 600 }}>{l.length}</span>
@@ -244,11 +233,11 @@ export function ProjectsHome({ app, projects, types, actions }) {
               type="button"
               className="stencil"
               onClick={() => !only && toggleFold(s.id)}
-              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: only ? "default" : "pointer", fontFamily: "inherit", fontSize: 11, color: "var(--muted)", marginBottom: 8 }}
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: only ? "default" : "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 10 }}
             >
-              {!only && (closed ? <ChevronRight size={13} /> : <ChevronDown size={13} />)}
-              <span style={{ width: 7, height: 7, borderRadius: 2, background: s.color }} />
-              {s.name} <span style={{ color: "var(--muted2)" }}>{list.length}</span>
+              {!only && (closed ? <ChevronRight size={15} strokeWidth={2.5} /> : <ChevronDown size={15} strokeWidth={2.5} />)}
+              <span style={{ width: 9, height: 9, borderRadius: 2, background: s.color }} />
+              {s.name} <span style={{ color: "var(--muted)", fontWeight: 700 }}>{list.length}</span>
             </button>
             {!closed && (s.id === "done" ? byYear(list) : cards(list))}
           </div>

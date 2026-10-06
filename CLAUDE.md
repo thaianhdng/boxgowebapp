@@ -76,11 +76,12 @@ Start of each conversation, the owner should say which one it is:
      CALENDAR / <project>, Edit project, Settings, one save tick) with
      `<Expansion part="screen">` under it — `screen` "projects" = Projects
      home (search, Create New, status filter chips, projects grouped by
-     status; Done / Cancelled folded, remembered per device; Done is split
-     by year, each foldable), "calendar" = Calendar home
+     status under bold headings; Done / Cancelled folded, remembered per
+     device; Done is split by year, each foldable), "calendar" = Calendar home
      (`calendar/CalendarHome.jsx`: search + full-width calendar of every
-     project, cancelled ones left out; a tapped day has "+ Add event": pick
-     the project — active ones, Done on request — then the event window),
+     project, cancelled ones left out; "List this month" starts open; a
+     tapped day has "+ Add event": pick the project — active ones, Done on
+     request — then the event window),
      "project" = the
      Project page (`route.from = "calendar"` when opened from the Calendar,
      so its crumb and switch stay on Calendar) — and
@@ -90,19 +91,25 @@ Start of each conversation, the owner should say which one it is:
      project shows Shooting from its first shoot day to its last and Done
      after. Projects without a status count as Done if their shoot days
      are all past, else Soft lock; the sync part saves such past ones as
-     Confirmed with their events confirmed (so old jobs don't look
-     tentative). A Soft lock whose dates have passed gets
-     a "confirm or cancel?" warning. Setting Confirmed offers to confirm
-     all shoot days. Status is Project-only (not in the equipment list).
+     Confirmed. A Soft lock whose dates have passed gets a "confirm or
+     cancel?" warning. Status is Project-only (not in the equipment list).
+     **There is no per-event Tentative / Confirmed** (owner's call: project
+     status is enough): a Soft lock project's events are drawn faded /
+     dashed everywhere (`isTentative`, `occurrences(...).tentative`); old
+     events' `confirmed` field is ignored.
      The Project page: sticky jump bar (Calendar · Schedule · Equipment ·
-     Budget · Files), status, info strip, calendar (folded by default,
-     open/folded remembered per device), schedule, equipment list,
-     **Budget** (`budget/`: `project.budget = { currency: VND|USD, lines:
-     [{ item, qty, rate, note }] }`, total) and **Files** (`files/`:
+     Files), status, info strip, calendar (open by default, folding
+     remembered per device; this project's events in colour, other
+     projects' events greyed with their names), schedule, equipment list
+     and **Files** (`files/`:
      `project.files = [{ kind: script|treatment|recce|other, name, url }]`,
      pasted links, open in a new tab; real Google Drive picking later).
-     Project cards show status and which parts exist (List, Budget,
-     Files). A clash (red dot) = two projects' shoots / prelights on one
+     Project cards show status and what the job has ("List · 3 files",
+     nothing when neither; no event colour squares). The Budget feature
+     was removed (owner's call); old `project.budget` data is kept but
+     unused. **Event types** are edited in Settings → Calendar (an
+     owner-only tab: `AttributesManagerModal`'s `extraTabs`, rendering
+     `<Expansion part="settings">`), not from the calendars. A clash (red dot) = two projects' shoots / prelights on one
      day, or overlapping set times (`clashDates`); a full day box shows
      as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
      owner: its crumb root reads "Equipment" (others: "Project Manager"),
@@ -133,16 +140,14 @@ Start of each conversation, the owner should say which one it is:
      Shooting events are split into days (ids `<id>`, `<id>~1`…) by
      `splitShootRanges`. Shoot days are added / changed **only** in the
      project's Create New / Edit window (the event window has no Shooting
-     type; tapping a shoot day opens Edit project; its Tentative /
-     Confirmed switch still works in the schedule). A project's own
+     type; tapping a shoot day opens Edit project). A project's own
      calendar names each day's event (shoot days as "Shooting D1"…). The
      schedule lists every shoot day on its own line (D1, D2…). Events are
      always ordered date → time (all-day first) → the Event types list
      order → order added (`compareEvents` in `schedule/events.js`). Times
      are picked as hour : minute in 5-minute steps. The People feature is
      removed for now: a project's Producer / Gaffer (set in Create New /
-     Edit) still live in `people` and show in the info strip. New shoot days (from
-     either module) start tentative. Every project keeps at least one
+     Edit) still live in `people` and show in the info strip. Every project keeps at least one
      shoot day; Calendar's Create New requires them; projects without
      any show "⚠ No shoot dates" and sort first. New lists (Create New,
      Duplicate) get a Project automatically. **One Create New / Edit
@@ -158,9 +163,9 @@ Start of each conversation, the owner should say which one it is:
      desktop: dashed card); Calendar has the search bar only. Its colour key is tap-to-filter (tap event
      types to show only those; tap again to drop one). A Project with a list must
      keep at least one Shooting event. Schedule events: date or range,
-     optional time, online/offline, note, confirmed per event. Calendars
-     colour by event type; tentative is faded; Google Calendar (not built
-     yet) should get confirmed events only.
+     optional time, online/offline, note. Calendars colour by event type;
+     Soft lock projects' events are faded; Google Calendar (not built yet)
+     should get Confirmed projects' events only.
    - **Naming:** a schedule item is an **event** (UI and code: `events`,
      `EventModal`, `eventTypes`, "+ Add event", "Event types"). Data saved
      before the rename used `steps` (project) / `stepTypes` (settings);

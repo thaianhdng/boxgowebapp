@@ -6,7 +6,7 @@ so it can all be removed again in one step. Regenerate with
 
 | File | What it is |
 |---|---|
-| `boxgo-test-backup.json` | 27 test equipment lists and (owner only) their Projects / Calendar details: status, events, budget, files, plus 4 Calendar-only projects. Safe to restore into your real account: it can't replace anything else. |
+| `boxgo-test-backup.json` | 27 test equipment lists and (owner only) their Projects / Calendar details: status, events, files, plus 4 Calendar-only projects. Safe to restore into your real account: it can't replace anything else. |
 | `test-cleanup.sql` | Removes all test data again. Your own projects aren't touched. |
 | `boxgo-test-backup-FULL-spare-account-only.json` | Everything (catalog, tags, houses, templates, profile, appearance). **Only for a spare test account**: restoring it replaces those parts. |
 
@@ -39,5 +39,5 @@ Run → open BOXGO again.
 - In the Projects & Calendar details: every status (Shooting, Confirmed, Soft lock, Done,
   Cancelled, plus a stale Soft lock), every event type, timed and all-day
   events, multi-day events, online events with links and a Google Maps
-  recce, budgets in VND and USD, files of every kind, greyed Calendar-only
+  recce, files of every kind, greyed Calendar-only
   projects, and clashes on 2, 8, 9 and 28 October 2026.

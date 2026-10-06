@@ -1,7 +1,9 @@
-import { eachDay } from "../shared/dates.js";
+import { eachDay, todayStr } from "../shared/dates.js";
+import { statusOf } from "../projects/status.js";
 
 // An event: { id, typeId, start, end, time, endTime, mode: "offline"|"online",
-//           location, link, note, confirmed }
+//           location, link, note }. (Older events also carry `confirmed`;
+// it's no longer used: a project's status says whether it's tentative.)
 // `end` is "" for a single-day event.
 
 // Events are ordered by date, then time (all-day first), then the order of
@@ -28,17 +30,24 @@ export function eventDays(event) {
 }
 
 // Every event of every project, one entry per calendar day it covers:
-// { date, event, project, projectId, dayIndex, dayCount }
+// { date, event, project, projectId, dayIndex, dayCount, tentative }.
+// `tentative`: the project is a Soft lock (drawn faded / dashed).
 export function occurrences(projectsById, types) {
   const out = [];
+  const today = todayStr();
   for (const [projectId, project] of Object.entries(projectsById)) {
+    const tentative = isTentative(project, types, today);
     for (const event of project.events || []) {
       const days = eventDays(event);
-      days.forEach((date, i) => out.push({ date, event, project, projectId, dayIndex: i, dayCount: days.length }));
+      days.forEach((date, i) => out.push({ date, event, project, projectId, dayIndex: i, dayCount: days.length, tentative }));
     }
   }
   return out.sort((a, b) => compareEvents(a.event, b.event, types, a.date, b.date));
 }
+
+// A Soft lock project's events are tentative; Confirmed, Shooting and Done
+// ones aren't.
+export const isTentative = (project, types, today = todayStr()) => statusOf(project, types, today) === "softlock";
 
 // Date span of a project's dated events: { first, last } or null.
 export function projectSpan(project) {

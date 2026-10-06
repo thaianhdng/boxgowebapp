@@ -161,6 +161,9 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
           const others = focusProjectId ? all.filter((o) => o.projectId !== focusProjectId) : [];
           const isSel = selected === date;
           const clash = clashes.has(date) && (!focusProjectId || (mine.length > 0 && others.length > 0));
+          // A project's own calendar: its events in colour, then other
+          // projects' events greyed out.
+          const shown = [...mine, ...others];
           return (
             <button
               key={date}
@@ -191,11 +194,13 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
               {clash && (
                 <span title="Clash: two projects need you this day" style={{ position: "absolute", top: 4, right: 4, width: 7, height: 7, borderRadius: "50%", background: "var(--danger)" }} />
               )}
-              {mine.slice(0, maxBars).map((o, k) => {
+              {shown.slice(0, maxBars).map((o, k) => {
                 const t = typeOf(types, o.event.typeId);
-                const faded = !o.event.confirmed;
+                const faded = o.tentative;
+                const other = named && o.projectId !== focusProjectId;
+                const color = other ? "var(--muted2)" : t.color;
                 return showLabels ? (
-                  <span key={k} title={named ? t.name : `${o.project.name} · ${t.name}`} style={{
+                  <span key={k} title={named && !other ? t.name : `${o.project.name} · ${t.name}`} style={{
                     fontSize: small ? 8 : 10, fontWeight: 700, lineHeight: small ? "10px" : "14px",
                     padding: small ? "1px 2px" : "0 4px", borderRadius: 2, flexShrink: 0,
                     // On a phone names wrap onto two lines, between words
@@ -203,23 +208,21 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                     ...(small
                       ? { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "normal", overflowWrap: "normal" }
                       : { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }),
-                    background: faded ? "transparent" : t.color, color: faded ? t.color : "#111",
-                    border: `1px ${faded ? "dashed" : "solid"} ${t.color}`, opacity: faded ? 0.75 : 1,
+                    background: faded || other ? "transparent" : color, color: faded || other ? color : "#111",
+                    border: `1px ${faded ? "dashed" : "solid"} ${color}`, opacity: faded ? 0.75 : 1,
+                    ...(other ? { fontWeight: 600 } : {}),
                   }}>
-                    {(named ? (dayNo.has(o.event.id) ? `${t.name} D${dayNo.get(o.event.id)}` : t.name) : (o.project.name || t.name)).replace(/-/g, "\u2011")}
+                    {(named && !other ? (dayNo.has(o.event.id) ? `${t.name} D${dayNo.get(o.event.id)}` : t.name) : (o.project.name || t.name)).replace(/-/g, "\u2011")}
                   </span>
                 ) : (
                   <span key={k} style={{
                     height: 5, borderRadius: 2, flexShrink: 0,
-                    background: t.color, opacity: faded ? 0.3 : 1,
+                    background: color, opacity: faded ? 0.3 : 1,
                   }} />
                 );
               })}
-              {mine.length > maxBars && (
-                <span style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)", lineHeight: "10px" }}>+{mine.length - maxBars} more</span>
-              )}
-              {others.length > 0 && (
-                <span title="Other projects on this day" style={{ position: "absolute", bottom: 4, right: 4, width: 6, height: 6, borderRadius: "50%", background: "var(--muted2)" }} />
+              {shown.length > maxBars && (
+                <span style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)", lineHeight: "10px" }}>+{shown.length - maxBars} more</span>
               )}
               </div>
             </button>
@@ -231,7 +234,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
 }
 
 // A one-line key under a calendar: only the event types on screen this
-// month, plus tentative / other project / clash when they appear.
+// month, plus soft lock / other projects / clash when they appear.
 // With `onToggle` (the Calendar page) the event types are buttons: tap to
 // show only those types (`filter`, a Set; empty = all), tap again to drop
 // one.
@@ -267,8 +270,8 @@ export function MonthKey({ month, occ, types, focusProjectId, filter, onToggle }
   };
   const items = [
     ...used.map(typeItem),
-    mine.some((o) => !o.event.confirmed) && item("tent", <span style={{ width: 8, height: 8, borderRadius: 2, border: "1px dashed var(--muted)" }} />, "tentative"),
-    focusProjectId && inMonth.some((o) => o.projectId !== focusProjectId) && item("other", <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--muted2)" }} />, "other project"),
+    mine.some((o) => o.tentative) && item("tent", <span style={{ width: 8, height: 8, borderRadius: 2, border: "1px dashed var(--muted)" }} />, "soft lock"),
+    focusProjectId && inMonth.some((o) => o.projectId !== focusProjectId) && item("other", <span style={{ width: 8, height: 8, borderRadius: 2, border: "1px solid var(--muted2)" }} />, "other projects"),
     hasClash && item("clash", <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--danger)" }} />, "clash"),
   ].filter(Boolean);
   if (!items.length) return <span style={{ fontSize: 10.5, color: "var(--muted2)" }}>Nothing this month</span>;

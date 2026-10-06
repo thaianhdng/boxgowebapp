@@ -27,9 +27,13 @@ export function AttributesManagerModal({
   includeUsernameInPdf, onSetIncludeUsernameInPdf, includeEmailInPdf, onSetIncludeEmailInPdf, includePhoneInPdf, onSetIncludePhoneInPdf,
   theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId, uiSize, onSetUiSize,
   onOpenCatalog, onExportBackup, onRestoreFileSelect, backupError, onClose, onSignOut,
+  extraTabs,
 }) {
   const restoreInputRef = useRef(null);
   const [tab, setTab] = useState(SETTINGS_TABS[0].id);
+  // `extraTabs` (owner only): more tabs, e.g. Calendar — { id, label, content }.
+  const tabs = [...SETTINGS_TABS, ...(extraTabs || [])];
+  const extra = (extraTabs || []).find((t) => t.id === tab);
   return (
     <div className="no-print" style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
@@ -41,14 +45,15 @@ export function AttributesManagerModal({
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)" }}>
-          {SETTINGS_TABS.map((t) => (
+        <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)", ...(extraTabs ? { gap: 2, overflowX: "auto" } : {}) }}>
+          {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               style={{
                 flex: 1, padding: "8px 2px", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
-                fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+                fontSize: extraTabs ? 10.5 : 12, fontWeight: 700, whiteSpace: "nowrap",
+                ...(extraTabs ? { padding: "8px 0", letterSpacing: "-0.02em" } : {}),
                 color: tab === t.id ? "var(--accent)" : "var(--muted)",
                 borderBottom: `2px solid ${tab === t.id ? "var(--accent)" : "transparent"}`, marginBottom: -1,
               }}
@@ -57,6 +62,8 @@ export function AttributesManagerModal({
             </button>
           ))}
         </div>
+
+        {extra && <div style={{ marginBottom: 20 }}>{extra.content}</div>}
 
         {tab === "profile" && (
           <>

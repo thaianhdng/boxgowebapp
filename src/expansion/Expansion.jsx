@@ -13,13 +13,14 @@
 //                             equipment list in step (projects/sync.js)
 //   <Expansion part="crumb">  the project's name in the breadcrumb
 //                             (PROJECTS / HONDA TVC)
+//   <Expansion part="settings"> Settings → Calendar tab: event types
 //   <Expansion part="screen"> under BOXGO's header, by app.route.screen:
 //                             "projects" the Projects home (every project
 //                             by status), "calendar" the Calendar (every
 //                             project's events), "project" a Project page
 //                             (route.from = "calendar" when opened there)
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { useXStore, load, refresh, putProject, setEventTypes, getState, exportBackup, restoreBackup } from "./store.js";
 import { projectActions } from "./projects/actions.js";
@@ -29,11 +30,12 @@ import { todayStr } from "./shared/dates.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
 import { ProjectPage } from "./projects/ProjectPage.jsx";
 import { CalendarHome } from "./calendar/CalendarHome.jsx";
-import { EventTypesModal } from "./schedule/EventTypesModal.jsx";
+import { EventTypesEditor } from "./schedule/EventTypesEditor.jsx";
 
 export default function Expansion({ app, part }) {
   if (part === "sync") return <Sync app={app} />;
   if (part === "crumb") return <Crumb app={app} />;
+  if (part === "settings") return <CalendarSettings />;
   return <Screen app={app} />;
 }
 
@@ -46,6 +48,20 @@ function Crumb({ app }) {
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", color: "var(--accent)" }}>{p?.name || "Project"}</span>
     </span>
   );
+}
+
+// Settings → Calendar (owner only): the event types and their colours /
+// order. Shown inside BOXGO's Settings window.
+function CalendarSettings() {
+  const x = useXStore();
+  const types = x.settings.eventTypes;
+  const usage = useMemo(() => {
+    const u = {};
+    for (const p of Object.values(x.projects)) for (const s of p.events || []) u[s.typeId] = (u[s.typeId] || 0) + 1;
+    return u;
+  }, [x.projects]);
+  if (x.status !== "ready") return <div style={{ fontSize: 12, color: "var(--muted)" }}>Loading…</div>;
+  return <EventTypesEditor types={types} usage={usage} onChange={setEventTypes} />;
 }
 
 function Sync({ app }) {
@@ -95,8 +111,7 @@ function Sync({ app }) {
   // Shooting event per day (lists' day ids are unchanged by this).
   // Projects from before statuses existed whose shoot days are all past
   // (jobs that happened, mostly made in the equipment list) become
-  // Confirmed (so they show Done) with their events confirmed, instead of
-  // looking tentative forever.
+  // Confirmed (so they show Done), instead of looking like a Soft lock.
   useEffect(() => {
     if (x.status !== "ready") return;
     const today = todayStr();
@@ -104,7 +119,7 @@ function Sync({ app }) {
       const events = splitShootRanges(p.events, types);
       if (events) { putProject(id, { ...p, events }); continue; }
       if (!p.status && shootDates(p, types).length && statusOf(p, types, today) === "done") {
-        putProject(id, { ...p, status: "confirmed", events: (p.events || []).map((s) => (s.confirmed ? s : { ...s, confirmed: true })) });
+        putProject(id, { ...p, status: "confirmed" });
       }
     }
   }, [x.status, x.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -130,18 +145,12 @@ function Sync({ app }) {
 
 function Screen({ app }) {
   const x = useXStore();
-  const [showTypes, setShowTypes] = useState(false);
   const types = x.settings.eventTypes;
   const actions = useMemo(() => projectActions(app, types), [app, types]);
   const { screen, projectId, intent } = app.route;
 
   useEffect(() => { window.scrollTo(0, 0); }, [screen, projectId]);
 
-  const usage = useMemo(() => {
-    const u = {};
-    for (const p of Object.values(x.projects)) for (const s of p.events || []) u[s.typeId] = (u[s.typeId] || 0) + 1;
-    return u;
-  }, [x.projects]);
 
   let body;
   if (x.status === "error") {
@@ -164,11 +173,10 @@ function Screen({ app }) {
         types={types}
         actions={actions}
         intent={intent}
-        onManageTypes={() => setShowTypes(true)}
       />
     );
   } else if (screen === "calendar") {
-    body = <CalendarHome app={app} projects={x.projects} types={types} actions={actions} onManageTypes={() => setShowTypes(true)} />;
+    body = <CalendarHome app={app} projects={x.projects} types={types} actions={actions} />;
   } else {
     body = <ProjectsHome app={app} projects={x.projects} types={types} actions={actions} />;
   }
@@ -185,9 +193,6 @@ function Screen({ app }) {
         `}</style>
         {body}
       </main>
-      {showTypes && (
-        <EventTypesModal types={types} usage={usage} onChange={setEventTypes} onClose={() => setShowTypes(false)} />
-      )}
     </>
   );
 }

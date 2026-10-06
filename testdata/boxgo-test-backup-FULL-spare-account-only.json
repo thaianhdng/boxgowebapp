@@ -7169,60 +7169,6 @@
       "confirmed": false
      }
     ],
-    "budget": {
-     "currency": "VND",
-     "lines": [
-      {
-       "id": "b1",
-       "item": "DOP fee",
-       "qty": 3,
-       "rate": 18000000,
-       "note": ""
-      },
-      {
-       "id": "b2",
-       "item": "Prep / recce days",
-       "qty": 2,
-       "rate": 6000000,
-       "note": "Recce + camera test"
-      },
-      {
-       "id": "b3",
-       "item": "1st AC",
-       "qty": 4,
-       "rate": 3500000,
-       "note": ""
-      },
-      {
-       "id": "b4",
-       "item": "2nd AC",
-       "qty": 4,
-       "rate": 2500000,
-       "note": ""
-      },
-      {
-       "id": "b5",
-       "item": "DIT",
-       "qty": 3,
-       "rate": 4000000,
-       "note": ""
-      },
-      {
-       "id": "b6",
-       "item": "Camera package (Venice 2)",
-       "qty": 3,
-       "rate": 12000000,
-       "note": "Venice 2 + Cooke S7/i"
-      },
-      {
-       "id": "b7",
-       "item": "Overtime",
-       "qty": 1.5,
-       "rate": 3500000,
-       "note": "Day 2 went 2.5 hrs over"
-      }
-     ]
-    },
     "files": [
      {
       "id": "f1",
@@ -7631,32 +7577,6 @@
       "confirmed": false
      }
     ],
-    "budget": {
-     "currency": "USD",
-     "lines": [
-      {
-       "id": "u1",
-       "item": "DOP fee",
-       "qty": 3,
-       "rate": 900,
-       "note": ""
-      },
-      {
-       "id": "u2",
-       "item": "Travel days",
-       "qty": 2,
-       "rate": 300,
-       "note": ""
-      },
-      {
-       "id": "u3",
-       "item": "Per diem",
-       "qty": 5,
-       "rate": 35.5,
-       "note": "Đà Lạt"
-      }
-     ]
-    },
     "files": [
      {
       "id": "g1",
@@ -7903,109 +7823,6 @@
       "confirmed": false
      }
     ],
-    "budget": {
-     "currency": "VND",
-     "lines": [
-      {
-       "id": "p0",
-       "item": "DOP fee",
-       "qty": 10,
-       "rate": 18000000,
-       "note": ""
-      },
-      {
-       "id": "p1",
-       "item": "Prep days",
-       "qty": 4,
-       "rate": 6000000,
-       "note": ""
-      },
-      {
-       "id": "p2",
-       "item": "Travel days",
-       "qty": 2,
-       "rate": 3000000,
-       "note": ""
-      },
-      {
-       "id": "p3",
-       "item": "1st AC",
-       "qty": 10,
-       "rate": 3500000,
-       "note": ""
-      },
-      {
-       "id": "p4",
-       "item": "2nd AC",
-       "qty": 10,
-       "rate": 2500000,
-       "note": ""
-      },
-      {
-       "id": "p5",
-       "item": "DIT",
-       "qty": 10,
-       "rate": 4000000,
-       "note": ""
-      },
-      {
-       "id": "p6",
-       "item": "Video assist",
-       "qty": 10,
-       "rate": 2000000,
-       "note": ""
-      },
-      {
-       "id": "p7",
-       "item": "Camera package A",
-       "qty": 10,
-       "rate": 15000000,
-       "note": ""
-      },
-      {
-       "id": "p8",
-       "item": "Camera package B",
-       "qty": 6,
-       "rate": 9000000,
-       "note": ""
-      },
-      {
-       "id": "p9",
-       "item": "Lenses",
-       "qty": 10,
-       "rate": 8000000,
-       "note": ""
-      },
-      {
-       "id": "p10",
-       "item": "Grip package",
-       "qty": 10,
-       "rate": 12000000,
-       "note": ""
-      },
-      {
-       "id": "p11",
-       "item": "Lighting package",
-       "qty": 10,
-       "rate": 30000000,
-       "note": ""
-      },
-      {
-       "id": "p12",
-       "item": "Overtime",
-       "qty": 2,
-       "rate": 3500000,
-       "note": ""
-      },
-      {
-       "id": "p13",
-       "item": "Per diem",
-       "qty": 6,
-       "rate": 500000,
-       "note": ""
-      }
-     ]
-    },
     "files": [
      {
       "id": "h1",

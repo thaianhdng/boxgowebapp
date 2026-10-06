@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Section, Toggle } from "../shared/ui.jsx";
 import { monthKey, todayStr, wdm } from "../shared/dates.js";
 import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
-import { occurrences } from "../schedule/events.js";
+import { isTentative, occurrences } from "../schedule/events.js";
 import { MonthGrid, MonthHeader, MonthKey } from "../calendar/MonthGrid.jsx";
 import { ScheduleSection } from "../schedule/ScheduleSection.jsx";
 import { InfoStrip } from "./InfoStrip.jsx";
@@ -10,18 +10,17 @@ import { EquipmentPanel } from "./EquipmentPanel.jsx";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { listLike } from "./sync.js";
 import { SET_STATUSES, setStatus, staleSoftLock, statusInfo, statusOf } from "./status.js";
-import { BudgetSection } from "../budget/BudgetSection.jsx";
 import { FilesSection } from "../files/FilesSection.jsx";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 
 // Jump bar at the top of the page: each section of the job.
-const JUMPS = [["Calendar", "x-calendar"], ["Schedule", "x-schedule"], ["Equipment", "x-equipment"], ["Budget", "x-budget"], ["Files", "x-files"]];
+const JUMPS = [["Calendar", "x-calendar"], ["Schedule", "x-schedule"], ["Equipment", "x-equipment"], ["Files", "x-files"]];
 
-// The project's calendar starts folded (the schedule lists the same
-// events); opening or folding it is remembered on this device.
-const CAL_KEY = "boxgo-x-project-calendar-open";
+// The project's calendar starts open; folding it is remembered on this
+// device.
+const CAL_KEY = "boxgo-x-project-calendar";
 function readCalOpen() {
-  try { return localStorage.getItem(CAL_KEY) === "1"; } catch { return false; }
+  try { return localStorage.getItem(CAL_KEY) !== "closed"; } catch { return true; }
 }
 
 // Soft lock / Confirmed / Cancelled, set here; a Confirmed project shows
@@ -61,7 +60,7 @@ function startMonth(project) {
   return monthKey(dates.find((d) => d >= today) || dates[dates.length - 1] || today);
 }
 
-export function ProjectPage({ app, id, project, allProjects, types, actions, intent, onManageTypes }) {
+export function ProjectPage({ app, id, project, allProjects, types, actions, intent }) {
   const [showInfo, setShowInfo] = useState(false); // the shared Edit Project window
   const [creatingList, setCreatingList] = useState(false); // Create New, prefilled
   const [month, setMonth] = useState(() => startMonth(project));
@@ -70,7 +69,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
   const setCalOpen = (open) => {
     setCalOpenState(open);
     if (!open) setSelDate(null);
-    try { localStorage.setItem(CAL_KEY, open ? "1" : "0"); } catch { /* ignore */ }
+    try { localStorage.setItem(CAL_KEY, open ? "open" : "closed"); } catch { /* ignore */ }
   };
   // Opens the schedule's event window from the calendar to edit an event:
   // { event, n } (`n` so the same request can repeat).
@@ -91,12 +90,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
     types,
   ), [allProjects, types, id]);
 
-  function changeStatus(status) {
-    const tentativeShoots = (project.events || []).some((s) => s.typeId === shootTypeId(types) && !s.confirmed);
-    if (status === "confirmed" && tentativeShoots && window.confirm("Also mark all shoot days as confirmed?")) {
-      update({ status, events: (project.events || []).map((s) => (s.typeId === shootTypeId(types) ? { ...s, confirmed: true } : s)) });
-    } else update({ status });
-  }
+  const changeStatus = (status) => update({ status });
   const onSel = selDate ? occ.filter((o) => o.date === selDate) : [];
 
   return (
@@ -157,7 +151,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
                   key={i}
                   className="row"
                   onClick={() => (mine ? setEventRequest({ event: o.event, n: Date.now() }) : app.go({ screen: "project", projectId: o.projectId, from: app.route.from }))}
-                  style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center", padding: "4px 2px", cursor: "pointer", opacity: o.event.confirmed ? 1 : 0.55 }}
+                  style={{ fontSize: 12.5, display: "flex", gap: 6, alignItems: "center", padding: "4px 2px", cursor: "pointer", opacity: o.tentative ? 0.55 : 1 }}
                 >
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: mine ? t.color : "var(--muted2)", flexShrink: 0 }} />
                   <b style={{ color: mine ? t.color : "var(--muted)", flexShrink: 0 }}>{t.name}</b>
@@ -186,7 +180,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         }}
         request={eventRequest}
         onEditShootDays={() => setShowInfo(true)}
-        onManageTypes={onManageTypes}
+        tentative={isTentative(project, types)}
         highlightDate={selDate}
       />
 
@@ -197,8 +191,6 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         onCreate={() => setCreatingList(true)}
       />
 
-      <BudgetSection budget={project.budget} onChange={(budget) => update({ budget })} />
-
       <FilesSection files={project.files} onChange={(files) => update({ files })} />
 
       <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14, marginTop: 6 }}>
@@ -207,8 +199,8 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
           style={{ padding: "3px 8px", fontSize: 11, color: "var(--danger)" }}
           onClick={() => {
             const msg = list
-              ? `Delete "${project.name}" — its schedule, budget, files and its equipment list? This can't be undone.`
-              : `Delete "${project.name}" — its schedule, budget and files? This can't be undone.`;
+              ? `Delete "${project.name}" — its schedule, files and its equipment list? This can't be undone.`
+              : `Delete "${project.name}" — its schedule and files? This can't be undone.`;
             if (!window.confirm(msg)) return;
             actions.remove(id);
             app.go({ screen: app.route.from === "calendar" ? "calendar" : "projects" });

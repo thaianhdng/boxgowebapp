@@ -1297,7 +1297,7 @@ export default function EquipmentManifest({ session }) {
         accentId,
         fontId,
       };
-      // The owner's Projects / Calendar data (status, events, budget,
+      // The owner's Projects / Calendar data (status, events,
       // files, Calendar-only projects, event types).
       const expansion = isCatalogOwner ? xBackupRef.current?.export() : null;
       if (expansion) backup.expansion = expansion;
@@ -1796,7 +1796,7 @@ export default function EquipmentManifest({ session }) {
                       className="stencil"
                       // The owner can tap the name to open this job's Project page.
                       onClick={isCatalogOwner ? () => goX({ screen: "project", projectId: activeProjectId }) : undefined}
-                      title={isCatalogOwner ? "Open this project's page (status, schedule, budget, files)" : undefined}
+                      title={isCatalogOwner ? "Open this project's page (status, schedule, files)" : undefined}
                       style={{
                         fontSize: 15, display: "flex", alignItems: "center", gap: 6,
                         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200,
@@ -2340,6 +2340,11 @@ export default function EquipmentManifest({ session }) {
           onOpenCatalog={() => { setShowTagManager(false); setView("catalog"); }}
           onExportBackup={exportFullBackup}
           onRestoreFileSelect={handleBackupFileSelect}
+          extraTabs={isCatalogOwner ? [{
+            id: "calendar",
+            label: "Calendar",
+            content: <Suspense fallback={null}><Expansion part="settings" app={expansionApp} /></Suspense>,
+          }] : null}
           backupError={backupError}
           onClose={() => setShowTagManager(false)}
           onSignOut={() => supabase.auth.signOut()}
@@ -2355,7 +2360,7 @@ export default function EquipmentManifest({ session }) {
           extraSections={isCatalogOwner ? [{
             key: "expansion",
             label: "Projects & Calendar details",
-            detail: (d) => `${Object.keys(d.expansion?.projects || {}).length} projects' status, events, budget and files (added; your others are kept), plus any missing event types`,
+            detail: (d) => `${Object.keys(d.expansion?.projects || {}).length} projects' status, events and files (added; your others are kept), plus any missing event types`,
             has: (d) => !!d.expansion?.projects,
           }] : null}
         />
