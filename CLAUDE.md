@@ -142,9 +142,15 @@ Start of each conversation, the owner should say which one it is:
      in Restore: **Start fresh** (`wipeNote` prop → `sel.wipe`): deletes
      every current list (server first, awaited) and every Project
      (`store.wipeAll`) before restoring; event types / catalog / settings
-     stay unless ticked. Owner-only in Settings → Catalog & Data: **Remove
-     test data** (`TestDataCleaner`): deletes lists and Projects whose id
-     starts `7e57`, nothing else.
+     stay unless ticked. Owner-only in Settings → Catalog & Data, the **Test
+     data** box (`TestDataCleaner`): **Load test data** builds
+     `src/lib/testData.js` (dynamic import, own download) with every date
+     moved so it sits around today, and restores it through
+     `applyRestore` (lists + Projects / Calendar details); **Remove test
+     data** deletes lists and Projects whose id starts `7e57`, nothing
+     else. Meant to be offered to everyone when expansion features go
+     public for testing (owner's plan). Greyed "no list" cards never
+     double a project that has a list.
      `<Expansion part="sync">` is always
      mounted for the owner (renders nothing): loads the store, reports
      save state (`app.reportSaveState`) and runs the list → Project link.
@@ -241,10 +247,12 @@ Start of each conversation, the owner should say which one it is:
 
 ## Testing
 
-- `testdata/`: made-up test data (ids start `7e57`) — a projects-only
-  backup (with owner Projects / Calendar details) safe for the real
-  account, a full backup for a spare account, and a cleanup SQL. See its README;
-  regenerate with `node testdata/make-test-data.mjs`.
+- Test data lives in `src/lib/testData.js` (ids start `7e57`): the app's
+  Load / Remove test data buttons use it, and `node
+  testdata/make-test-data.mjs` writes it as files (`testdata/`: a
+  projects-only backup safe for the real account, a full backup for a
+  spare account, a cleanup SQL; see its README). Change the data there,
+  then regenerate the files.
 
 - `npm install --no-save playwright` (gets pruned by other `--no-save`
   installs; reinstall if missing). Launch Chromium with

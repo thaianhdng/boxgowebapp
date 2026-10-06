@@ -413,6 +413,15 @@ export default function EquipmentManifest({ session }) {
   const testIds = isCatalogOwner
     ? [...new Set([...projects.map((p) => p.id), ...(xBackupRef.current?.ids() || [])])].filter((id) => String(id).startsWith("7e57"))
     : [];
+  // Builds the test data now (dates around today) and restores it like a
+  // backup: the lists, plus the owner's Projects / Calendar details. Its
+  // code is only downloaded when this runs.
+  async function loadTestData() {
+    const { buildTestData } = await import("./lib/testData.js");
+    const { safe } = buildTestData(todayStr());
+    await applyRestore(safe, { projects: new Set(safe.projects.map((_, i) => i)), expansion: true });
+  }
+
   async function removeTestData() {
     const listIds = projects.map((p) => p.id).filter((id) => String(id).startsWith("7e57"));
     if (listIds.length) {
@@ -623,7 +632,10 @@ export default function EquipmentManifest({ session }) {
   const visibleDays = activeDay === "all" ? days : days.filter((d) => d.id === activeDay);
 
   const filteredProjects = useMemo(() => {
-    const all = isCatalogOwner ? [...projects, ...xGhosts] : projects;
+    // A greyed "no list yet" card never doubles a project that has a list
+    // (during a restore the expansion's report can lag a moment behind).
+    const listIds = new Set(projects.map((p) => p.id));
+    const all = isCatalogOwner ? [...projects, ...xGhosts.filter((g) => !listIds.has(g.id))] : projects;
     const base = projectFilter
       ? all.filter((p) => (p[projectFilter.field] || "") === projectFilter.value)
       : all;
@@ -2407,7 +2419,7 @@ export default function EquipmentManifest({ session }) {
           dataTop={isCatalogOwner || dbMode() === "test" ? (
             <>
               <DbSwitch />
-              <TestDataCleaner count={testIds.length} onRemove={removeTestData} />
+              <TestDataCleaner count={testIds.length} onLoad={loadTestData} onRemove={removeTestData} />
             </>
           ) : null}
           extraTabs={isCatalogOwner ? [{

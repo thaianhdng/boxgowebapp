@@ -1,8 +1,12 @@
 # BOXGO test data
 
 Made-up projects for testing every screen. Every test id starts with `7e57`,
-so it can all be removed again in one step. Regenerate with
-`node testdata/make-test-data.mjs`.
+so it can all be removed again in one step.
+
+**Easiest:** in BOXGO, Settings → Catalog & Data → **Load test data** (dated
+around today) and **Remove test data** — no files needed. The data itself
+is in `src/lib/testData.js`; these files are written from it with
+`node testdata/make-test-data.mjs` (dated around 5 October 2026).
 
 | File | What it is |
 |---|---|
