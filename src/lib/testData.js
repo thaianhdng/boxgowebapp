@@ -6,7 +6,7 @@
 // Calendar-only projects. Every id starts with 7e57 ("test"), so it can be
 // removed again without touching anything else.
 //
-// Used by Settings → Catalog & Data → Load test data (built at that
+// Used by Settings → Data → Load test data (built at that
 // moment, dates moved so they sit around today) and by
 // testdata/make-test-data.mjs (the backup files, dated around 2026-10-05).
 // Only downloaded when loaded (dynamic import).

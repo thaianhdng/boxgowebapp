@@ -1,6 +1,6 @@
 import { dbMode, setDbMode, testDbConfigured } from "../lib/dbMode.js";
 
-// Owner only (Settings → Catalog & Data): switch this device between the
+// Owner only (Settings → Data): switch this device between the
 // live database and the separate TEST one. Switching reloads the app; each
 // database has its own sign-in, projects, catalog and Calendar data.
 export function DbSwitch() {

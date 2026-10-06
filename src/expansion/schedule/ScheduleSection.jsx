@@ -8,7 +8,7 @@ import { EventModal, newEvent } from "./EventModal.jsx";
 
 // Shoot days are listed here but changed in the project's Edit window
 // (onEditShootDays). `tentative`: the project is a Soft lock, so its events
-// are drawn faded. (Event types are edited in Settings → Calendar.)
+// are drawn faded. (Event types are edited in Settings → Library.)
 export function ScheduleSection({ events, types, request, onChange, onEditShootDays, highlightDate, tentative }) {
   const [editing, setEditing] = useState(null); // { event, isNew }
   const list = events || [];

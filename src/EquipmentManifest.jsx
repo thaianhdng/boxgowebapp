@@ -2422,11 +2422,12 @@ export default function EquipmentManifest({ session }) {
               <TestDataCleaner count={testIds.length} onLoad={loadTestData} onRemove={removeTestData} />
             </>
           ) : null}
-          extraTabs={isCatalogOwner ? [{
-            id: "calendar",
-            label: "Calendar",
+          librarySections={isCatalogOwner ? [{
+            id: "eventTypes",
+            title: "Event Types",
             content: <Suspense fallback={null}><Expansion part="settings" app={expansionApp} /></Suspense>,
           }] : null}
+          backupNote={isCatalogOwner ? "Backup saves everything to one file: your projects with their Projects & Calendar details and event types, the master catalog and brands, tags, houses, templates, your profile and appearance. Restore lets you pick which parts to bring back." : null}
           backupError={backupError}
           onClose={() => setShowTagManager(false)}
           onSignOut={() => supabase.auth.signOut()}

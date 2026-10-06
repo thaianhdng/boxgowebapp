@@ -1,6 +1,6 @@
 # BOXGO test database (owner only)
 
-A second, separate Supabase project. In BOXGO, Settings → Catalog & Data →
+A second, separate Supabase project. In BOXGO, Settings → Data →
 Database switches the owner's device between **Live BOXGO** and **Test
 BOXGO**. Nothing done in Test touches the live data. The app's side is in
 `src/lib/dbMode.js`, which holds the test project's address
@@ -25,7 +25,7 @@ BOXGO**. Nothing done in Test touches the live data. The app's side is in
 
 ## Using it
 
-- Switch: Settings → Catalog & Data → Database → Test BOXGO. The app
+- Switch: Settings → Data → Database → Test BOXGO. The app
   reloads; sign in with the test password. A teal **TEST** badge shows in
   the header (and on the sign-in screen) the whole time.
 - To fill it with a copy of your real data: in Live, Settings → Backup;

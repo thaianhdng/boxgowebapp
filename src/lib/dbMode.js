@@ -1,7 +1,7 @@
 // Which database the app talks to: the live one (everyone) or the owner's
 // separate TEST project (a second Supabase project with the same tables —
 // setup in supabase/test-project/). The owner switches in Settings →
-// Catalog & Data; the choice is remembered on that device and the app
+// Data; the choice is remembered on that device and the app
 // reloads, so only one database is ever in use at a time.
 //
 // The test project's address and public (anon) key go here. The anon key

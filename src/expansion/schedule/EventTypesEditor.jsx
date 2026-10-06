@@ -4,7 +4,7 @@ import { SWATCHES } from "./eventTypes.js";
 import { uid } from "../../lib/utils.js";
 
 // Add, rename, recolour, reorder and remove event types (Settings →
-// Calendar). The order here is the order of the types in the event window,
+// Library → Event Types). The order here is the order of the types in the event window,
 // and breaks ties between events on the same day (see compareEvents in
 // events.js).
 export function EventTypesEditor({ types, usage, onChange }) {
@@ -38,8 +38,9 @@ export function EventTypesEditor({ types, usage, onChange }) {
 
   return (
     <div>
-      <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 4 }}>Event types</div>
-      <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10 }}>Tap a colour to change it; arrows set the order (also the order on a shared day).</div>
+      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>
+        Tap a colour square to change it. The arrows set the order: the order in the event window, and how events on the same day and time are listed. Shooting can be renamed and recoloured, not removed.
+      </div>
       {types.map((t, i) => (
         <div key={t.id} style={{ marginBottom: 6 }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>

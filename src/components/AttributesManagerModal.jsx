@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import {
-  Trash2, FileSpreadsheet, X, ClipboardPaste, Sun, Moon, Monitor,
+  Trash2, FileSpreadsheet, X, ClipboardPaste, Sun, Moon, Monitor, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { EditableAttrSection } from "./EditableAttrSection.jsx";
 import { Logo } from "./Logo.jsx";
@@ -27,33 +27,57 @@ export function AttributesManagerModal({
   includeUsernameInPdf, onSetIncludeUsernameInPdf, includeEmailInPdf, onSetIncludeEmailInPdf, includePhoneInPdf, onSetIncludePhoneInPdf,
   theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId, uiSize, onSetUiSize,
   onOpenCatalog, onExportBackup, onRestoreFileSelect, backupError, onClose, onSignOut,
-  extraTabs, dataTop,
+  librarySections, dataTop, backupNote,
 }) {
   const restoreInputRef = useRef(null);
   const [tab, setTab] = useState(SETTINGS_TABS[0].id);
-  // `extraTabs` (owner only): more tabs, e.g. Calendar — { id, label, content }.
-  const tabs = [...SETTINGS_TABS, ...(extraTabs || [])];
-  const extra = (extraTabs || []).find((t) => t.id === tab);
+  // Owner layout (`librarySections` given): "Lists" is "Library" — tags,
+  // houses, templates and the extra sections (e.g. Event types), each a
+  // fold-out, one open at a time — and "Catalog & Data" is "Data".
+  // Everyone else keeps the v1.0 tabs.
+  const owner = !!librarySections;
+  const tabs = owner
+    ? SETTINGS_TABS.map((t) => ({ ...t, label: { lists: "Library", data: "Data" }[t.id] || t.label }))
+    : SETTINGS_TABS;
+  const [openSection, setOpenSection] = useState(null);
+  const fold = (id, title, body) => {
+    const open = openSection === id;
+    return (
+      <div key={id} data-acc-open={open} style={{ borderBottom: "1px solid var(--border)" }}>
+        <button
+          type="button"
+          onClick={() => setOpenSection(open ? null : id)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 0",
+            background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: open ? "var(--accent)" : "var(--text)",
+          }}
+        >
+          <span className="stencil" style={{ fontSize: 12 }}>{title}</span>
+          {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </button>
+        {open && <div style={{ paddingBottom: 16 }}>{body}</div>}
+      </div>
+    );
+  };
+  const renameHint = (
+    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 10 }}>
+      Tap a name to rename it; every project using it updates. Removing one only takes it off this list: projects already using it keep it.
+    </div>
+  );
   return (
     <div className="no-print" style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
       alignItems: "center", justifyContent: "center", zIndex: 60, padding: 16,
     }}>
-      {/* With extra (owner-only) tabs the window is wider on bigger screens,
-          and on a phone the tabs sit in two rows of full names. */}
-      {extraTabs && (
-        <style>{`
-          .settings-x { max-width: 520px !important; }
-          @media (max-width: 560px) { .settings-tabs-x { display: grid !important; grid-template-columns: repeat(3, 1fr); row-gap: 2px; } }
-        `}</style>
-      )}
-      <div className={extraTabs ? "settings-x" : undefined} style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 400, maxHeight: "88vh", overflowY: "auto", padding: 22, border: "1px solid var(--border2)" }}>
+      {/* The owner's window is wider on bigger screens (more in Data). */}
+      {owner && <style>{".settings-x { max-width: 520px !important; }"}</style>}
+      <div className={owner ? "settings-x" : undefined} style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 400, maxHeight: "88vh", overflowY: "auto", padding: 22, border: "1px solid var(--border2)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, position: "sticky", top: -22, background: "var(--surface)", paddingTop: 22, marginTop: -22, zIndex: 5 }}>
           <div className="stencil" style={{ fontSize: 14, color: "var(--accent)" }}>Settings</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
 
-        <div className={extraTabs ? "settings-tabs-x" : undefined} style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)" }}>
+        <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)" }}>
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -69,8 +93,6 @@ export function AttributesManagerModal({
             </button>
           ))}
         </div>
-
-        {extra && <div style={{ marginBottom: 20 }}>{extra.content}</div>}
 
         {tab === "profile" && (
           <>
@@ -192,7 +214,39 @@ export function AttributesManagerModal({
           </>
         )}
 
-        {tab === "lists" && (
+        {tab === "lists" && owner && (
+          <div style={{ marginBottom: 20, borderTop: "1px solid var(--border)" }}>
+            {fold("tags", "Project Tags", <>
+              <EditableAttrSection bare placeholder="New tag…" items={tags} onAdd={onAddTag} onRename={onRenameTag} onRemove={onRemoveTag} uppercase />
+              {renameHint}
+            </>)}
+            {fold("production", "Production Houses", <>
+              <EditableAttrSection bare placeholder="New production house…" items={productionHouses} onAdd={onAddProductionHouse} onRename={onRenameProductionHouse} onRemove={onRemoveProductionHouse} />
+              {renameHint}
+            </>)}
+            {fold("rental", "Rental Houses", <>
+              <EditableAttrSection bare placeholder="New rental house…" items={rentalHouses} onAdd={onAddRentalHouse} onRename={onRenameRentalHouse} onRemove={onRemoveRentalHouse} />
+              {renameHint}
+            </>)}
+            {fold("templates", "Templates", <>
+              {templates.map((t) => (
+                <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: 13 }}>{t.name}</span>
+                  <button onClick={() => onDeleteTemplate(t.id)} title="Delete template" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
+                {templates.length === 0 && "No templates yet. "}
+                To make one, open an equipment list → Edit project → Save as Template. New equipment lists can then start from it (the "Start from" menu in Create New).
+              </div>
+            </>)}
+            {librarySections.map((sec) => fold(sec.id, sec.title, sec.content))}
+          </div>
+        )}
+
+        {tab === "lists" && !owner && (
           <>
           <EditableAttrSection
             title="Project Tags"
@@ -275,7 +329,7 @@ export function AttributesManagerModal({
               <div style={{ fontSize: 11.5, color: "#AA0000", marginBottom: 12 }}>{backupError}</div>
             )}
             <div style={{ fontSize: 11, color: "var(--muted)" }}>
-              Backup saves every project, tag, house, and the master catalog to one file. Restore lets you pick which parts of that file to bring back.
+              {backupNote || "Backup saves every project, tag, house, and the master catalog to one file. Restore lets you pick which parts of that file to bring back."}
             </div>
           </div>
           </>

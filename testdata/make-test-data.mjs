@@ -8,7 +8,7 @@
 //                             profile and appearance — for a spare account
 //                             only (Restore replaces each ticked section).
 //   test-cleanup.sql          removes all test data (ids starting 7e57).
-// In the app: Settings → Catalog & Data → Load / Remove test data does the
+// In the app: Settings → Data → Load / Remove test data does the
 // same without files. Run: node testdata/make-test-data.mjs
 
 import { writeFileSync } from "node:fs";

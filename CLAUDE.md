@@ -27,6 +27,11 @@ owned by a Director of Photography with **no coding knowledge**.
   desktop when the layout differs). Send both with `SendUserFile`
   (`display: "render"`), captioned "Before" / "After". Say when a change
   has nothing to show (e.g. a data fix).
+- **Keep wording accurate** (owner's standing request): after a change,
+  re-read the text it touches and anything that refers to it (hints,
+  labels, confirm messages, tooltips, READMEs, these notes). Renamed
+  tabs, moved features or changed behaviour often leave a hint that's no
+  longer true; fix those in the same change.
 
 ## Two streams of work
 
@@ -122,11 +127,15 @@ Start of each conversation, the owner should say which one it is:
      wrap. The Projects home keeps the list's 22px page margins on a phone
      (Calendar / Project pages: 14px, class `x-tight`). The Budget feature
      was removed (owner's call); old `project.budget` data is kept but
-     unused. **Event types** are edited in Settings → Calendar (an
-     owner-only tab: `AttributesManagerModal`'s `extraTabs`, rendering
-     `<Expansion part="settings">`), not from the calendars. With
-     extra tabs (owner) the Settings window is 520px wide (others: 400)
-     and on a phone its tabs sit in two rows (`.settings-tabs-x` grid). A clash (red dot) = two projects' shoots / prelights on one
+     unused. **Settings for the owner** (`AttributesManagerModal` with
+     `librarySections`; everyone else keeps v1.0's Profile · Appearance ·
+     Lists · Catalog & Data): one row of tabs Profile · Appearance ·
+     **Library** · **Data**, window 520px wide on bigger screens. Library =
+     fold-out sections, one open at a time: Project Tags, Production
+     Houses, Rental Houses, Templates, **Event Types**
+     (`<Expansion part="settings">` — event types are edited only here,
+     not from the calendars). Data = Database switch, Test data, Master
+     Catalog, Backup / Restore (owner's own backup note). A clash (red dot) = two projects' shoots / prelights on one
      day, or overlapping set times (`clashDates`); a full day box shows
      as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
      owner: its crumb root reads "Equipment" (others: "Project Manager"),
@@ -144,7 +153,7 @@ Start of each conversation, the owner should say which one it is:
      in Restore: **Start fresh** (`wipeNote` prop → `sel.wipe`): deletes
      every current list (server first, awaited) and every Project
      (`store.wipeAll`) before restoring; event types / catalog / settings
-     stay unless ticked. Owner-only in Settings → Catalog & Data, the **Test
+     stay unless ticked. Owner-only in Settings → Data, the **Test
      data** box (`TestDataCleaner`): **Load test data** builds
      `src/lib/testData.js` (dynamic import, own download) with every date
      moved so it sits around today, and restores it through
@@ -222,7 +231,7 @@ Start of each conversation, the owner should say which one it is:
     tables (`supabase/test-project/000_test_setup.sql` = base tables
     rebuilt from the code + 002, 005, 004; README there has the setup
     steps). `src/lib/dbMode.js` holds its URL / anon key; the owner
-    switches Live / Test in Settings → Catalog & Data (`DbSwitch`, saved
+    switches Live / Test in Settings → Data (`DbSwitch`, saved
     per device in localStorage `boxgo-db`, app reloads). The client picks
     the database at load (`supabaseClient.js`); share pages always use
     live. A teal TEST badge (`TestBadge`) shows in the header and on the
