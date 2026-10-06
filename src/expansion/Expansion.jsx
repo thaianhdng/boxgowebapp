@@ -21,7 +21,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { useXStore, load, refresh, putProject, setEventTypes, getState } from "./store.js";
+import { useXStore, load, refresh, putProject, setEventTypes, getState, exportBackup, restoreBackup } from "./store.js";
 import { projectActions } from "./projects/actions.js";
 import { listLike, projectFromList, projectWithList, splitShootRanges } from "./projects/sync.js";
 import { shootDates, statusOf } from "./projects/status.js";
@@ -59,6 +59,13 @@ function Sync({ app }) {
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
+
+  // BOXGO's Backup / Restore (Settings) carries the Projects and Calendar
+  // data too, for the owner.
+  useEffect(() => {
+    app.registerBackup({ export: exportBackup, restore: restoreBackup });
+    return () => app.registerBackup(null);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // BOXGO's header shows one save indicator for everything.
   useEffect(() => { app.reportSaveState(x.saveState); }, [x.saveState]); // eslint-disable-line react-hooks/exhaustive-deps

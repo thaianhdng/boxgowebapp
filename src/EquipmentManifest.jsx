@@ -85,6 +85,9 @@ export default function EquipmentManifest({ session }) {
   // Owner: ids of equipment lists whose job is Cancelled (from the
   // expansion). Only marks the project card and the crumb.
   const [xCancelled, setXCancelled] = useState([]);
+  // Owner: the expansion's backup hooks ({ export, restore }), so the
+  // Backup file also carries Projects / Calendar data.
+  const xBackupRef = useRef(null);
   const xCancelledSet = useMemo(() => new Set(xCancelled), [xCancelled]);
   const [ghostDraft, setGhostDraft] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -1294,12 +1297,17 @@ export default function EquipmentManifest({ session }) {
         accentId,
         fontId,
       };
+      // The owner's Projects / Calendar data (status, events, budget,
+      // files, Calendar-only projects, event types).
+      const expansion = isCatalogOwner ? xBackupRef.current?.export() : null;
+      if (expansion) backup.expansion = expansion;
       const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
       const mmdd = exportDateStr();
       const nameSlug = userName.trim() ? `_${slug(userName)}` : "";
       const finalName = withTimeStamp(`${mmdd}_boxgo-backup${nameSlug}.json`);
 
       saveFile(blob, finalName);
+      if (isCatalogOwner && !expansion) setBackupError("Saved, but without your Projects / Calendar details: they hadn't loaded yet. Wait a moment and make the backup again.");
     } catch (err) {
       console.error("Backup export failed:", err);
       setBackupError(`Backup couldn't be saved: ${err?.message || err}`);
@@ -1334,6 +1342,14 @@ export default function EquipmentManifest({ session }) {
   // project is kept — nothing is deleted.
   function applyRestore(data, sel) {
     const picked = (data.projects || []).filter((_, i) => sel.projects.has(i));
+    // Owner: Projects / Calendar details first, so the restored lists find
+    // their Projects already there. Lists left unticked keep theirs out too.
+    if (sel.expansion && xBackupRef.current) {
+      const skipIds = new Set((data.projects || []).filter((_, i) => !sel.projects.has(i)).map((p) => p.id));
+      if (xBackupRef.current.restore(data.expansion, { skipIds }) === null) {
+        setBackupError("Projects / Calendar details weren't restored: they hadn't loaded yet. Wait a moment and restore again.");
+      }
+    }
     if (picked.length > 0) {
       // A backup made before project ids were switched to real UUIDs (or one
       // hand-edited outside the app) can carry an id Supabase's projects.id
@@ -1530,6 +1546,7 @@ export default function EquipmentManifest({ session }) {
     deleteEquipmentList: deleteProject,
     addHouses: ({ productionHouse, rentalHouse }) => { addProductionHouse(productionHouse); addRentalHouse(rentalHouse); },
     reportGhosts: setXGhosts,
+    registerBackup: (api) => { xBackupRef.current = api; },
     reportCancelled: (ids) => setXCancelled((cur) => (cur.join() === ids.join() ? cur : ids)),
     // What the shared Create New / Edit window needs.
     recentProjectNames,
@@ -2335,6 +2352,12 @@ export default function EquipmentManifest({ session }) {
           currentProjectIds={new Set(projects.map((p) => p.id))}
           onCancel={() => setPendingRestore(null)}
           onRestore={(sel) => applyRestore(pendingRestore, sel)}
+          extraSections={isCatalogOwner ? [{
+            key: "expansion",
+            label: "Projects & Calendar details",
+            detail: (d) => `${Object.keys(d.expansion?.projects || {}).length} projects' status, events, budget and files (added; your others are kept), plus any missing event types`,
+            has: (d) => !!d.expansion?.projects,
+          }] : null}
         />
       )}
 

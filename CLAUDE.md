@@ -111,7 +111,13 @@ Start of each conversation, the owner should say which one it is:
      (`app.reportCancelled`; never in the preview, PDF or share page),
      Cancelled projects get no greyed card, and the floating back-to-top
      button shows on every page at every size (others: phones only, as in
-     v1.0). `<Expansion part="sync">` is always
+     v1.0). **Backup** (Settings) for the owner also carries the
+     expansion data as `expansion: { projects: {id: data}, eventTypes }`
+     (`store.exportBackup`); Restore offers it as "Projects & Calendar
+     details" (`store.restoreBackup`: adds / overwrites by id, skips lists
+     left unticked, adds missing event types). Wired through
+     `app.registerBackup`; other users' backups are unchanged.
+     `<Expansion part="sync">` is always
      mounted for the owner (renders nothing): loads the store, reports
      save state (`app.reportSaveState`) and runs the list → Project link.
      Data: `x_projects` (id = the list's `projects.id`) and `x_settings`
@@ -199,8 +205,8 @@ Start of each conversation, the owner should say which one it is:
 ## Testing
 
 - `testdata/`: made-up test data (ids start `7e57`) — a projects-only
-  backup safe for the real account, a full backup for a spare account,
-  owner Projects / Calendar extras SQL and a cleanup SQL. See its README;
+  backup (with owner Projects / Calendar details) safe for the real
+  account, a full backup for a spare account, and a cleanup SQL. See its README;
   regenerate with `node testdata/make-test-data.mjs`.
 
 - `npm install --no-save playwright` (gets pruned by other `--no-save`

@@ -21,9 +21,11 @@ export const RESTORE_SECTIONS = [
 
 // Lets the user pick what to take from a backup. Calls onRestore with
 // { projects: Set of indexes into data.projects, <section key>: true, … }.
-export function RestoreModal({ data, currentProjectIds, onCancel, onRestore }) {
+// `extraSections` (owner only): more sections in the same form, e.g. the
+// Projects / Calendar data.
+export function RestoreModal({ data, currentProjectIds, onCancel, onRestore, extraSections }) {
   const backupProjects = data.projects || [];
-  const sections = RESTORE_SECTIONS.filter((s) => s.has(data));
+  const sections = [...RESTORE_SECTIONS, ...(extraSections || [])].filter((s) => s.has(data));
   const [projectSel, setProjectSel] = useState(() => new Set(backupProjects.map((_, i) => i)));
   const [sectionSel, setSectionSel] = useState(() => new Set(sections.map((s) => s.key)));
   const [showProjects, setShowProjects] = useState(false);

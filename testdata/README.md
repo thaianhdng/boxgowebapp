@@ -6,8 +6,7 @@ so it can all be removed again in one step. Regenerate with
 
 | File | What it is |
 |---|---|
-| `boxgo-test-backup.json` | 27 test equipment lists, **projects only**. Safe to restore into your real account: it can't replace anything else. |
-| `test-projects-extras.sql` | Optional, owner only. Adds Projects / Calendar details a backup can't carry (status, events, budget, files) plus 4 Calendar-only projects. |
+| `boxgo-test-backup.json` | 27 test equipment lists and (owner only) their Projects / Calendar details: status, events, budget, files, plus 4 Calendar-only projects. Safe to restore into your real account: it can't replace anything else. |
 | `test-cleanup.sql` | Removes all test data again. Your own projects aren't touched. |
 | `boxgo-test-backup-FULL-spare-account-only.json` | Everything (catalog, tags, houses, templates, profile, appearance). **Only for a spare test account**: restoring it replaces those parts. |
 
@@ -15,10 +14,8 @@ so it can all be removed again in one step. Regenerate with
 
 1. Make a backup of your real data first: Settings → Catalog & Data → Backup.
 2. Settings → Catalog & Data → Restore → choose `boxgo-test-backup.json` →
-   Restore. (It only offers "Projects".)
-3. Optional, for Projects / Calendar: Supabase → SQL Editor → New query →
-   paste all of `test-projects-extras.sql` → Run. Then close BOXGO and open
-   it again.
+   Restore. It offers "Projects" (the equipment lists) and, for the owner,
+   "Projects & Calendar details" — keep both ticked.
 
 ## Remove it
 
@@ -39,7 +36,7 @@ Run → open BOXGO again.
   house / producer names.
 - All three PDF fonts, Vietnamese names, a very long project name, no-tag
   and no-house projects.
-- With the extras: every status (Shooting, Confirmed, Soft lock, Done,
+- In the Projects & Calendar details: every status (Shooting, Confirmed, Soft lock, Done,
   Cancelled, plus a stale Soft lock), every event type, timed and all-day
   events, multi-day events, online events with links and a Google Maps
   recce, budgets in VND and USD, files of every kind, greyed Calendar-only

@@ -4,18 +4,16 @@
 //                             case: 1–10 shoot days, per-day quantities,
 //                             notes, custom / subrent items, empty lists,
 //                             no dates, long names, Vietnamese text, every
-//                             PDF font, a full-catalog stress list… Projects
-//                             only, so it's safe to restore into a real
-//                             account (nothing else can be replaced).
+//                             PDF font, a full-catalog stress list… plus
+//                             (owner only, "Projects & Calendar" in Restore)
+//                             their status, events, budget and files and 4
+//                             Calendar-only projects. Projects only, so it's
+//                             safe to restore into a real account (nothing
+//                             else can be replaced).
 //   boxgo-test-backup-FULL-spare-account-only.json
 //                             the same plus catalog, tags, houses, templates,
 //                             profile and appearance — for a spare account
 //                             only (Restore replaces each ticked section).
-//   test-projects-extras.sql  optional, owner only: Projects / Calendar
-//                             details a backup can't carry (status, events,
-//                             budget, files) for those lists, plus a few
-//                             Calendar-only projects. Run in the Supabase
-//                             SQL Editor after restoring the backup.
 //   test-cleanup.sql          removes everything above again.
 // Every test id starts with 7e57 ("test") so cleanup can find them.
 
@@ -224,13 +222,6 @@ const backup = {
   accentId: "amber",
   fontId: "jetbrains",
 };
-// Safe for a real account: only the test projects (Restore adds them and
-// keeps everything else; with no other sections in the file, nothing else
-// can be replaced by mistake).
-writeFileSync(`${OUT}boxgo-test-backup.json`, JSON.stringify({ type: backup.type, version: backup.version, exportedAt: backup.exportedAt, projects: L }, null, 1));
-// Everything (catalog, tags, houses, templates, profile, appearance): only
-// for a spare test account — restoring its sections REPLACES those parts.
-writeFileSync(`${OUT}boxgo-test-backup-FULL-spare-account-only.json`, JSON.stringify(backup, null, 1));
 
 // ---------------------------------------------------------------- Projects / Calendar extras
 const ev = (id, typeId, start, o = {}) => ({ id, typeId, start, end: "", time: "", endTime: "", mode: "offline", location: "", link: "", note: "", confirmed: false, ...o });
@@ -337,16 +328,16 @@ const X = [
     people: [], events: [ev("c4k", "kickoff", "2026-10-07", { time: "17:00", mode: "online", link: MEET })] } },
 ];
 
-const q = (s) => `'${s.replace(/'/g, "''")}'`;
-writeFileSync(`${OUT}test-projects-extras.sql`, [
-  "-- BOXGO test data, part 2 (owner only): Projects / Calendar details for the",
-  "-- test equipment lists, plus 4 Calendar-only projects. Run AFTER restoring",
-  "-- boxgo-test-backup.json. Safe to run again. Remove with test-cleanup.sql.",
-  "insert into x_projects (id, data, updated_at) values",
-  X.map((r) => `  (${q(r.id)}, ${q(JSON.stringify(r.data))}::jsonb, now())`).join(",\n"),
-  "on conflict (id) do update set data = excluded.data, updated_at = now();",
-  "",
-].join("\n"));
+// The owner's Projects / Calendar data, the way BOXGO's Backup saves it.
+const expansion = { projects: Object.fromEntries(X.map((r) => [r.id, r.data])) };
+
+// Safe for a real account: only the test projects (Restore adds them and
+// keeps everything else; with no other sections in the file, nothing else
+// can be replaced by mistake).
+writeFileSync(`${OUT}boxgo-test-backup.json`, JSON.stringify({ type: backup.type, version: backup.version, exportedAt: backup.exportedAt, projects: L, expansion }, null, 1));
+// Everything (catalog, tags, houses, templates, profile, appearance): only
+// for a spare test account — restoring its sections REPLACES those parts.
+writeFileSync(`${OUT}boxgo-test-backup-FULL-spare-account-only.json`, JSON.stringify({ ...backup, expansion }, null, 1));
 
 writeFileSync(`${OUT}test-cleanup.sql`, [
   "-- Removes all BOXGO test data (every id starting with 7e57): the test",
@@ -359,4 +350,4 @@ writeFileSync(`${OUT}test-cleanup.sql`, [
   "",
 ].join("\n"));
 
-console.log(`${L.length} lists, ${templates.length} templates, ${X.length} Projects rows`);
+console.log(`${L.length} lists, ${templates.length} templates, ${X.length} Projects / Calendar entries`);

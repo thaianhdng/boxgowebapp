@@ -184,6 +184,34 @@ export async function removeProject(id) {
   }
 }
 
+// BOXGO's backup file carries this data for the owner (as `expansion`):
+// every Project (status, events, budget, files…) and the event types.
+// Null until loaded, so a backup never saves an empty copy by mistake.
+export function exportBackup() {
+  if (state.status !== "ready") return null;
+  return { projects: state.projects, eventTypes: state.settings.eventTypes };
+}
+
+// Restoring it adds the backup's Projects (overwriting ones with the same
+// id; `skipIds` = equipment lists the owner chose not to restore) and keeps
+// every other current Project. Event types missing here are added; the
+// owner's own types and colours stay as they are. Returns how many
+// Projects came back, or null when the data isn't loaded yet.
+export function restoreBackup(part, { skipIds = new Set() } = {}) {
+  if (state.status !== "ready" || !part) return null;
+  const incoming = Object.entries(part.projects || {})
+    .filter(([id, data]) => !skipIds.has(id) && data && typeof data === "object")
+    .map(([id, data]) => [id, renamedProject(data) || data]);
+  const have = new Set(state.settings.eventTypes.map((t) => t.id));
+  const newTypes = (part.eventTypes || []).filter((t) => t && t.id && !have.has(t.id));
+  set({
+    projects: { ...state.projects, ...Object.fromEntries(incoming) },
+    ...(newTypes.length ? { settings: { ...state.settings, eventTypes: [...state.settings.eventTypes, ...newTypes] } } : {}),
+  });
+  scheduleSave();
+  return incoming.length;
+}
+
 export function setEventTypes(eventTypes) {
   if (state.status !== "ready") return;
   set({ settings: { ...state.settings, eventTypes } });
