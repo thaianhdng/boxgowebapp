@@ -27,7 +27,7 @@ export function AttributesManagerModal({
   includeUsernameInPdf, onSetIncludeUsernameInPdf, includeEmailInPdf, onSetIncludeEmailInPdf, includePhoneInPdf, onSetIncludePhoneInPdf,
   theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId, uiSize, onSetUiSize,
   onOpenCatalog, onExportBackup, onRestoreFileSelect, backupError, onClose, onSignOut,
-  extraTabs,
+  extraTabs, dataTop,
 }) {
   const restoreInputRef = useRef(null);
   const [tab, setTab] = useState(SETTINGS_TABS[0].id);
@@ -237,6 +237,8 @@ export function AttributesManagerModal({
 
         {tab === "data" && (
           <>
+          {/* Owner only: the Live / Test database switch. */}
+          {dataTop}
           <div style={{ marginBottom: 20 }}>
             <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Master Catalog</div>
             <button

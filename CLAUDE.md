@@ -204,6 +204,17 @@ Start of each conversation, the owner should say which one it is:
   - SQL the owner has already run lives in `supabase/`. New SQL: add a
     numbered file there and give the owner the steps to run it in the
     Supabase SQL Editor.
+  - **Test database (owner only):** a second Supabase project with the same
+    tables (`supabase/test-project/000_test_setup.sql` = base tables
+    rebuilt from the code + 002, 005, 004; README there has the setup
+    steps). `src/lib/dbMode.js` holds its URL / anon key; the owner
+    switches Live / Test in Settings → Catalog & Data (`DbSwitch`, saved
+    per device in localStorage `boxgo-db`, app reloads). The client picks
+    the database at load (`supabaseClient.js`); share pages always use
+    live. A teal TEST badge (`TestBadge`) shows in the header and on the
+    sign-in screen, which also gets "Back to live BOXGO" (so does the
+    load-error screen: free projects pause when unused). Any new SQL for
+    live must also be added to the test project's setup file.
 - Each user has their **own** master catalog, cloned from
   `DEFAULT_CATALOG` / `DEFAULT_DEPARTMENTS` / `DEFAULT_BRANDS`
   (`src/constants.js`) on first sign-in. The owner updates those defaults

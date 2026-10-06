@@ -8,6 +8,9 @@ import { CatalogDeptSection } from "./components/CatalogDeptSection.jsx";
 import { CatalogItemFormModal } from "./components/CatalogItemFormModal.jsx";
 import { RestoreModal } from "./components/RestoreModal.jsx";
 import { Logo } from "./components/Logo.jsx";
+import { dbMode, setDbMode } from "./lib/dbMode.js";
+import { DbSwitch } from "./components/DbSwitch.jsx";
+import { TestBadge } from "./components/TestBadge.jsx";
 import { isOwner } from "./owner.js";
 import { DepartmentManagerModal } from "./components/DepartmentManagerModal.jsx";
 import { ManifestDeptSection } from "./components/ManifestDeptSection.jsx";
@@ -1569,6 +1572,19 @@ export default function EquipmentManifest({ session }) {
         {loadError ? (
           <>
             <div>Couldn't load your data. Check your connection and try again.</div>
+            {dbMode() === "test" && (
+              // The owner's TEST database: a free project pauses after a
+              // week unused — restore it in Supabase, or go back to live.
+              <>
+                <div style={{ maxWidth: 340, color: "#2DD4BF" }}>This is the TEST database. If it hasn't been used for a while it may be paused: open supabase.com, pick the test project and press Restore.</div>
+                <button
+                  onClick={() => setDbMode("live")}
+                  style={{ padding: "8px 16px", background: "transparent", color: "#eee", border: "1px solid #444", borderRadius: 4, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }}
+                >
+                  Back to live BOXGO
+                </button>
+              </>
+            )}
             <button
               onClick={() => { setLoadError(false); setLoadAttempt((n) => n + 1); }}
               style={{ padding: "8px 16px", background: "#FFB020", color: "#111", border: "none", borderRadius: 4, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }}
@@ -1718,6 +1734,7 @@ export default function EquipmentManifest({ session }) {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, ...(isCatalogOwner ? { flexShrink: 0 } : {}) }}>
                 <Logo size={20} />
+                {dbMode() === "test" && <TestBadge />}
                 {/* The owner's phone: the logo alone, to leave room for three modules. */}
                 <span className={isCatalogOwner ? "stencil hdr-wordmark-x" : "stencil"} style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
                   BOXGO
@@ -2340,6 +2357,7 @@ export default function EquipmentManifest({ session }) {
           onOpenCatalog={() => { setShowTagManager(false); setView("catalog"); }}
           onExportBackup={exportFullBackup}
           onRestoreFileSelect={handleBackupFileSelect}
+          dataTop={isCatalogOwner || dbMode() === "test" ? <DbSwitch /> : null}
           extraTabs={isCatalogOwner ? [{
             id: "calendar",
             label: "Calendar",
