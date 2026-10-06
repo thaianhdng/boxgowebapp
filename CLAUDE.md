@@ -19,6 +19,14 @@ owned by a Director of Photography with **no coding knowledge**.
   Safari behaviour can't be tested here).
 - Don't change the PDF layout, export formatting, or the backup `.json`
   format unless explicitly asked.
+- **Before / after screenshots for every change** (owner's standing
+  request, every conversation), whenever the change is visible: capture
+  "before" from the code as it was (screenshot before editing, or run a
+  `git worktree` of the previous commit), then "after" with the same
+  device, page and data (usually `testdata/`; simulated iPhone, plus
+  desktop when the layout differs). Send both with `SendUserFile`
+  (`display: "render"`), captioned "Before" / "After". Say when a change
+  has nothing to show (e.g. a data fix).
 
 ## Two streams of work
 
