@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Plus, Search } from "lucide-react";
 import { todayStr, wdm } from "../shared/dates.js";
 import { formatShootDateRange } from "../../lib/utils.js";
-import { typeOf } from "../schedule/eventTypes.js";
+import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
 import { sortEvents } from "../schedule/events.js";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { STATUSES, shootDates, staleSoftLock, statusInfo, statusOf } from "./status.js";
@@ -29,42 +29,76 @@ function partsOf(hasList, project) {
   return [hasList && "List", files && `${files} file${files > 1 ? "s" : ""}`].filter(Boolean).join(" · ");
 }
 
+// The Producer / Gaffer set in Create New / Edit (kept in `people`).
+function roleName(people, exact, loose) {
+  const list = people || [];
+  const p = list.find((x) => (x.role || "").trim().toLowerCase() === exact) || list.find((x) => loose.test(x.role || ""));
+  return p ? (p.name || "").trim() : "";
+}
+
+const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+
+// Laid out like the equipment list's project cards (same size and lines):
+// tag · name · shoot dates (status where the ⋮ menu sits), Production
+// House + Producer · Rental House + Gaffer, shoot locations, then the
+// next event, what the job has, and the notes.
 function ProjectCard({ project, status, hasList, types, today, onOpen }) {
   const next = status !== "cancelled" && nextEvent(project, today, types);
   const nextType = next && typeOf(types, next.typeId);
   const dates = shootDates(project, types);
   const range = formatShootDateRange(dates.map((date) => ({ date })));
   const parts = partsOf(hasList, project);
+  const producer = roleName(project.people, "producer", /producer/i);
+  const gaffer = roleName(project.people, "gaffer", /gaffer/i);
+  const shootId = shootTypeId(types);
+  const locs = [...new Set((project.events || []).filter((s) => s.typeId === shootId && s.mode !== "online").map((s) => (s.location || "").trim()).filter(Boolean))];
+  const pair = (house, person) => (house || person) && (
+    <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 1, minWidth: 0, maxWidth: "100%" }}>
+      {/* A very long name wraps rather than running past the card. */}
+      {house && <span style={{ fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", overflowWrap: "anywhere" }}>{house}</span>}
+      {person && <span>{person}</span>}
+    </span>
+  );
   return (
     <div
       onClick={onOpen}
       style={{
-        minWidth: 0, border: "1px solid var(--border)", borderLeft: `3px solid ${statusInfo(status).color}`,
-        borderRadius: 4, background: "var(--surface)", cursor: "pointer", padding: "8px 12px 10px",
+        position: "relative", minWidth: 0, border: "1px solid var(--border)", borderLeft: `3px solid ${statusInfo(status).color}`,
+        borderRadius: 4, background: "var(--surface)", cursor: "pointer", padding: "8px 12px 12px", display: "flex", flexDirection: "column",
         opacity: status === "cancelled" ? 0.6 : 1,
       }}
     >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
-        {project.tag && (
-          <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px", flexShrink: 0 }}>{project.tag}</span>
-        )}
-        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: status === "cancelled" ? "line-through" : "none" }}>{project.name || "Untitled"}</span>
-        {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", flexShrink: 0 }}>{range}</span>}
-        <span style={{ flex: 1 }} />
-        <StatusChip status={status} style={{ flexShrink: 0, alignSelf: "center" }} />
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 3 }}>
+          {project.tag && (
+            <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px", flexShrink: 0, marginRight: 4 }}>{project.tag}</span>
+          )}
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", marginRight: 4, textDecoration: status === "cancelled" ? "line-through" : "none" }}>{project.name || "Untitled"}</span>
+          {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)" }}>{range}</span>}
+        </div>
+        <StatusChip status={status} style={{ flexShrink: 0, marginTop: 2 }} />
       </div>
-      {!dates.length && <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 3 }}>⚠ No shoot dates</div>}
-      {staleSoftLock(project, types, today) && <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 3 }}>⚠ Shoot dates have passed: confirm or cancel?</div>}
-      {project.productionHouse && <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text)", marginTop: 3 }}>{project.productionHouse}</div>}
+      {(project.productionHouse || producer || project.rentalHouse || gaffer) && (
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 3, fontSize: 11, color: "var(--muted)" }}>
+          {pair(project.productionHouse, producer)}
+          {pair(project.rentalHouse, gaffer)}
+        </div>
+      )}
+      {locs.length > 0 && <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 5 }}>{locs.join(" · ")}</div>}
+      {!dates.length && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ No shoot dates</div>}
+      {staleSoftLock(project, types, today) && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ Shoot dates have passed: confirm or cancel?</div>}
       {(next || parts) && (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 5, fontSize: 11.5, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 5, fontSize: 10.5, minWidth: 0 }}>
           {next && (
-            <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ minWidth: 0, ...oneLine }}>
               <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
             </span>
           )}
-          {parts && <span style={{ marginLeft: "auto", flexShrink: 0, fontSize: 11, color: "var(--muted)" }}>{parts}</span>}
+          {parts && <span style={{ marginLeft: "auto", flexShrink: 0, color: "var(--muted2)" }}>{parts}</span>}
         </div>
+      )}
+      {project.notes && (
+        <div title={project.notes} style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 2, ...oneLine }}>{project.notes.replace(/\s*\n+\s*/g, " · ")}</div>
       )}
     </div>
   );
@@ -145,7 +179,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
   const shown = groups.filter(([s, list]) => list.length && (!only || only === s.id));
 
   const cards = (list) => (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
       {list.map(({ id, project, status }) => (
         <ProjectCard
           key={id}

@@ -104,8 +104,13 @@ Start of each conversation, the owner should say which one it is:
      and **Files** (`files/`:
      `project.files = [{ kind: script|treatment|recce|other, name, url }]`,
      pasted links, open in a new tab; real Google Drive picking later).
-     Project cards show status and what the job has ("List · 3 files",
-     nothing when neither; no event colour squares). The Budget feature
+     Project cards copy the equipment list's card layout and size
+     (owner's call; 240px grid, same lines: tag · name · dates with the
+     status where the ⋮ sits, Production House + Producer, Rental House +
+     Gaffer, shoot locations), then the next event, what the job has
+     ("List · 3 files", nothing when neither) and the notes; long names
+     wrap. The Projects home keeps the list's 22px page margins on a phone
+     (Calendar / Project pages: 14px, class `x-tight`). The Budget feature
      was removed (owner's call); old `project.budget` data is kept but
      unused. **Event types** are edited in Settings → Calendar (an
      owner-only tab: `AttributesManagerModal`'s `extraTabs`, rendering

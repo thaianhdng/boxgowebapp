@@ -183,12 +183,15 @@ function Screen({ app }) {
 
   return (
     <>
-      <main className="x-main" style={{ padding: "18px 22px 60px", maxWidth: screen === "project" ? 920 : 1280, width: "100%", margin: "0 auto" }}>
+      {/* The Projects home keeps the equipment list's page margins (22px) on a
+          phone too, so its cards are the same size; the Calendar and Project
+          pages use narrower phone margins to give the month grid more room. */}
+      <main className={screen === "project" || screen === "calendar" ? "x-main x-tight" : "x-main"} style={{ padding: "18px 22px 60px", maxWidth: screen === "project" ? 920 : 1280, width: "100%", margin: "0 auto" }}>
         <style>{`
           .x-jump { margin-left: -22px; margin-right: -22px; padding: 8px 22px; border-bottom: 1px solid var(--border); }
           @media (max-width: 600px) {
-            .x-main { padding: 16px 14px 60px !important; }
-            .x-jump { margin-left: -14px; margin-right: -14px; padding: 8px 14px; }
+            .x-tight { padding: 16px 14px 60px !important; }
+            .x-tight .x-jump { margin-left: -14px; margin-right: -14px; padding: 8px 14px; }
           }
         `}</style>
         {body}
