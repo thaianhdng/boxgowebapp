@@ -39,21 +39,28 @@ export function AttributesManagerModal({
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
       alignItems: "center", justifyContent: "center", zIndex: 60, padding: 16,
     }}>
-      <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 400, maxHeight: "88vh", overflowY: "auto", padding: 22, border: "1px solid var(--border2)" }}>
+      {/* With extra (owner-only) tabs the window is wider on bigger screens,
+          and on a phone the tabs sit in two rows of full names. */}
+      {extraTabs && (
+        <style>{`
+          .settings-x { max-width: 520px !important; }
+          @media (max-width: 560px) { .settings-tabs-x { display: grid !important; grid-template-columns: repeat(3, 1fr); row-gap: 2px; } }
+        `}</style>
+      )}
+      <div className={extraTabs ? "settings-x" : undefined} style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 400, maxHeight: "88vh", overflowY: "auto", padding: 22, border: "1px solid var(--border2)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, position: "sticky", top: -22, background: "var(--surface)", paddingTop: 22, marginTop: -22, zIndex: 5 }}>
           <div className="stencil" style={{ fontSize: 14, color: "var(--accent)" }}>Settings</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)", ...(extraTabs ? { gap: 2, overflowX: "auto" } : {}) }}>
+        <div className={extraTabs ? "settings-tabs-x" : undefined} style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)" }}>
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               style={{
                 flex: 1, padding: "8px 2px", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
-                fontSize: extraTabs ? 10.5 : 12, fontWeight: 700, whiteSpace: "nowrap",
-                ...(extraTabs ? { padding: "8px 0", letterSpacing: "-0.02em" } : {}),
+                fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
                 color: tab === t.id ? "var(--accent)" : "var(--muted)",
                 borderBottom: `2px solid ${tab === t.id ? "var(--accent)" : "transparent"}`, marginBottom: -1,
               }}

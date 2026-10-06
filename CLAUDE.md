@@ -124,7 +124,9 @@ Start of each conversation, the owner should say which one it is:
      was removed (owner's call); old `project.budget` data is kept but
      unused. **Event types** are edited in Settings → Calendar (an
      owner-only tab: `AttributesManagerModal`'s `extraTabs`, rendering
-     `<Expansion part="settings">`), not from the calendars. A clash (red dot) = two projects' shoots / prelights on one
+     `<Expansion part="settings">`), not from the calendars. With
+     extra tabs (owner) the Settings window is 520px wide (others: 400)
+     and on a phone its tabs sit in two rows (`.settings-tabs-x` grid). A clash (red dot) = two projects' shoots / prelights on one
      day, or overlapping set times (`clashDates`); a full day box shows
      as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
      owner: its crumb root reads "Equipment" (others: "Project Manager"),
