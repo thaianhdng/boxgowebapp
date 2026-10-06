@@ -11,6 +11,7 @@ import { Logo } from "./components/Logo.jsx";
 import { dbMode, setDbMode } from "./lib/dbMode.js";
 import { DbSwitch } from "./components/DbSwitch.jsx";
 import { TestBadge } from "./components/TestBadge.jsx";
+import { TestDataCleaner } from "./components/TestDataCleaner.jsx";
 import { isOwner } from "./owner.js";
 import { DepartmentManagerModal } from "./components/DepartmentManagerModal.jsx";
 import { ManifestDeptSection } from "./components/ManifestDeptSection.jsx";
@@ -403,6 +404,31 @@ export default function EquipmentManifest({ session }) {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Owner: the made-up test data (testdata/, every id starts with 7e57) —
+  // its equipment lists and Calendar-only projects.
+  // (Counted from the lists and every Project, cancelled ones included; the
+  // expansion re-reports its ghosts whenever its Projects change, which
+  // re-renders this.)
+  const testIds = isCatalogOwner
+    ? [...new Set([...projects.map((p) => p.id), ...(xBackupRef.current?.ids() || [])])].filter((id) => String(id).startsWith("7e57"))
+    : [];
+  async function removeTestData() {
+    const listIds = projects.map((p) => p.id).filter((id) => String(id).startsWith("7e57"));
+    if (listIds.length) {
+      const { error } = await supabase.from("projects").delete().in("id", listIds);
+      if (error) { console.error("Failed to remove test lists:", error); setBackupError("Couldn't remove the test data. Check your connection and try again."); return; }
+      const gone = new Set(listIds);
+      listIds.forEach((id) => { savedProjectsRef.current.delete(id); serverStampsRef.current.projects.delete(id); });
+      writeCountRef.current += 1;
+      setProjectsState((prev) => prev.filter((p) => !gone.has(p.id)));
+      if (gone.has(activeProjectId)) { setActiveProjectId(null); setView("projects"); }
+    }
+    const x = xBackupRef.current;
+    if (x && !(await x.remove(x.ids().filter((id) => id.startsWith("7e57"))))) {
+      setBackupError("The test equipment lists were removed, but not all of their Calendar details. Try again.");
+    }
+  }
 
   function goToPreview(id) {
     // Remember which page we were on so the Back button can return there
@@ -1343,8 +1369,29 @@ export default function EquipmentManifest({ session }) {
   // sections replace what's in the app; ticked projects are added (or
   // overwrite the current project with the same id) and every other current
   // project is kept — nothing is deleted.
-  function applyRestore(data, sel) {
+  async function applyRestore(data, sel) {
     const picked = (data.projects || []).filter((_, i) => sel.projects.has(i));
+    // Owner: "Start fresh" deletes every current project first (and the
+    // owner's Projects / Calendar details), waiting for the server so
+    // nothing restored afterwards gets deleted.
+    if (sel.wipe) {
+      setPendingRestore(null);
+      if (isCatalogOwner && xBackupRef.current && !(await xBackupRef.current.wipe())) {
+        setBackupError("Couldn't clear your current data, so nothing was changed. Check your connection and try again.");
+        return;
+      }
+      const { error } = await supabase.from("projects").delete().eq("user_id", session.user.id);
+      if (error) {
+        console.error("Failed to delete projects:", error);
+        setBackupError("Some current projects couldn't be deleted (check your connection); the backup was still restored.");
+      } else {
+        savedProjectsRef.current = new Map();
+        serverStampsRef.current.projects = new Map();
+        setLiveShareTokens({});
+        setProjectsState([]);
+      }
+      writeCountRef.current += 1;
+    }
     // Owner: Projects / Calendar details first, so the restored lists find
     // their Projects already there. Lists left unticked keep theirs out too.
     if (sel.expansion && xBackupRef.current) {
@@ -1366,7 +1413,7 @@ export default function EquipmentManifest({ session }) {
       const byId = new Map(restoredProjects.map((p) => [p.id, p]));
       setProjectsState((prev) => [
         ...restoredProjects,
-        ...prev.filter((p) => !byId.has(p.id)),
+        ...(sel.wipe ? [] : prev.filter((p) => !byId.has(p.id))),
       ]);
     }
     if (sel.catalog) {
@@ -2357,7 +2404,12 @@ export default function EquipmentManifest({ session }) {
           onOpenCatalog={() => { setShowTagManager(false); setView("catalog"); }}
           onExportBackup={exportFullBackup}
           onRestoreFileSelect={handleBackupFileSelect}
-          dataTop={isCatalogOwner || dbMode() === "test" ? <DbSwitch /> : null}
+          dataTop={isCatalogOwner || dbMode() === "test" ? (
+            <>
+              <DbSwitch />
+              <TestDataCleaner count={testIds.length} onRemove={removeTestData} />
+            </>
+          ) : null}
           extraTabs={isCatalogOwner ? [{
             id: "calendar",
             label: "Calendar",
@@ -2375,6 +2427,7 @@ export default function EquipmentManifest({ session }) {
           currentProjectIds={new Set(projects.map((p) => p.id))}
           onCancel={() => setPendingRestore(null)}
           onRestore={(sel) => applyRestore(pendingRestore, sel)}
+          wipeNote={isCatalogOwner ? "Their Projects & Calendar details go too; your event types, catalog and settings stay unless ticked above." : null}
           extraSections={isCatalogOwner ? [{
             key: "expansion",
             label: "Projects & Calendar details",

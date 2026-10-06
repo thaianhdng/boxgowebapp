@@ -22,7 +22,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { Loader2 } from "lucide-react";
-import { useXStore, load, refresh, putProject, setEventTypes, getState, exportBackup, restoreBackup } from "./store.js";
+import { useXStore, load, refresh, putProject, setEventTypes, getState, exportBackup, restoreBackup, wipeAll, removeProjects, projectIds } from "./store.js";
 import { projectActions } from "./projects/actions.js";
 import { listLike, projectFromList, projectWithList, splitShootRanges } from "./projects/sync.js";
 import { shootDates, statusOf } from "./projects/status.js";
@@ -79,7 +79,7 @@ function Sync({ app }) {
   // BOXGO's Backup / Restore (Settings) carries the Projects and Calendar
   // data too, for the owner.
   useEffect(() => {
-    app.registerBackup({ export: exportBackup, restore: restoreBackup });
+    app.registerBackup({ export: exportBackup, restore: restoreBackup, wipe: wipeAll, remove: removeProjects, ids: projectIds });
     return () => app.registerBackup(null);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

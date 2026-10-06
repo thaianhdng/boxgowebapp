@@ -212,6 +212,33 @@ export function restoreBackup(part, { skipIds = new Set() } = {}) {
   return incoming.length;
 }
 
+// Restore's "Start fresh": delete every Project (event types are kept).
+// Waits for the server, so nothing restored afterwards can be deleted by
+// it. Returns false (nothing deleted locally) if it fails.
+export async function wipeAll() {
+  if (state.status !== "ready") return false;
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+  const { error } = await supabase.from("x_projects").delete().neq("id", "");
+  if (error) { console.error("Failed to wipe Projects:", error); return false; }
+  savedProjects.clear();
+  set({ projects: {} });
+  return true;
+}
+
+// Delete these Projects (e.g. the test data, ids starting 7e57).
+export async function removeProjects(ids) {
+  if (state.status !== "ready" || !ids.length) return true;
+  const { error } = await supabase.from("x_projects").delete().in("id", ids);
+  if (error) { console.error("Failed to delete Projects:", error); return false; }
+  const gone = new Set(ids);
+  ids.forEach((id) => savedProjects.delete(id));
+  set({ projects: Object.fromEntries(Object.entries(state.projects).filter(([id]) => !gone.has(id))) });
+  return true;
+}
+
+// Ids of every Project (for finding the test data).
+export const projectIds = () => Object.keys(state.projects);
+
 export function setEventTypes(eventTypes) {
   if (state.status !== "ready") return;
   set({ settings: { ...state.settings, eventTypes } });

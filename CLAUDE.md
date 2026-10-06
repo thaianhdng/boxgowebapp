@@ -138,7 +138,13 @@ Start of each conversation, the owner should say which one it is:
      (`store.exportBackup`); Restore offers it as "Projects & Calendar
      details" (`store.restoreBackup`: adds / overwrites by id, skips lists
      left unticked, adds missing event types). Wired through
-     `app.registerBackup`; other users' backups are unchanged.
+     `app.registerBackup`; other users' backups are unchanged. Owner-only
+     in Restore: **Start fresh** (`wipeNote` prop → `sel.wipe`): deletes
+     every current list (server first, awaited) and every Project
+     (`store.wipeAll`) before restoring; event types / catalog / settings
+     stay unless ticked. Owner-only in Settings → Catalog & Data: **Remove
+     test data** (`TestDataCleaner`): deletes lists and Projects whose id
+     starts `7e57`, nothing else.
      `<Expansion part="sync">` is always
      mounted for the owner (renders nothing): loads the store, reports
      save state (`app.reportSaveState`) and runs the list → Project link.

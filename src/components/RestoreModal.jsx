@@ -22,13 +22,16 @@ export const RESTORE_SECTIONS = [
 // Lets the user pick what to take from a backup. Calls onRestore with
 // { projects: Set of indexes into data.projects, <section key>: true, … }.
 // `extraSections` (owner only): more sections in the same form, e.g. the
-// Projects / Calendar data.
-export function RestoreModal({ data, currentProjectIds, onCancel, onRestore, extraSections }) {
+// Projects / Calendar data. `wipeNote` (owner only) offers "Start fresh":
+// delete every current project first (onRestore gets `wipe: true`); the
+// note says what else that deletes.
+export function RestoreModal({ data, currentProjectIds, onCancel, onRestore, extraSections, wipeNote }) {
   const backupProjects = data.projects || [];
   const sections = [...RESTORE_SECTIONS, ...(extraSections || [])].filter((s) => s.has(data));
   const [projectSel, setProjectSel] = useState(() => new Set(backupProjects.map((_, i) => i)));
   const [sectionSel, setSectionSel] = useState(() => new Set(sections.map((s) => s.key)));
   const [showProjects, setShowProjects] = useState(false);
+  const [wipe, setWipe] = useState(false);
   const allProjectsRef = useRef(null);
 
   const allProjects = projectSel.size === backupProjects.length;
@@ -115,22 +118,44 @@ export function RestoreModal({ data, currentProjectIds, onCancel, onRestore, ext
               </span>
             </label>
           ))}
+
+          {wipeNote && (
+            <label style={{ ...rowStyle, borderTop: "1px solid var(--border)", marginTop: 4, paddingTop: 12 }}>
+              <input type="checkbox" checked={wipe} onChange={() => setWipe((v) => !v)} style={{ ...boxStyle, accentColor: "var(--danger)" }} />
+              <span>
+                <div style={{ ...labelStyle, color: wipe ? "var(--danger)" : "var(--text)" }}>Start fresh</div>
+                <div style={detailStyle}>Delete all {currentProjectIds.size} projects you have now before restoring. {wipeNote}</div>
+              </span>
+            </label>
+          )}
         </div>
 
         <div style={{ padding: "12px 22px 22px" }}>
           <div style={{ fontSize: 12, color: "#AA0000", marginBottom: 16, lineHeight: 1.45 }}>
-            Ticked sections replace what's in the app now. Ticked projects are added
-            {overwrites > 0 ? ` (${overwrites} you still have will be overwritten by the backup's version)` : ""}; your other current projects are kept. This can't be undone.
+            {wipe ? (
+              <>Every project you have now is deleted first, then the ticked parts of this backup are restored. Make a Backup first if you might want them back. This can't be undone.</>
+            ) : (
+              <>
+                Ticked sections replace what's in the app now. Ticked projects are added
+                {overwrites > 0 ? ` (${overwrites} you still have will be overwritten by the backup's version)` : ""}; your other current projects are kept. This can't be undone.
+              </>
+            )}
           </div>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
             <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
             <button
               className="btn btn-primary"
-              disabled={nothingSelected}
-              style={nothingSelected ? { opacity: 0.5, cursor: "default" } : undefined}
-              onClick={() => onRestore({ projects: projectSel, ...Object.fromEntries([...sectionSel].map((k) => [k, true])) })}
+              disabled={nothingSelected && !wipe}
+              style={{
+                ...(nothingSelected && !wipe ? { opacity: 0.5, cursor: "default" } : {}),
+                ...(wipe ? { background: "var(--danger)", borderColor: "var(--danger)", color: "#fff" } : {}),
+              }}
+              onClick={() => {
+                if (wipe && !window.confirm(`Delete all ${currentProjectIds.size} projects you have now, then restore this backup? This can't be undone.`)) return;
+                onRestore({ projects: projectSel, ...Object.fromEntries([...sectionSel].map((k) => [k, true])), ...(wipe ? { wipe: true } : {}) });
+              }}
             >
-              Restore
+              {wipe ? "Delete & restore" : "Restore"}
             </button>
           </div>
         </div>
