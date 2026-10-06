@@ -3,7 +3,8 @@
 A second, separate Supabase project. In BOXGO, Settings → Catalog & Data →
 Database switches the owner's device between **Live BOXGO** and **Test
 BOXGO**. Nothing done in Test touches the live data. The app's side is in
-`src/lib/dbMode.js` (the test project's address + public key go there).
+`src/lib/dbMode.js`, which holds the test project's address
+(`sknqssjxtctadptwziqb`) and its public (publishable) key.
 
 ## One-time setup
 
