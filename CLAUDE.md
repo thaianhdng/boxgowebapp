@@ -84,9 +84,9 @@ Start of each conversation, the owner should say which one it is:
      database — **Projects** and **Calendar** (the expansion) and
      **Equipment** (v1.0 composer). BOXGO's header top row has the
      module switch instead of the "Equipment List Composer" caption: the
-     BOXGO logo (and wordmark) is the Projects button (accent while
-     Projects shows), then | CALENDAR | EQUIPMENT (on the owner's phone
-     the wordmark hides and the name shrinks so it fits). The crumb's
+     logo stays as it is, the BOXGO wordmark is the home tab (Projects;
+     accent while Projects shows), then | CALENDAR | EQUIPMENT (on the
+     owner's phone the name shrinks so it fits). The crumb's
      section names: "Projects Manager", "Calendar", "Equipment Lists
      Manager" (others keep "Project Manager"); the crumb wraps, so a list /
      project name too long to sit beside it takes the next line and is cut
@@ -175,8 +175,11 @@ Start of each conversation, the owner should say which one it is:
      day, or overlapping set times (`clashDates`); a full day box shows
      as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
      owner: its crumb root reads "Equipment Lists Manager" (others:
-     "Project Manager"), tapping the project name in its crumb opens the
-     Project page (the small calendar icon after the name marks that),
+     "Project Manager"); inside a list in a project, "Edit project" and an
+     accent "Go to project" button (the Project page) sit at the bottom
+     right of the info box instead of the header (a draft's box has "Edit
+     list" and "Add to project"); tapping the name in the crumb also
+     opens the Project page,
      Cancelled jobs' lists get a "Cancelled" mark on their card and crumb
      (`app.reportCancelled`; never in the preview, PDF or share page),
      Cancelled projects get no greyed card, and the floating back-to-top

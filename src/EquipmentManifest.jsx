@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, lazy, Suspense } from "react";
 import {
-  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, ChevronDown, CalendarDays, ListFilter, Loader2, Check, Settings,
+  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, ChevronDown, ArrowRight, CalendarDays, ListFilter, Loader2, Check, Settings,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient.js";
 import { AttributesManagerModal } from "./components/AttributesManagerModal.jsx";
@@ -1838,7 +1838,7 @@ export default function EquipmentManifest({ session }) {
         .pop-item { background: transparent; }
         .pop-item:hover { background: var(--surface2); }
         .new-project-row-btn { display: none; }
-        @media (max-width: 600px) { .hdr-wordmark-x { display: none; } .hdr-name-x { font-size: 12px !important; } }
+        @media (max-width: 600px) { .hdr-name-x { font-size: 12px !important; } }
         .back-to-top-btn { display: none !important; }
         .category-fab { display: none !important; }
         .category-fab-menu { display: none !important; }
@@ -1886,24 +1886,23 @@ export default function EquipmentManifest({ session }) {
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, ...(isCatalogOwner ? { flexShrink: 0 } : {}) }}>
+                <Logo size={20} />
                 {isCatalogOwner ? (
-                  // The owner: the logo (and wordmark) is the Projects module's
-                  // button — accent while Projects is showing.
+                  // The owner: the BOXGO wordmark is the home tab (Projects),
+                  // accent while Projects is showing.
                   <button
+                    className="stencil"
                     onClick={() => goX({ screen: "projects" })}
                     title="Projects"
-                    style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, cursor: "pointer", color: view === "x" && xModule === "projects" ? "var(--accent)" : "var(--text)" }}
+                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 17, letterSpacing: "0.08em", color: view === "x" && xModule === "projects" ? "var(--accent)" : "var(--text)" }}
                   >
-                    <Logo size={20} />
-                    {/* The owner's phone: the logo alone, to leave room for the modules. */}
-                    <span className="stencil hdr-wordmark-x" style={{ fontSize: 17, letterSpacing: "0.08em", color: "inherit" }}>BOXGO</span>
+                    BOXGO
                   </button>
-                ) : (<>
-                  <Logo size={20} />
+                ) : (
                   <span className="stencil" style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
                     BOXGO
                   </span>
-                </>)}
+                )}
                 {dbMode() === "test" && <TestBadge />}
                 {isCatalogOwner ? (
                   // The owner's three modules, sharing one projects database: Projects and Calendar
@@ -1997,7 +1996,6 @@ export default function EquipmentManifest({ session }) {
                         {activeProject?.name || (activeIsDraft ? "Untitled list" : "Project")}
                       </span>
                       {isCatalogOwner && xCancelledSet.has(activeProjectId) && <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px" }}>Cancelled</span>}
-                      {activeMeta && <CalendarDays size={13} style={{ flexShrink: 0, color: "var(--muted)" }} />}
                     </span>
 
                   </>
@@ -2026,7 +2024,9 @@ export default function EquipmentManifest({ session }) {
                     <Logo size={14} /> Master Catalog
                   </button>
                 )}
-                {view === "manifest" && (
+                {/* The owner's lists have Edit (and Go to project) at the foot
+                    of the info box instead. */}
+                {view === "manifest" && !(activeMeta || activeIsDraft) && (
                   <button
                     className="btn btn-ghost"
                     onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }}
@@ -2174,9 +2174,14 @@ export default function EquipmentManifest({ session }) {
                         <div style={{ flex: "1 1 220px", fontSize: 12, color: "var(--muted)" }}>
                           <b style={{ color: "var(--text)" }}>Draft list</b>, in no project. Add it to a project for production details, a project note, shoot schedule, calendar, files and up to 5 list versions.
                         </div>
-                        <button className="btn btn-ghost" style={{ flexShrink: 0 }} onClick={() => askListTarget("attach", activeProjectId)}>
-                          <Plus size={14} /> Add to project
-                        </button>
+                        <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexShrink: 0 }}>
+                          <button className="btn btn-ghost" onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }} title="Edit this draft list's name, tag, days and quantity mode">
+                            <Pencil size={14} /> Edit list
+                          </button>
+                          <button className="btn btn-primary" onClick={() => askListTarget("attach", activeProjectId)}>
+                            <Plus size={14} /> Add to project
+                          </button>
+                        </div>
                       </div>
                     ) : (
                     <div style={{ marginBottom: listRow ? 8 : 20, border: "1px solid var(--border)", borderRadius: 4, padding: "12px 14px" }}>
@@ -2209,6 +2214,18 @@ export default function EquipmentManifest({ session }) {
                           marginTop: 10, border: "none", borderRadius: 0, background: "none",
                         }}
                       />
+                      {activeMeta && (
+                        // Owner: edit the project's details, or go to its
+                        // page (status, schedule, calendar, files).
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                          <button className="btn btn-ghost" onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }} title="Edit project details, days and quantity mode">
+                            <Pencil size={14} /> Edit project
+                          </button>
+                          <button className="btn btn-primary" onClick={() => goX({ screen: "project", projectId: activeMeta.projectId })} title="This project's page: status, schedule, calendar, files and all its lists">
+                            Go to project <ArrowRight size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     )}
 
