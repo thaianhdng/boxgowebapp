@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, FileSpreadsheet, Paperclip, Plus, Search } from "lucide-react";
 import { todayStr, wdm } from "../shared/dates.js";
 import { formatShootDateRange } from "../../lib/utils.js";
 import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
@@ -23,10 +23,20 @@ export function StatusChip({ status, style }) {
   );
 }
 
-// What the job already has: "List · 3 files" (nothing when it has neither).
-function partsOf(hasList, project) {
-  const files = (project.files || []).length;
-  return [hasList && "List", files && `${files} file${files > 1 ? "s" : ""}`].filter(Boolean).join(" · ");
+// What the job already has, as icons: an equipment list, and files with
+// their count (nothing when it has neither).
+function Parts({ hasList, files }) {
+  if (!hasList && !files) return null;
+  return (
+    <span style={{ marginLeft: "auto", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8, color: "var(--text)", alignSelf: "center" }}>
+      {hasList && <span title="Equipment list" style={{ display: "inline-flex" }}><FileSpreadsheet size={13} /></span>}
+      {files > 0 && (
+        <span title={`${files} file${files > 1 ? "s" : ""}`} style={{ display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 700 }}>
+          <Paperclip size={12} />{files}
+        </span>
+      )}
+    </span>
+  );
 }
 
 // The Producer / Gaffer set in Create New / Edit (kept in `people`).
@@ -40,14 +50,16 @@ const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellip
 
 // Laid out like the equipment list's project cards (same size and lines):
 // name · shoot dates, Production House + Producer · Rental House + Gaffer,
-// the notes, shoot locations, then the next event and what the job has.
+// the notes, shoot locations, then the next event and what the job has
+// (icons, bottom right).
 // The tag sits in the top right corner.
 function ProjectCard({ project, status, hasList, types, today, onOpen }) {
   const next = status !== "cancelled" && nextEvent(project, today, types);
   const nextType = next && typeOf(types, next.typeId);
   const dates = shootDates(project, types);
   const range = formatShootDateRange(dates.map((date) => ({ date })));
-  const parts = partsOf(hasList, project);
+  const files = (project.files || []).length;
+  const parts = hasList || files > 0;
   const producer = roleName(project.people, "producer", /producer/i);
   const gaffer = roleName(project.people, "gaffer", /gaffer/i);
   const shootId = shootTypeId(types);
@@ -89,13 +101,15 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
       {!dates.length && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ No shoot dates</div>}
       {staleSoftLock(project, types, today) && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ Shoot dates have passed: confirm or cancel?</div>}
       {(next || parts) && (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 5, fontSize: 10.5, minWidth: 0 }}>
+        // The last row, kept at the card's foot: the next event, and what
+        // the job has in the bottom right corner.
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: "auto", paddingTop: 5, fontSize: 10.5, minWidth: 0 }}>
           {next && (
             <span style={{ minWidth: 0, ...oneLine }}>
               <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
             </span>
           )}
-          {parts && <span style={{ marginLeft: "auto", flexShrink: 0, color: "var(--muted2)" }}>{parts}</span>}
+          <Parts hasList={hasList} files={files} />
         </div>
       )}
     </div>
