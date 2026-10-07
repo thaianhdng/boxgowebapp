@@ -1,6 +1,6 @@
 import { newProjectId } from "../../lib/utils.js";
 import { getState, putProject, updateProject, removeProject } from "../store.js";
-import { MAX_VERSIONS, currentLink, equipmentPatch, fitList, linksOf, ownersOf, projectFromList, projectWithList, savedLinks } from "./sync.js";
+import { MAX_VERSIONS, currentLink, equipmentPatch, fitList, linksOf, listNoteOf, ownersOf, projectFromList, projectWithList, savedLinks } from "./sync.js";
 
 // Everything that changes a Project, or which equipment lists belong to
 // it, goes through here, so its lists (its versions) always get the latest
@@ -9,11 +9,12 @@ export function projectActions(app, types) {
   const listById = (listId) => app.projects.find((p) => p.id === listId);
   const listIds = () => new Set(app.projects.map((p) => p.id));
   const projectOf = (id) => getState().projects[id];
-  // [{ id, v, note, list }] — the Project's versions, oldest first.
+  // [{ id, v, note, list }] — the Project's versions, oldest first
+  // (`note`: each list's own note).
   const versionsOf = (id) => {
     const p = projectOf(id);
     if (!p) return [];
-    return linksOf(id, p, listIds()).map((l) => ({ ...l, list: listById(l.id) }));
+    return linksOf(id, p, listIds()).map((l) => { const list = listById(l.id); return { ...l, note: listNoteOf(list, l), list }; });
   };
   const currentListOf = (id) => {
     const p = projectOf(id);
@@ -31,7 +32,7 @@ export function projectActions(app, types) {
   }
 
   // Take a list out of whichever Project has it.
-  function unlink(listId) {
+  function dropLink(listId) {
     const ids = listIds();
     const owner = ownersOf(getState().projects, ids).get(listId);
     if (!owner) return;
@@ -48,7 +49,7 @@ export function projectActions(app, types) {
   function link(list, target) {
     const ids = new Set([...listIds(), list.id]);
     if (target?.newProject) {
-      unlink(list.id);
+      dropLink(list.id);
       const id = newProjectId();
       putProject(id, { ...projectFromList(list, types), lists: [{ id: list.id, v: 1, note: "" }] });
       return list;
@@ -57,10 +58,18 @@ export function projectActions(app, types) {
     if (!p) return null;
     const saved = savedLinks(target.projectId, p, ids).filter((l) => l.id !== list.id);
     if (linksOf(target.projectId, { ...p, lists: saved }, ids).length >= MAX_VERSIONS) return null;
-    unlink(list.id);
+    dropLink(list.id);
     const v = saved.reduce((m, l) => Math.max(m, l.v || 0), 0) + 1;
     updateProject(target.projectId, (cur) => ({ ...cur, lists: [...saved, { id: list.id, v, note: target.note || "" }], currentList: undefined }));
     return fitList(list, p, types);
+  }
+
+  // A list that leaves its Project becomes a draft: houses, Producer and
+  // Gaffer belong to a project, so they go.
+  const DRAFT = { productionHouse: "", producer: "", rentalHouse: "", gaffer: "" };
+  function unlink(listId) {
+    dropLink(listId);
+    if (listById(listId)) app.updateEquipmentList(listId, DRAFT);
   }
 
   return {
@@ -69,7 +78,7 @@ export function projectActions(app, types) {
     // (tentative) Shooting events.
     create(info) {
       const id = newProjectId();
-      putProject(id, { ...projectFromList({ ...info, createdAt: Date.now() }, types), status: "softlock", lists: [] });
+      putProject(id, { ...projectFromList({ ...info, note: "", createdAt: Date.now() }, types), status: "softlock", lists: [] });
       app.addHouses(info);
       return id;
     },
@@ -88,7 +97,7 @@ export function projectActions(app, types) {
     remove(id, { keepLists = false } = {}) {
       const lists = versionsOf(id);
       removeProject(id);
-      if (!keepLists) lists.forEach((l) => app.deleteEquipmentList(l.id));
+      lists.forEach((l) => (keepLists ? app.updateEquipmentList(l.id, DRAFT) : app.deleteEquipmentList(l.id)));
     },
     hasList: (id) => versionsOf(id).length > 0,
     versionsOf,
@@ -109,8 +118,9 @@ export function projectActions(app, types) {
     setCurrent(id, listId) {
       updateProject(id, (p) => ({ ...p, lists: savedLinks(id, p, listIds()), currentList: listId }));
     },
-    setNote(id, listId, note) {
-      updateProject(id, (p) => ({ ...p, lists: savedLinks(id, p, listIds()).map((l) => (l.id === listId ? { ...l, note } : l)) }));
+    // A list's own note (not the project note every version shares).
+    setNote(listId, note) {
+      app.updateEquipmentList(listId, { listNote: note });
     },
   };
 }

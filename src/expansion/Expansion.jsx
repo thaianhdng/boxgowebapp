@@ -28,7 +28,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { useXStore, load, refresh, putProject, setEventTypes, getState, exportBackup, restoreBackup, wipeAll, removeProjects, projectIds } from "./store.js";
 import { projectActions } from "./projects/actions.js";
-import { currentLink, equipmentPatch, fitList, linksOf, listLike, projectWithList, shootDaysOf, splitShootRanges } from "./projects/sync.js";
+import { currentLink, equipmentPatch, fitList, linksOf, listLike, listNoteOf, mergedNotes, projectWithList, shootDaysOf, splitShootRanges } from "./projects/sync.js";
 import { shootDates, statusOf } from "./projects/status.js";
 import { todayStr } from "./shared/dates.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
@@ -131,6 +131,16 @@ function Sync({ app }) {
       const links = linksOf(pid, p0, listIds);
       if (!links.length) continue;
       const cur = currentLink(links, p0);
+      // Once: the Project's note and its lists' notes become one shared
+      // project note (lists keep a different note of their own).
+      if (!p0.notesShared) {
+        const versions = links.map((l) => { const list = byId.get(l.id); return { id: l.id, note: list.note, listNote: listNoteOf(list, l) }; });
+        const merged = mergedNotes(p0, versions, cur.id);
+        putProject(pid, { ...p0, notes: merged.notes, notesShared: true });
+        for (const [id, patch] of Object.entries(merged.lists)) app.updateEquipmentList(id, patch);
+        links.forEach((l) => checked.current.set(l.id, byId.get(l.id)));
+        continue;
+      }
       const ordered = [cur, ...links.filter((l) => l !== cur)];
       for (const l of ordered) {
         const list = byId.get(l.id);
@@ -185,6 +195,7 @@ function Sync({ app }) {
     if (x.status !== "ready") return;
     const listIds = new Set(app.projects.map((p) => p.id));
     const today = todayStr();
+    const byId = new Map(app.projects.map((l) => [l.id, l]));
     const meta = {};
     const ghosts = [];
     const cancelled = [];
@@ -196,9 +207,9 @@ function Sync({ app }) {
         continue;
       }
       const cur = currentLink(links, p);
-      const versions = [...links].sort((a, b) => a.v - b.v).map(({ id, v, note }) => ({ id, v, note: note || "" }));
+      const versions = [...links].sort((a, b) => a.v - b.v).map((l) => ({ id: l.id, v: l.v, note: listNoteOf(byId.get(l.id), l) }));
       for (const l of links) {
-        meta[l.id] = { projectId: pid, v: l.v, note: l.note || "", count: links.length, current: l === cur, versions };
+        meta[l.id] = { projectId: pid, v: l.v, note: listNoteOf(byId.get(l.id), l), count: links.length, current: l === cur, versions };
         if (isCancelled) cancelled.push(l.id);
       }
     }

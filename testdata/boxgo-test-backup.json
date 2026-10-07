@@ -2217,7 +2217,8 @@
    "customItems": [],
    "note": "",
    "pdfFont": "inter",
-   "createdAt": 1744761600000
+   "createdAt": 1744761600000,
+   "listNote": "First pass"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000016",
@@ -2507,7 +2508,8 @@
    ],
    "note": "Song tempo 92 BPM — playback speaker needed every day.\nArtist only available 14:00–22:00.",
    "pdfFont": "plex",
-   "createdAt": 1745971200000
+   "createdAt": 1745971200000,
+   "listNote": "Treatment budget"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000018",
@@ -3244,7 +3246,8 @@
     "Grip": true
    },
    "pdfFont": "jetbrains",
-   "createdAt": 1746576000000
+   "createdAt": 1746576000000,
+   "listNote": "Full wishlist"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000019",
@@ -5574,7 +5577,8 @@
    "customItems": [],
    "note": "",
    "pdfFont": "inter",
-   "createdAt": 1752624000000
+   "createdAt": 1752624000000,
+   "listNote": "After tech recce: + crane, jib"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000029",
@@ -6020,9 +6024,10 @@
     }
    },
    "customItems": [],
-   "note": "Budget cut: no anamorphic package.",
+   "note": "Call time 05:30 at the studio gate. Camera truck parks on the left lane only — the right side is a fire lane.\nGhi chú: Toàn bộ thiết bị phải được kiểm tra trước 18:00 ngày hôm trước. Mang thêm pin V-mount (tối thiểu 12 viên) và 2 bộ sạc nhanh.\nClient monitor needs its own wireless feed (Teradek or Vaxis) — agency sits in the van, not on set.",
    "pdfFont": "jetbrains",
-   "createdAt": 1753228800000
+   "createdAt": 1753228800000,
+   "listNote": "Budget cut: no anamorphic package"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000030",
@@ -6693,9 +6698,10 @@
     }
    },
    "customItems": [],
-   "note": "",
+   "note": "Call time 05:30 at the studio gate. Camera truck parks on the left lane only — the right side is a fire lane.\nGhi chú: Toàn bộ thiết bị phải được kiểm tra trước 18:00 ngày hôm trước. Mang thêm pin V-mount (tối thiểu 12 viên) và 2 bộ sạc nhanh.\nClient monitor needs its own wireless feed (Teradek or Vaxis) — agency sits in the van, not on set.",
    "pdfFont": "jetbrains",
-   "createdAt": 1753833600000
+   "createdAt": 1753833600000,
+   "listNote": "Middle ground"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000031",
@@ -6828,9 +6834,10 @@
     }
    },
    "customItems": [],
-   "note": "",
+   "note": "Song tempo 92 BPM — playback speaker needed every day.\nArtist only available 14:00–22:00.",
    "pdfFont": "plex",
-   "createdAt": 1754438400000
+   "createdAt": 1754438400000,
+   "listNote": "Leaner, 1 camera"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000032",
@@ -6963,9 +6970,10 @@
     }
    },
    "customItems": [],
-   "note": "",
+   "note": "Song tempo 92 BPM — playback speaker needed every day.\nArtist only available 14:00–22:00.",
    "pdfFont": "plex",
-   "createdAt": 1755043200000
+   "createdAt": 1755043200000,
+   "listNote": "Label wants 2 more cams"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000033",
@@ -7106,9 +7114,10 @@
     }
    },
    "customItems": [],
-   "note": "",
+   "note": "Song tempo 92 BPM — playback speaker needed every day.\nArtist only available 14:00–22:00.",
    "pdfFont": "plex",
-   "createdAt": 1755648000000
+   "createdAt": 1755648000000,
+   "listNote": "+ FX6 for BTS"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000034",
@@ -7241,9 +7250,10 @@
     }
    },
    "customItems": [],
-   "note": "",
+   "note": "Song tempo 92 BPM — playback speaker needed every day.\nArtist only available 14:00–22:00.",
    "pdfFont": "plex",
-   "createdAt": 1756252800000
+   "createdAt": 1756252800000,
+   "listNote": "Final, sent to Cinerent"
   },
   {
    "id": "7e570000-0000-4000-8000-000000000035",
@@ -8486,12 +8496,12 @@
      {
       "id": "7e570000-0000-4000-8000-000000000015",
       "v": 1,
-      "note": "First pass"
+      "note": ""
      },
      {
       "id": "7e570000-0000-4000-8000-000000000028",
       "v": 2,
-      "note": "After tech recce: + crane, jib"
+      "note": ""
      }
     ]
    },
@@ -8680,27 +8690,27 @@
      {
       "id": "7e570000-0000-4000-8000-000000000017",
       "v": 1,
-      "note": "Treatment budget"
+      "note": ""
      },
      {
       "id": "7e570000-0000-4000-8000-000000000031",
       "v": 2,
-      "note": "Leaner, 1 camera"
+      "note": ""
      },
      {
       "id": "7e570000-0000-4000-8000-000000000032",
       "v": 3,
-      "note": "Label wants 2 more cams"
+      "note": ""
      },
      {
       "id": "7e570000-0000-4000-8000-000000000033",
       "v": 4,
-      "note": "+ FX6 for BTS"
+      "note": ""
      },
      {
       "id": "7e570000-0000-4000-8000-000000000034",
       "v": 5,
-      "note": "Final, sent to Cinerent"
+      "note": ""
      }
     ],
     "files": [
@@ -8953,17 +8963,17 @@
      {
       "id": "7e570000-0000-4000-8000-000000000018",
       "v": 1,
-      "note": "Full wishlist"
+      "note": ""
      },
      {
       "id": "7e570000-0000-4000-8000-000000000029",
       "v": 2,
-      "note": "Budget cut"
+      "note": ""
      },
      {
       "id": "7e570000-0000-4000-8000-000000000030",
       "v": 3,
-      "note": "Middle ground"
+      "note": ""
      }
     ],
     "currentList": "7e570000-0000-4000-8000-000000000029",

@@ -2,7 +2,9 @@
 // `projects` table): its versions V1, V2… (`project.lists`, see linksOf).
 // A list belongs to one Project at most; a list in none is a draft ("No
 // project"). Every version shares the job's name, tag, houses, Producer,
-// Gaffer and shoot days, kept in step both ways:
+// Gaffer, shoot days and project note (the list's `note` is the Project's
+// `notes`, once `notesShared` — see mergedNotes), kept in step both ways;
+// each list also has its own note (`listNote`):
 //   - editing a Project pushes those into its lists (equipmentPatch), and
 //   - editing a list in the equipment list composer (v1.0 screens: Edit
 //     project, + add day…) pulls them into its Project (projectWithList),
@@ -63,6 +65,7 @@ export function equipmentFields(project, types, list) {
     rentalHouse: project.rentalHouse || "",
     producer: findRole(project.people, PRODUCER[0], PRODUCER[1]),
     gaffer: findRole(project.people, GAFFER[0], GAFFER[1]),
+    ...(project.notesShared ? { note: project.notes || "" } : {}),
   };
   const days = shootDaysOf(project, types);
   if (days.length) {
@@ -115,6 +118,7 @@ export function projectWithList(project, list, types) {
   for (const k of ["name", "tag", "productionHouse", "rentalHouse"]) {
     if ((list[k] || "") !== (project[k] || "")) next[k] = list[k] || "";
   }
+  if (project.notesShared && (list.note || "") !== (project.notes || "")) next.notes = list.note || "";
   next.people = withRole(withRole(project.people, PRODUCER, (list.producer || "").trim()), GAFFER, (list.gaffer || "").trim());
 
   const shootId = shootTypeId(types);
@@ -137,13 +141,13 @@ export function projectWithList(project, list, types) {
   }
   next.events = events;
 
-  const same = ["name", "tag", "productionHouse", "rentalHouse"].every((k) => (next[k] || "") === (project[k] || "")) &&
+  const same = ["name", "tag", "productionHouse", "rentalHouse", "notes"].every((k) => (next[k] || "") === (project[k] || "")) &&
     peopleKey(next.people) === peopleKey(project.people) &&
     eventsKey(next.events) === eventsKey(project.events);
   return same ? null : next;
 }
 
-const EMPTY = () => ({ name: "", tag: "", productionHouse: "", rentalHouse: "", notes: "", people: [], events: [], createdAt: Date.now() });
+const EMPTY = () => ({ name: "", tag: "", productionHouse: "", rentalHouse: "", notes: "", notesShared: true, people: [], events: [], createdAt: Date.now() });
 
 // A Project made from an equipment list (Create New's "A new project",
 // or a draft added to a new project), or from what the shared
@@ -204,6 +208,12 @@ export function ownersOf(projects, listIds) {
 // "all days same" list, nothing on a per-day one.
 export function fitList(list, project, types) {
   const f = equipmentFields(project, types, list);
+  // The list's own project note, if it had a different one, stays as its
+  // list note.
+  const own = (list.note || "").trim();
+  if ("note" in f && own && own !== f.note.trim() && !(list.listNote || "").includes(own)) {
+    f.listNote = [list.listNote, own].filter(Boolean).join("\n");
+  }
   if (!f.days) return { ...list, ...f };
   const oldDays = list.days || [];
   const newIds = new Set(f.days.map((d) => d.id));
@@ -220,3 +230,26 @@ export function fitList(list, project, types) {
   }
   return { ...list, ...f, itemData };
 }
+
+// Before project notes were shared, a Project (`notes`) and each of its
+// lists (`note`) had their own. Once, they're combined: the Project's note
+// and its current list's, both kept; another version's different note
+// becomes that list's own list note. Returns { notes, lists: { id: patch } }.
+export function mergedNotes(project, versions, currentId) {
+  const cur = versions.find((v) => v.id === currentId);
+  const pieces = [...new Set([project.notes, cur?.note].map((t) => (t || "").trim()).filter(Boolean))];
+  const notes = pieces.join("\n");
+  const lists = {};
+  for (const v of versions) {
+    const own = (v.note || "").trim();
+    const patch = {};
+    if ((v.note || "") !== notes) patch.note = notes;
+    if (own && !pieces.includes(own) && !(v.listNote || "").includes(own)) patch.listNote = [v.listNote, own].filter(Boolean).join("\n");
+    if (Object.keys(patch).length) lists[v.id] = patch;
+  }
+  return { notes, lists };
+}
+
+// A list's own note: `listNote`, or (made before it moved onto the list)
+// the note on its link.
+export const listNoteOf = (list, link) => (list && list.listNote !== undefined ? list.listNote : link?.note || "");

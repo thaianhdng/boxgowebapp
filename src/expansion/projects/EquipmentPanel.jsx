@@ -15,7 +15,7 @@ function usedModels(list, catalog, test) {
 const label = { width: 62, flexShrink: 0, fontSize: 10, fontWeight: 700, color: "var(--muted2)", textTransform: "uppercase", letterSpacing: "0.04em", paddingTop: 2 };
 
 // The project's equipment lists — its versions V1, V2… (up to
-// MAX_VERSIONS), each as a summary with its note and a way into the
+// MAX_VERSIONS), each as a summary with its own list note and a way into the
 // Equipment List Composer — or a button to start one. The current version
 // is the one the composer's project list shows.
 export function EquipmentPanel({ app, versions, currentId, hasShootEvents, onCreate, onDuplicate, onSetCurrent, onSetNote, onRemove, onDelete }) {
@@ -69,7 +69,7 @@ export function EquipmentPanel({ app, versions, currentId, hasShootEvents, onCre
                 <input
                   key={`${id}:${note || ""}`}
                   defaultValue={note || ""}
-                  placeholder="Add a note, e.g. after tech recce"
+                  placeholder="List note, e.g. after tech recce"
                   onBlur={(e) => { const t = e.target.value.trim(); if (t !== (note || "")) onSetNote(id, t); }}
                   onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
                   style={{ flex: 1, minWidth: 0, fontSize: 12.5, padding: "4px 8px" }}

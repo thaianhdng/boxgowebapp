@@ -14,7 +14,9 @@ import { uid, todayStr, addOneDay, cascadeDates } from "../lib/utils.js";
 // save as template) and requires every shoot day to have a date.
 // `heading` / `saveLabel` (owner only) replace "New Project" / "Create
 // project" when the window makes a list for an existing project or a draft.
-export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
+// `noHouses` (owner only, a draft list in no project): no production /
+// rental house, Producer or Gaffer — those belong to a project.
+export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, noHouses, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
   const start = initial || prefill;
   const [name, setName] = useState(start?.name || "");
   // Editing shows the project's real tag, even none ("—") or one since
@@ -73,7 +75,10 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
     const days = dayRows.map((d, i) => ({
       id: d.id, label: `Day ${i + 1}`, date: d.date, location: d.location, projectLabel: d.projectLabel,
     }));
-    onSave({ name: name.trim(), tag, productionHouse: productionHouse.trim(), producer: producer.trim(), rentalHouse: rentalHouse.trim(), gaffer: gaffer.trim(), days, perDayQty, templateId: templateId || undefined });
+    const houses = noHouses
+      ? { productionHouse: "", producer: "", rentalHouse: "", gaffer: "" }
+      : { productionHouse: productionHouse.trim(), producer: producer.trim(), rentalHouse: rentalHouse.trim(), gaffer: gaffer.trim() };
+    onSave({ name: name.trim(), tag, ...houses, days, perDayQty, templateId: templateId || undefined });
   }
 
   return (
@@ -118,6 +123,7 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
           />
         </div>
 
+        {!noHouses && (<>
         <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
           <select
             value={productionHouse}
@@ -151,12 +157,13 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
             style={{ flex: 2 }}
           />
         </div>
+        </>)}
 
         <button
           onClick={onManageTags}
           style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", alignItems: "center", gap: 4, fontSize: 11, marginBottom: 16 }}
         >
-          <Pencil size={11} /> Manage tags, production houses and rental houses
+          <Pencil size={11} /> {noHouses ? "Manage tags" : "Manage tags, production houses and rental houses"}
         </button>
 
         <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>

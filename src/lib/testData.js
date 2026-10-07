@@ -187,10 +187,10 @@ const L = [
     days: [["2026-10-28", "Vietcombank Tower – Q.1", "Pickups"]], items: kit("bigTVC", 0.3) }),
 ];
 // ---- later versions of some jobs' lists (the project's V2, V3…)
-const again = (n, of, o) => list(n, { ...o, of, name: L[of - 1].name, tag: L[of - 1].tag, ph: L[of - 1].productionHouse, producer: L[of - 1].producer, rh: L[of - 1].rentalHouse, gaffer: L[of - 1].gaffer, days: L[of - 1].days.map((d) => [d.date, d.location, d.projectLabel]) });
+const again = (n, of, o) => list(n, { note: L[of - 1].note, ...o, of, name: L[of - 1].name, tag: L[of - 1].tag, ph: L[of - 1].productionHouse, producer: L[of - 1].producer, rh: L[of - 1].rentalHouse, gaffer: L[of - 1].gaffer, days: L[of - 1].days.map((d) => [d.date, d.location, d.projectLabel]) });
 L.push(
   again(28, 15, { perDayQty: true, vary, items: { ...kit("anamorphic"), [item("CRANE")]: 2, [item("JIB ARM")]: 1 }, font: "inter" }),
-  again(29, 18, { perDayQty: true, vary, items: kit("bigTVC", 0.8), note: "Budget cut: no anamorphic package." }),
+  again(29, 18, { perDayQty: true, vary, items: kit("bigTVC", 0.8) }),
   again(30, 18, { perDayQty: true, vary, items: { ...kit("bigTVC", 0.7), ...kit("anamorphic", 0.3) } }),
   again(31, 17, { perDayQty: true, vary, items: kit("mv", 1.2), font: "plex" }),
   again(32, 17, { perDayQty: true, vary, items: kit("mv", 1.8), font: "plex" }),
@@ -241,8 +241,8 @@ const MEET = "https://meet.google.com/tst-abcd-efg";
 const MAPS = "https://maps.app.goo.gl/test-recce";
 const byN = (n) => L[n - 1];
 
-// Versions: [n, note] for each list of the job (V1, V2…); the first is
-// the job's own list.
+// Versions: [n, note] for each list of the job (V1, V2…; the note is that
+// list's own list note); the first is the job's own list.
 function xFromList(n, status, extra = {}, shootConfirmed = status === "confirmed") {
   const p = byN(n);
   const versions = extra.versions || [[n, ""]];
@@ -252,7 +252,7 @@ function xFromList(n, status, extra = {}, shootConfirmed = status === "confirmed
       name: p.name, tag: p.tag, productionHouse: p.productionHouse, rentalHouse: p.rentalHouse,
       notes: extra.notes || "", people: people(p), status, createdAt: p.createdAt,
       events: [...shootEvents(p, shootConfirmed), ...(extra.events || [])],
-      lists: versions.map(([k, note], i) => ({ id: byN(k).id, v: i + 1, note })),
+      lists: versions.map(([k, note], i) => { if (note) byN(k).listNote = note; return { id: byN(k).id, v: i + 1, note: "" }; }),
       ...(extra.current ? { currentList: byN(extra.current).id } : {}),
       ...(extra.files ? { files: extra.files } : {}),
     },
@@ -306,7 +306,7 @@ const X = [
     files: [file("g1", "treatment", "MV treatment", "https://drive.google.com/file/d/test-mv"), file("g2", "recce", "Langbiang recce video", "https://drive.google.com/file/d/test-recce-video")],
   }),
   xFromList(18, "confirmed", {
-    versions: [[18, "Full wishlist"], [29, "Budget cut"], [30, "Middle ground"]],
+    versions: [[18, "Full wishlist"], [29, "Budget cut: no anamorphic package"], [30, "Middle ground"]],
     current: 29,
     events: [
       ev("x18a", "kickoff", "2026-10-13", { time: "09:00", endTime: "12:00", location: "Ogilvy office – Q.1", confirmed: true }),

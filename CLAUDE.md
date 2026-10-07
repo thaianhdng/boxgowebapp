@@ -207,14 +207,26 @@ Start of each conversation, the owner should say which one it is:
      shoot day; Calendar's Create New requires them; projects without
      any show "⚠ No shoot dates" and sort first. **List versions**
      (owner's call): a Project has 0–5 equipment lists, `project.lists =
-     [{ id, v, note }]` (V numbers never reused; `MAX_VERSIONS`), and
+     [{ id, v }]` (V numbers never reused; `MAX_VERSIONS`), and
      `currentList` (else the newest is current). A list is in one Project
-     at most; one in none is a draft ("No project"). Projects from before
+     at most; one in none is a draft ("No project"): a draft has no
+     production / rental house, Producer or Gaffer (they belong to a
+     project: Create New's draft form hides them, `noHouses`, and a list
+     that leaves its project, or a copy to no project, loses them). Each
+     list has its own **list note** (`list.listNote`, edited under the
+     composer's info box and on the Project page; older notes on the link,
+     `link.note`, are read as a fallback, `listNoteOf`); copies start
+     without one. The composer's "Project note" (`list.note`, on the PDF)
+     is the Project's `notes`, the same in every version — once
+     `project.notesShared`: the first time, the sync part combines the
+     Project's note and its current list's (`mergedNotes`), and another
+     version's different note becomes its list note; a list joining a
+     project keeps its old project note as its list note. Projects from before
      versions have no `lists`: their list is the one with the Project's own
      id, as V1 (`linksOf`, read lazily, written out on the first change).
      Every version shares the Project's name, tag, houses, Producer,
-     Gaffer and shoot days (same day ids), only equipment, quantities and
-     the note differ; the sync part reads one changed list per Project per
+     Gaffer, shoot days (same day ids) and project note; only equipment,
+     quantities and the list note differ; the sync part reads one changed list per Project per
      pass (current first) and brings the others in line, and a list that
      just joined is fitted to the Project (`fitList`: days by position),
      never read into it. Lists don't get a Project automatically any
@@ -225,13 +237,17 @@ Start of each conversation, the owner should say which one it is:
      / no project. Equipment cards' ⋮ menu (owner): Add to project… /
      Remove from project. Equipment shows one card per Project, its
      current version, with "V3 · note · 3 lists" when there are several
-     or a note, and drafts marked "No project"; inside a list the crumb
-     has a "V3 ▾" switch (owner). The Project page's equipment section
-     lists every version (note, Make current, Edit, Preview, Duplicate,
+     or a list note, and drafts marked "No project"; inside a list, under
+     the info box, a row with the version switch ("V2 of 3 ▾", or "No
+     project" for a draft) and the list note (owner). The composer's item
+     search reads "Search items…" (everyone; every list uses the same
+     master catalog). The Project page's equipment section lists every
+     version (list note, Make current, Edit, Preview, Duplicate,
      Remove, Delete, + New version); deleting a Project with lists asks
      whether to delete them or keep them as drafts. The version is never
-     on the PDF or share page. Data the expansion reports to BOXGO:
-     `app.reportListMeta` (list id → project, v, note, count, current),
+     on the PDF or share page, nor is the list note. Data the expansion
+     reports to BOXGO: `app.reportListMeta` (list id → project, v, list
+     note, count, current),
      links through `app.registerLinks` (link / attach / unlink). **One Create New / Edit
      window for both modules:** BOXGO's `ProjectFormModal` (owner-only
      props: `prefill` = new from given values, `noList` = hide template,

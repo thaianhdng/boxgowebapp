@@ -880,6 +880,9 @@ export default function EquipmentManifest({ session }) {
       createdAt: Date.now(),
     };
     if (isCatalogOwner && target && xLinksRef.current) newProject = xLinksRef.current.link(newProject, target) || newProject;
+    // Owner's draft (no project): houses, Producer and Gaffer belong to a
+    // project, even when a template has them.
+    if (isCatalogOwner && !target && xLinksRef.current) newProject = { ...newProject, productionHouse: "", producer: "", rentalHouse: "", gaffer: "" };
     setProjectsState((prev) => [...prev, newProject]);
     addProductionHouse(newProject.productionHouse);
     addRentalHouse(newProject.rentalHouse);
@@ -923,8 +926,10 @@ export default function EquipmentManifest({ session }) {
   function duplicateProject(id, target) {
     const original = projects.find((p) => p.id === id);
     if (!original) return null;
+    // Owner: a copy starts without the original's own list note.
+    const fresh = isCatalogOwner ? { listNote: "" } : {};
     if (isCatalogOwner && target && xLinksRef.current && xListMeta?.[id]?.projectId === target.projectId) {
-      const copy = xLinksRef.current.link({ ...original, id: newProjectId(), createdAt: Date.now() }, target);
+      const copy = xLinksRef.current.link({ ...original, ...fresh, id: newProjectId(), createdAt: Date.now() }, target);
       if (copy) setProjectsState((prev) => [...prev, copy]);
       return copy;
     }
@@ -945,6 +950,7 @@ export default function EquipmentManifest({ session }) {
     });
     let newProject = {
       ...original,
+      ...fresh,
       id: newProjectId(),
       days: newDays,
       itemData: newItemData,
@@ -953,6 +959,9 @@ export default function EquipmentManifest({ session }) {
     if (isCatalogOwner && target && xLinksRef.current) {
       newProject = xLinksRef.current.link(newProject, target);
       if (!newProject) return null;
+    } else if (isCatalogOwner && xLinksRef.current) {
+      // A draft copy: no project, so no houses, Producer or Gaffer.
+      newProject = { ...newProject, productionHouse: "", producer: "", rentalHouse: "", gaffer: "" };
     }
     setProjectsState((prev) => [...prev, newProject]);
     return newProject;
@@ -1958,26 +1967,8 @@ export default function EquipmentManifest({ session }) {
                       </span>
                       {isCatalogOwner && xCancelledSet.has(activeProjectId) && <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px" }}>Cancelled</span>}
                       {activeMeta && <CalendarDays size={13} style={{ flexShrink: 0, color: "var(--muted)" }} />}
-                      {isCatalogOwner && xListMeta && !activeMeta && <span className="tag-box" style={{ flexShrink: 0, fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)" }} title="This list isn't in any project (a draft)">No project</span>}
                     </span>
-                    {activeMeta && activeMeta.count > 1 && (
-                      // Owner: switch between this project's lists (V1, V2…).
-                      // Shows just "V2 ▾"; tapping opens the full list (the
-                      // select lies invisibly over it).
-                      <span style={{ position: "relative", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 2, border: "1px solid var(--border2)", borderRadius: 3, padding: "2px 4px 2px 6px", fontSize: 12, fontWeight: 800, color: "var(--accent)" }}>
-                        V{activeMeta.v}<ChevronDown size={12} />
-                        <select
-                          value={activeProjectId}
-                          onChange={(e) => openProject(e.target.value)}
-                          title="This project's equipment lists"
-                          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer", padding: 0, fontSize: 16 }}
-                        >
-                          {activeMeta.versions.map((v) => (
-                            <option key={v.id} value={v.id}>V{v.v}{v.note ? ` · ${v.note}` : ""}</option>
-                          ))}
-                        </select>
-                      </span>
-                    )}
+
                   </>
                 )}
                 {view === "catalog" && (
@@ -2134,13 +2125,16 @@ export default function EquipmentManifest({ session }) {
               {view === "manifest" && (() => {
                 const deptsToShow = Object.keys(departments).filter((d) => manifestGroupedFiltered[d] || d === "Others" || d === "Subrent");
                 const searching = !!manifestSearch.trim();
-                const infoPairs = [
+                // Owner: a list in no project (a draft) has no production details.
+                const isDraft = isCatalogOwner && !!xListMeta && !activeMeta;
+                const listRow = isCatalogOwner && !!xListMeta;
+                const infoPairs = isDraft ? [] : [
                   { label: "Production House", values: [activeProject?.productionHouse, activeProject?.producer].filter(Boolean) },
                   { label: "Rental House", values: [activeProject?.rentalHouse, activeProject?.gaffer].filter(Boolean) },
                 ].filter((pair) => pair.values.length > 0);
                 return (
                   <>
-                    <div style={{ marginBottom: 20, border: "1px solid var(--border)", borderRadius: 4, padding: "12px 14px" }}>
+                    <div style={{ marginBottom: listRow ? 8 : 20, border: "1px solid var(--border)", borderRadius: 4, padding: "12px 14px" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                         {infoPairs.length > 0 ? (
                           <div style={{ display: "flex", gap: 28 }}>
@@ -2152,7 +2146,7 @@ export default function EquipmentManifest({ session }) {
                             ))}
                           </div>
                         ) : (
-                          <div style={{ fontSize: 12, color: "var(--muted2)" }}>No production details set yet.</div>
+                          <div style={{ fontSize: 12, color: "var(--muted2)" }}>{isDraft ? "Draft (no project): production details come with a project." : "No production details set yet."}</div>
                         )}
                       </div>
                       <textarea
@@ -2172,12 +2166,47 @@ export default function EquipmentManifest({ session }) {
                       />
                     </div>
 
+                    {listRow && (
+                      // Owner: which of the project's lists this is (switch
+                      // between versions; the box shows "V2 ▾", tapping opens
+                      // the full list) and this list's own note.
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                        {activeMeta ? (
+                          <span
+                            title={activeMeta.count > 1 ? "Switch to another of this project's lists" : "This project's only list"}
+                            style={{ position: "relative", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 2, border: "1px solid var(--border2)", borderRadius: 3, padding: "6px 6px 6px 8px", fontSize: 12, fontWeight: 800, color: "var(--accent)" }}
+                          >
+                            V{activeMeta.v}{activeMeta.count > 1 && <><span style={{ color: "var(--muted)", fontWeight: 600 }}>&nbsp;of {activeMeta.count}</span><ChevronDown size={12} /></>}
+                            {activeMeta.count > 1 && (
+                              <select
+                                value={activeProjectId}
+                                onChange={(e) => openProject(e.target.value)}
+                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer", padding: 0, fontSize: 16 }}
+                              >
+                                {activeMeta.versions.map((v) => (
+                                  <option key={v.id} value={v.id}>V{v.v}{v.note ? ` · ${v.note}` : ""}</option>
+                                ))}
+                              </select>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="tag-box" style={{ flexShrink: 0, fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)" }} title="This list isn't in any project (a draft)">No project</span>
+                        )}
+                        <input
+                          value={activeProject?.listNote !== undefined ? activeProject.listNote : (activeMeta?.note || "")}
+                          onChange={(e) => updateProject(activeProjectId, { listNote: e.target.value })}
+                          placeholder="List note (this list only)…"
+                          style={{ flex: 1, minWidth: 0, fontSize: 13, padding: "6px 10px" }}
+                        />
+                      </div>
+                    )}
+
                     <div style={{ position: "relative", marginBottom: 14 }}>
                       <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
                       <input
                         value={manifestSearch}
                         onChange={(e) => setManifestSearch(e.target.value)}
-                        placeholder="Search this project's items…"
+                        placeholder="Search items…"
                         style={{ width: "100%", paddingLeft: 30, fontSize: 13 }}
                       />
                     </div>
@@ -2460,6 +2489,7 @@ export default function EquipmentManifest({ session }) {
         <ProjectFormModal
           initial={projects.find((p) => p.id === editingProjectId)}
           heading={!editingProjectId && isCatalogOwner && xLinksRef.current && !newListTarget ? "New draft list" : undefined}
+          noHouses={isCatalogOwner && xLinksRef.current ? (editingProjectId ? !!xListMeta && !xListMeta[editingProjectId] : !newListTarget) : false}
           saveLabel={!editingProjectId && isCatalogOwner && xLinksRef.current && !newListTarget ? "Create list" : undefined}
           productionHouses={productionHouses}
           rentalHouses={rentalHouses}

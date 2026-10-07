@@ -205,7 +205,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         onCreate={() => setCreatingList(true)}
         onDuplicate={setDuplicating}
         onSetCurrent={(listId) => actions.setCurrent(id, listId)}
-        onSetNote={(listId, note) => actions.setNote(id, listId, note)}
+        onSetNote={(listId, note) => actions.setNote(listId, note)}
         onRemove={(listId) => actions.unlink(listId)}
         onDelete={(listId, v) => {
           if (window.confirm(`Delete V${v} of "${project.name}"? Its equipment and quantities go; the project${versions.length > 1 ? " and its other lists" : ""} stay.`)) app.deleteEquipmentList(listId);
