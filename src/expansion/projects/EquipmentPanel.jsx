@@ -1,13 +1,13 @@
 import { Copy, FileSpreadsheet, FolderMinus, Plus, SquarePen, Trash2 } from "lucide-react";
 import { Section, smallBtn } from "../shared/ui.jsx";
-import { formatShootDateRange } from "../../lib/utils.js";
+import { formatShootDateRange, inCardPreview } from "../../lib/utils.js";
 import { MAX_VERSIONS } from "./sync.js";
 
-function usedModels(list, catalog, test) {
+function usedModels(app, list, catalog, test) {
   const names = Object.entries(list.itemData || {})
     .filter(([, e]) => Object.values(e.quantities || {}).some((q) => q > 0))
     .map(([id]) => catalog.find((c) => c.id === id))
-    .filter((c) => c && test(c))
+    .filter((c) => c && test(c) && inCardPreview(c, app.cardPreviewOff))
     .map((c) => c.name);
   return [...new Set(names)];
 }
@@ -55,8 +55,8 @@ export function EquipmentPanel({ app, versions, currentId, hasShootEvents, onCre
         {ordered.map(({ id, v, note, list }) => {
           const current = id === currentId;
           const itemCount = Object.values(list.itemData || {}).filter((e) => Object.values(e.quantities || {}).some((q) => q > 0)).length;
-          const bodies = usedModels(list, catalog, (c) => /camera/i.test(c.department));
-          const lenses = usedModels(list, catalog, (c) => /lens/i.test(c.department) || /lens/i.test(c.subcategory || ""));
+          const bodies = usedModels(app, list, catalog, (c) => /camera/i.test(c.department));
+          const lenses = usedModels(app, list, catalog, (c) => /lens/i.test(c.department) || /lens/i.test(c.subcategory || ""));
           const lines = [
             ["Items", itemCount ? String(itemCount) : "None yet"],
             bodies.length && ["Camera", bodies.join(", ")],

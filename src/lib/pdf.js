@@ -98,8 +98,29 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     // Brand line now lives in the footer (see below) so the header stays
     // dedicated to the information that actually matters per-document.
 
-    // Header: tag + name + date (left), prepared-by (right)
+    // Header: prepared-by (right), and tag + name + shoot dates (left) in
+    // the space left of it — a long name wraps instead of running under
+    // the prepared-by block, and the dates move to their own line when
+    // they don't fit after the name.
     const headerTopY = y;
+    const rightX = marginX + usableWidth;
+    const rightLines = [
+      preparedBy.name && { text: preparedBy.name, style: "bold", size: 17, color: [0, 0, 0], step: 14 },
+      preparedBy.email && { text: preparedBy.email, style: "normal", size: 9, color: [85, 85, 85], step: 11 },
+      preparedBy.phone && { text: preparedBy.phone, style: "normal", size: 9, color: [85, 85, 85], step: 11 },
+    ].filter(Boolean);
+    let rightW = 0;
+    rightLines.forEach((l) => { doc.setFont(FONT, l.style); doc.setFontSize(l.size); rightW = Math.max(rightW, doc.getTextWidth(l.text)); });
+    let rightY = headerTopY;
+    rightLines.forEach((l) => {
+      doc.setFont(FONT, l.style);
+      doc.setFontSize(l.size);
+      doc.setTextColor(...l.color);
+      doc.text(l.text, rightX, rightY, { align: "right" });
+      rightY += l.step;
+    });
+
+    const leftWidth = usableWidth - (rightW ? rightW + 18 : 0);
     let leftX = marginX;
     doc.setFont(FONT, "bold");
     if (project?.tag) {
@@ -109,66 +130,71 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       doc.text(tagText, leftX, y);
       leftX += doc.getTextWidth(tagText) + 8;
     }
+    const nameWidth = leftWidth - (leftX - marginX);
     doc.setFontSize(17);
     doc.setTextColor(...accentRgb);
-    const nameText = (project?.name || "Equipment List").toUpperCase();
-    doc.text(nameText, leftX, y);
-    leftX += doc.getTextWidth(nameText) + 8;
+    const nameLines = doc.splitTextToSize((project?.name || "Equipment List").toUpperCase(), nameWidth);
+    let leftY = y;
+    nameLines.forEach((line, i) => {
+      if (i) leftY += lh(17);
+      doc.text(line, leftX, leftY);
+    });
     if (shootDateRange) {
       doc.setTextColor(0, 0, 0);
-      doc.text(`· ${shootDateRange}`, leftX, y);
+      const last = nameLines[nameLines.length - 1] || "";
+      const after = `· ${shootDateRange}`;
+      const lastW = doc.getTextWidth(last);
+      if (lastW + 8 + doc.getTextWidth(after) <= nameWidth) {
+        doc.text(after, leftX + lastW + 8, leftY);
+      } else {
+        leftY += lh(17);
+        doc.text(shootDateRange, leftX, leftY);
+      }
     }
 
-    // Prepared-by block, right-aligned
-    let rightY = headerTopY;
-    const rightX = marginX + usableWidth;
-    if (preparedBy.name) {
-      doc.setFont(FONT, "bold");
-      doc.setFontSize(17);
-      doc.setTextColor(0, 0, 0);
-      doc.text(preparedBy.name, rightX, rightY, { align: "right" });
-      rightY += 14;
-    }
-    if (preparedBy.email) {
-      doc.setFont(FONT, "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(85, 85, 85);
-      doc.text(preparedBy.email, rightX, rightY, { align: "right" });
-      rightY += 11;
-    }
-    if (preparedBy.phone) {
-      doc.setFont(FONT, "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(85, 85, 85);
-      doc.text(preparedBy.phone, rightX, rightY, { align: "right" });
-      rightY += 11;
-    }
+    y = Math.max(leftY + 10, rightY) + 8;
 
-    y = Math.max(headerTopY + 10, rightY) + 8;
-
-    // Info strip: Production House / Rental House flow left-to-right based
-    // on actual content width (matching the preview's flex layout), and
-    // Created On sits as a third block, right-aligned, on the same line —
-    // one single strip instead of a separate stacked block up top.
+    // Info strip: Production House and Rental House (the house, with its
+    // Producer / Gaffer on the line below) flow left to right, and Created
+    // On (date, with the time below) sits right-aligned. Houses too long
+    // for the space are cut off with "…".
     const hasCreatedOn = Boolean(project?.createdAt);
     if (infoPairs.length > 0 || hasCreatedOn) {
-      let px = marginX;
       const gap = 28;
-      infoPairs.forEach((pair) => {
+      const createdD = hasCreatedOn ? new Date(project.createdAt) : null;
+      const createdLines = hasCreatedOn ? [formatDMY(fmtDate(createdD)), formatTime24(createdD)] : [];
+      const width = (text, style, size) => { doc.setFont(FONT, style); doc.setFontSize(size); return doc.getTextWidth(text); };
+      const createdW = hasCreatedOn ? Math.max(width("CREATED ON", "bold", 8), ...createdLines.map((t) => width(t, "bold", 11))) : 0;
+      const cols = [
+        { label: "Production House", lines: [[project?.productionHouse, "bold"], [project?.producer, "normal"]] },
+        { label: "Rental House", lines: [[project?.rentalHouse, "bold"], [project?.gaffer, "normal"]] },
+      ].map((c) => ({ ...c, lines: c.lines.filter(([t]) => t) })).filter((c) => c.lines.length);
+      const natural = cols.map((c) => Math.max(width(c.label.toUpperCase(), "bold", 8), ...c.lines.map(([t, st]) => width(t, st, 11))));
+      const avail = usableWidth - (hasCreatedOn ? createdW + gap : 0);
+      const fits = natural.reduce((a, b) => a + b, 0) + gap * Math.max(0, cols.length - 1) <= avail;
+      const share = cols.length ? (avail - gap * (cols.length - 1)) / cols.length : 0;
+      const cut = (text, style, max) => {
+        if (width(text, style, 11) <= max) return text;
+        let t = text;
+        while (t.length > 1 && width(`${t}…`, style, 11) > max) t = t.slice(0, -1);
+        return `${t.trimEnd()}…`;
+      };
+      let px = marginX;
+      let rows = createdLines.length;
+      cols.forEach((c, i) => {
+        const colW = fits ? natural[i] : share;
         doc.setFont(FONT, "bold");
         doc.setFontSize(8);
         doc.setTextColor(136, 136, 136);
-        const labelText = pair.label.toUpperCase();
-        doc.text(labelText, px, y);
-        const labelWidth = doc.getTextWidth(labelText);
-
-        doc.setFontSize(11);
-        doc.setTextColor(0, 0, 0);
-        const valueText = pair.values.join(" · ");
-        doc.text(valueText, px, y + 13);
-        const valueWidth = doc.getTextWidth(valueText);
-
-        px += Math.max(labelWidth, valueWidth) + gap;
+        doc.text(c.label.toUpperCase(), px, y);
+        c.lines.forEach(([text, style], k) => {
+          doc.setFont(FONT, style);
+          doc.setFontSize(11);
+          doc.setTextColor(0, 0, 0);
+          doc.text(cut(text, style, colW), px, y + 13 * (k + 1));
+        });
+        rows = Math.max(rows, c.lines.length);
+        px += colW + gap;
       });
 
       if (hasCreatedOn) {
@@ -178,13 +204,10 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         doc.text("CREATED ON", rightX, y, { align: "right" });
         doc.setFontSize(11);
         doc.setTextColor(0, 0, 0);
-        {
-          const createdD = new Date(project.createdAt);
-          doc.text(`${formatDMY(fmtDate(createdD))}  ${formatTime24(createdD)}`, rightX, y + 13, { align: "right" });
-        }
+        createdLines.forEach((t, k) => doc.text(t, rightX, y + 13 * (k + 1), { align: "right" }));
       }
 
-      y += 26;
+      y += 13 * rows + 13;
     }
 
     // Divider
@@ -194,20 +217,30 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     doc.setLineWidth(1);
     y += 14;
 
-    // Project note
-    if (project?.note) {
-      doc.setFont(FONT, "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(136, 136, 136);
-      doc.text("PROJECT NOTE", marginX, y);
-      y += 12;
+    // Project note, then the list's own note (owner's lists) in italics
+    // under it. The fonts have no italic, so it's slanted.
+    const noteText = (project?.note || "").trim();
+    const listNoteText = (project?.listNote || "").trim();
+    if (noteText) {
       doc.setFont(FONT, "normal");
       doc.setFontSize(10);
       doc.setTextColor(51, 51, 51);
-      const noteLines = doc.splitTextToSize(project.note, usableWidth);
-      noteLines.forEach((line) => { doc.text(line, marginX, y); y += lh(10); });
-      y += 8;
+      doc.splitTextToSize(noteText, usableWidth).forEach((line) => { doc.text(line, marginX, y); y += lh(10); });
     }
+    if (listNoteText) {
+      doc.setFont(FONT, "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(85, 85, 85);
+      const slant = 0.2;
+      doc.splitTextToSize(listNoteText, usableWidth - 4).forEach((line) => {
+        doc.saveGraphicsState();
+        doc.internal.write(`1 0 ${slant} 1 ${(-slant * (pageHeight - y)).toFixed(3)} 0 cm`);
+        doc.text(line, marginX, y);
+        doc.restoreGraphicsState();
+        y += lh(10);
+      });
+    }
+    if (noteText || listNoteText) y += 8;
 
     if (Object.keys(visibleGrouped).length === 0) {
       doc.setFont(FONT, "normal");

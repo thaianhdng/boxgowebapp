@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Plus, Trash2, Pencil, Search, Printer, Copy, MoreVertical, FolderInput, FolderMinus,
 } from "lucide-react";
-import { formatShootDateRange } from "../lib/utils.js";
+import { formatShootDateRange, inCardPreview } from "../lib/utils.js";
 
 
 // A project with `ghost: true` (owner only: a Calendar project that has no
@@ -11,11 +11,13 @@ import { formatShootDateRange } from "../lib/utils.js";
 // card and a "Cancelled" mark (only here, never in the preview or PDF).
 // `listOnly` (owner only): Delete removes just the equipment list — the
 // project stays in Projects — so the wording says so.
+// `previewOff`: camera / lens (sub)categories left out of the camera and
+// lens lines (set in the Master Catalog).
 // `listMeta` (owner only; null until known): each list's project and
 // version ({ v, note, count }), shown under the name; lists in no project
 // get a "No project" mark. With it, the ⋮ menu offers Add to project… /
 // Remove from project (onAddToProject / onRemoveFromProject).
-export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost, listOnly, cancelledIds, listMeta, onAddToProject, onRemoveFromProject }) {
+export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost, listOnly, cancelledIds, listMeta, onAddToProject, onRemoveFromProject, previewOff }) {
   const [confirmId, setConfirmId] = useState(null);
   const [projSearch, setProjSearch] = useState("");
   const [menuId, setMenuId] = useState(null); // project whose ⋮ menu is open
@@ -64,7 +66,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
     });
     const names = ids
       .map((id) => catalog.find((c) => c.id === id))
-      .filter((c) => c && matchTest(c))
+      .filter((c) => c && matchTest(c) && inCardPreview(c, previewOff))
       .map((c) => c.name);
     return [...new Set(names)];
   }
@@ -119,55 +121,19 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             onClick={() => (p.ghost ? onCreateFromGhost(p) : onOpen(p.id))}
           >
             {/* Flowing text: the dates follow the name and a long name wraps;
-                the tag and the menu float in the top right corner, so only
-                the first line makes room for them. */}
+                the tag floats in the top right corner, so only the first
+                line makes room for it. */}
             <div style={{ minWidth: 0, fontSize: 13, lineHeight: "18px", marginBottom: 3 }}>
-              {/* Top right corner: the tag, then the ⋮ menu (or a greyed
-                  card's "+ List"); the name flows around them. */}
-              <span style={{ float: "right", display: "flex", alignItems: "center", gap: 6, marginLeft: 8, height: 18 }}>
-                {p.tag && (
-                  <span
-                    className="tag-box"
-                    onClick={(e) => attr(e, "tag", p.tag)}
-                    title="Filter by this tag"
-                    style={{ fontWeight: 700, letterSpacing: 0.4, color: "var(--accent)", cursor: "pointer" }}
-                  >
-                    {p.tag}
-                  </span>
-                )}
-            {p.ghost ? (
-              <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, fontWeight: 700, color: "var(--muted)" }}>
-                <Plus size={12} /> List
-              </span>
-            ) : (
-            <div data-card-menu style={{ position: "relative", margin: "-5px -8px -5px 0" }} onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
-                title="More"
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6, display: "flex" }}
-              >
-                <MoreVertical size={16} />
-              </button>
-              {menuId === p.id && (
-                <div style={{
-                  position: "absolute", top: "100%", right: 0, zIndex: 30, minWidth: 150, padding: 4,
-                  background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
-                }}>
-                  <MenuItem icon={<Pencil size={13} />} label={listMeta && !listMeta[p.id] ? "Edit list" : "Edit project"} onClick={() => { setMenuId(null); onEdit(p); }} />
-                  <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
-                  <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
-                  {listMeta && !listMeta[p.id] && onAddToProject && (
-                    <MenuItem icon={<FolderInput size={13} />} label="Add to project…" onClick={() => { setMenuId(null); onAddToProject(p.id); }} />
-                  )}
-                  {listMeta?.[p.id] && onRemoveFromProject && (
-                    <MenuItem icon={<FolderMinus size={13} />} label="Remove from project" onClick={() => { setMenuId(null); onRemoveFromProject(p.id); }} />
-                  )}
-                  <MenuItem icon={<Trash2 size={13} />} label={listOnly ? "Delete list" : "Delete"} danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
-                </div>
+              {p.tag && (
+                <span
+                  className="tag-box"
+                  onClick={(e) => attr(e, "tag", p.tag)}
+                  title="Filter by this tag"
+                  style={{ float: "right", marginLeft: 8, marginTop: 2, fontWeight: 700, letterSpacing: 0.4, color: "var(--accent)", cursor: "pointer" }}
+                >
+                  {p.tag}
+                </span>
               )}
-            </div>
-            )}
-              </span>
               <span
                 onClick={(e) => attr(e, "name", p.name)}
                 title="Filter by this project name"
@@ -182,7 +148,10 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 <span className="tag-box" style={{ marginLeft: 6, fontWeight: 800, letterSpacing: 0.5, color: "var(--danger)", verticalAlign: "middle", position: "relative", top: -1 }}>Cancelled</span>
               )}
               {listMeta && !p.ghost && !listMeta[p.id] && (
-                <span className="tag-box" style={{ fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)", verticalAlign: "middle", position: "relative", top: -1 }} title="This list isn't in any project (a draft)">No project</span>
+                // A draft: "No project" on its own line under the name.
+                <div style={{ marginTop: 3, lineHeight: "14px" }}>
+                  <span className="tag-box" style={{ fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)" }} title="This list isn't in any project (a draft)">No project</span>
+                </div>
               )}
               {listMeta && !p.ghost && !listMeta[p.id] && p.listNote && (
                 <div style={{ fontSize: 10.5, lineHeight: "14px", color: "var(--muted)", marginTop: 1, overflowWrap: "anywhere" }}>{p.listNote}</div>
@@ -252,11 +221,49 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             {lenses.length > 0 && (
               <div title={lenses.join(" · ")} style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 2, ...oneLine }}>{lenses.join(" · ")}</div>
             )}
-            {emptyDays.length > 0 && emptyDays.length < (p.days || []).length && (
-              <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }} title="No items entered yet for these days">
-                ⚠ No items: {emptyDays.map((d) => d.label.replace("Day ", "D")).join(", ")}
+            {/* The card's foot: a warning about empty days at the left, the
+                ⋮ menu in the bottom right corner. */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: "auto", paddingTop: 4, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {emptyDays.length > 0 && emptyDays.length < (p.days || []).length && (
+                  <div style={{ fontSize: 10.5, color: "var(--accent)" }} title="No items entered yet for these days">
+                    ⚠ No items: {emptyDays.map((d) => d.label.replace("Day ", "D")).join(", ")}
+                  </div>
+                )}
               </div>
-            )}
+              {p.ghost ? (
+                <span style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, fontWeight: 700, color: "var(--muted)" }}>
+                  <Plus size={12} /> List
+                </span>
+              ) : (
+              <div data-card-menu style={{ position: "relative", flexShrink: 0, margin: "-6px -8px -8px 0" }} onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
+                  title="More"
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6, display: "flex" }}
+                >
+                  <MoreVertical size={16} />
+                </button>
+                {menuId === p.id && (
+                  <div style={{
+                    position: "absolute", bottom: "100%", right: 0, zIndex: 30, minWidth: 150, padding: 4,
+                    background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
+                  }}>
+                    <MenuItem icon={<Pencil size={13} />} label={listMeta && !listMeta[p.id] ? "Edit list" : "Edit project"} onClick={() => { setMenuId(null); onEdit(p); }} />
+                    <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
+                    <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
+                    {listMeta && !listMeta[p.id] && onAddToProject && (
+                      <MenuItem icon={<FolderInput size={13} />} label="Add to project…" onClick={() => { setMenuId(null); onAddToProject(p.id); }} />
+                    )}
+                    {listMeta?.[p.id] && onRemoveFromProject && (
+                      <MenuItem icon={<FolderMinus size={13} />} label="Remove from project" onClick={() => { setMenuId(null); onRemoveFromProject(p.id); }} />
+                    )}
+                    <MenuItem icon={<Trash2 size={13} />} label={listOnly ? "Delete list" : "Delete"} danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
+                  </div>
+                )}
+              </div>
+              )}
+            </div>
           </div>
         );
       })}

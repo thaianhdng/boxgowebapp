@@ -5,7 +5,21 @@ import {
 import { BreakableName } from "./BreakableName.jsx";
 
 
-export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onToggle, onEdit, onDelete, onReorderItem, onAddItem }) {
+// `previewOff` (camera / lens categories only): the categories and
+// subcategories left out of the project cards' camera and lens lines, with
+// an "In card preview" tick on the category bar and on each subcategory.
+export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onToggle, onEdit, onDelete, onReorderItem, onAddItem, previewOff, onTogglePreview }) {
+  const deptOn = previewOff ? !previewOff.has(dept) : false;
+  const tick = (key, on, disabled, onAccent) => (
+    <label
+      onClick={(e) => e.stopPropagation()}
+      title={disabled ? "The whole category is left out of the card preview" : "Show these items in the camera / lens lines on project cards"}
+      style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.45 : 1, color: onAccent ? "var(--accent-text)" : "var(--muted)", textTransform: "none", letterSpacing: 0, flexShrink: 0 }}
+    >
+      <input type="checkbox" checked={on} disabled={disabled} onChange={() => onTogglePreview(key)} style={{ width: 14, height: 14, margin: 0, padding: 0, accentColor: onAccent ? "var(--accent-text)" : "var(--accent)" }} />
+      In card preview
+    </label>
+  );
   const total = Object.values(data).reduce((n, arr) => n + arr.length, 0);
   const definedSet = new Set(subcats);
   const flatItems = Object.keys(data)
@@ -67,6 +81,7 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
           {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
           {dept}
         </span>
+        {previewOff && tick(dept, deptOn, false, true)}
       </div>
       {!collapsed && (
         <div style={{ background: "var(--surface)", borderRadius: "0 0 4px 4px", overflow: "hidden" }}>
@@ -93,12 +108,15 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
                 }}>
                   {sub}
                 </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                {previewOff && tick(`${dept}::${sub}`, deptOn && !previewOff.has(`${dept}::${sub}`), !deptOn, false)}
                 <button
                   onClick={(e) => { e.stopPropagation(); onAddItem(dept, sub); }}
                   style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11, display: "flex", alignItems: "center", gap: 3 }}
                 >
                   <Plus size={11} /> Add Item
                 </button>
+                </span>
               </div>
               {(data[sub] || []).map((c) => itemRow(c))}
             </div>

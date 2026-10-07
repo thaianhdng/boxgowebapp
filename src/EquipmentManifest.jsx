@@ -58,6 +58,7 @@ function buildAppStatePayload(v) {
       userName: v.userName, userEmail: v.userEmail, userPhone: v.userPhone,
       includeUsernameInPdf: v.includeUsernameInPdf, includeEmailInPdf: v.includeEmailInPdf, includePhoneInPdf: v.includePhoneInPdf,
       theme: v.theme, accentId: v.accentId, fontId: v.fontId, pdfFontId: v.pdfFontId,
+      cardPreviewOff: v.cardPreviewOff || [],
       departmentOrder: Object.keys(v.departments),
     },
   };
@@ -156,6 +157,12 @@ export default function EquipmentManifest({ session }) {
   // PDF font is per project (project.pdfFont); this is the last one picked,
   // which new projects start with.
   const [pdfFontId, setPdfFontId] = useState(DEFAULT_PDF_FONT);
+  // Camera / lens categories and subcategories left out of the cards'
+  // camera and lens lines ("dept" or "dept::subcategory"), ticked off in the
+  // Master Catalog.
+  const [cardPreviewOff, setCardPreviewOff] = useState([]);
+  const cardPreviewOffSet = useMemo(() => new Set(cardPreviewOff), [cardPreviewOff]);
+  const toggleCardPreview = (key) => setCardPreviewOff((cur) => (cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key]));
   // Per device, so it lives in this browser's storage rather than app_state.
   const [uiSize, setUiSize] = useState(() => {
     try { return localStorage.getItem(UI_SIZE_KEY) || "normal"; } catch { return "normal"; }
@@ -342,6 +349,7 @@ export default function EquipmentManifest({ session }) {
         accentId: st.accentId || "amber",
         fontId: st.fontId || "jetbrains",
         pdfFontId: pdfFontFor(st.pdfFontId).id,
+        cardPreviewOff: Array.isArray(st.cardPreviewOff) ? st.cardPreviewOff : [],
       };
       setCatalog(v.catalog);
       setDepartments(v.departments);
@@ -360,6 +368,7 @@ export default function EquipmentManifest({ session }) {
       setAccentId(v.accentId);
       setFontId(v.fontId);
       setPdfFontId(v.pdfFontId);
+      setCardPreviewOff(v.cardPreviewOff);
       // What we just loaded is by definition saved — so applying it never
       // triggers a write-back that could race another device's save.
       savedStateJsonRef.current = JSON.stringify(buildAppStatePayload(v));
@@ -474,7 +483,7 @@ export default function EquipmentManifest({ session }) {
 
   const appStatePayload = () => buildAppStatePayload({
     catalog, departments, projectTags, productionHouses, rentalHouses, brands, templates,
-    userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId, pdfFontId,
+    userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId, pdfFontId, cardPreviewOff,
   });
   const changedProjects = () => projects.filter((p) => savedProjectsRef.current.get(p.id) !== p);
   const hasUnsavedChanges = () =>
@@ -517,7 +526,7 @@ export default function EquipmentManifest({ session }) {
     }, 500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [departments, catalog, projectTags, productionHouses, rentalHouses, brands, userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, templates, theme, accentId, fontId, pdfFontId, loaded, session]);
+  }, [departments, catalog, projectTags, productionHouses, rentalHouses, brands, userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, templates, theme, accentId, fontId, pdfFontId, cardPreviewOff, loaded, session]);
 
   // save projects (debounced) — only the ones that changed. Deleting a
   // project writes immediately in deleteProject() rather than here.
@@ -1251,6 +1260,7 @@ export default function EquipmentManifest({ session }) {
       return { ...rest, [n]: subs || [] };
     });
     setCatalog((prev) => prev.map((c) => (c.department === oldName ? { ...c, department: n } : c)));
+    setCardPreviewOff((cur) => cur.map((k) => (k === oldName ? n : k.startsWith(`${oldName}::`) ? `${n}::${k.slice(oldName.length + 2)}` : k)));
     if (activeDept === oldName) setActiveDept(n);
   }
 
@@ -1270,6 +1280,7 @@ export default function EquipmentManifest({ session }) {
       [dept]: (prev[dept] || []).map((s) => (s === oldSub ? n : s)),
     }));
     setCatalog((prev) => prev.map((c) => (c.department === dept && c.subcategory === oldSub ? { ...c, subcategory: n } : c)));
+    setCardPreviewOff((cur) => cur.map((k) => (k === `${dept}::${oldSub}` ? `${dept}::${n}` : k)));
   }
 
   function removeSubcategory(dept, sub) {
@@ -1657,6 +1668,7 @@ export default function EquipmentManifest({ session }) {
     catalog,
     departments,
     templates,
+    cardPreviewOff: cardPreviewOffSet,
     projectTags,
     productionHouses,
     rentalHouses,
@@ -2117,6 +2129,7 @@ export default function EquipmentManifest({ session }) {
                     onCreateFromGhost={setGhostDraft}
                     listOnly={isCatalogOwner}
                     cancelledIds={isCatalogOwner ? xCancelledSet : null}
+                    previewOff={cardPreviewOffSet}
                     listMeta={isCatalogOwner ? xListMeta : null}
                     onAddToProject={isCatalogOwner ? (id) => askListTarget("attach", id) : undefined}
                     onRemoveFromProject={isCatalogOwner ? (id) => xLinksRef.current?.unlink(id) : undefined}
@@ -2307,6 +2320,8 @@ export default function EquipmentManifest({ session }) {
                       onDelete={deleteCatalogItem}
                       onReorderItem={reorderCatalogItem}
                       onAddItem={(d, s) => { setLastCatalogDraft({ department: d, subcategory: s }); setEditingCatalogId(null); setShowCatalogForm(true); }}
+                      previewOff={/camera|lens/i.test(dept) ? cardPreviewOffSet : null}
+                      onTogglePreview={toggleCardPreview}
                     />
                   ))}
                 </>

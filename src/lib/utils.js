@@ -282,3 +282,11 @@ function download(blob, filename, asGeneric) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
+
+// Whether a catalog item shows in the project cards' camera / lens lines:
+// `off` holds the categories ("dept") and subcategories ("dept::sub") the
+// user unticked in the Master Catalog.
+export function inCardPreview(c, off) {
+  if (!off || !off.size) return true;
+  return !off.has(c.department) && !off.has(`${c.department}::${c.subcategory || ""}`);
+}

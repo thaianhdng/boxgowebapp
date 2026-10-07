@@ -134,9 +134,15 @@ Start of each conversation, the owner should say which one it is:
      name (owner's call), so only the name's first line makes room for it.
      The top row is flowing text, not flex items. The equipment list's
      cards (everyone, owner's call: synced with the Projects cards) work
-     the same way: name · dates, with the tag and then the ⋮ menu (or a
-     greyed card's "+ List") floating in the top right corner; then the
-     houses, the project note, locations, gear, "⚠ No items". The
+     the same way: name · dates with the tag floating in the top right
+     corner (a draft's "No project" mark on its own line under the name);
+     then the houses, the project note, locations, gear; and a foot row
+     with "⚠ No items" at the left and the ⋮ menu (or a greyed card's
+     "+ List") in the bottom right corner, opening upwards. The cards'
+     camera and lens lines leave out the camera / lens categories and
+     subcategories unticked in the Master Catalog ("In card preview" on
+     their bars; `settings.cardPreviewOff`, keys "dept" / "dept::sub",
+     `inCardPreview`; not in the backup file). The
      Equipment page is capped at the Projects page's width (1236px of
      cards), so cards are the same size on wide screens. On both kinds
      of card a house and its person (Producer / Gaffer) stay on one line,
@@ -260,8 +266,10 @@ Start of each conversation, the owner should say which one it is:
      master catalog). The Project page's equipment section lists every
      version (list note, Make current, Edit, Preview, Duplicate,
      Remove, Delete, + New version); deleting a Project with lists asks
-     whether to delete them or keep them as drafts. The version is never
-     on the PDF or share page, nor is the list note. Data the expansion
+     whether to delete them or keep them as drafts. The version number is
+     never on the PDF or share page; the list note is (owner's call), in
+     slanted text under the project note (the PDF fonts have no italic).
+     Data the expansion
      reports to BOXGO: `app.reportListMeta` (list id → project, v, list
      note, count, current),
      links through `app.registerLinks` (link / attach / unlink). **One Create New / Edit
@@ -322,7 +330,13 @@ Start of each conversation, the owner should say which one it is:
   app_state are written; the app refreshes from the server when it comes
   back into view (unless there are unsaved edits); a failed load shows
   Retry and never lets defaults overwrite real data.
-- PDF: `src/lib/pdf.js` (jsPDF). Font is per project (`project.pdfFont`,
+- PDF: `src/lib/pdf.js` (jsPDF). Header (owner's call): prepared-by at
+  the right; tag + name at the left in the space beside it (a long name
+  wraps; the shoot dates follow it, or take their own line when they
+  don't fit); then Production House and Rental House (house, with the
+  Producer / Gaffer on the line below; cut with "…" when too wide) and
+  Created On (date, time below) at the right; the project note has no
+  label. Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
   default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and share page draw
   the real PDF with pdf.js (`src/lib/pdfPreview.js`). Downloads go through
