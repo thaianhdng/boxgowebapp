@@ -81,11 +81,12 @@ function ProjectCard({ project, status, hasList, types, today, onOpen, onOpenLis
   const gaffer = roleName(project.people, "gaffer", /gaffer/i);
   const shootId = shootTypeId(types);
   const locs = [...new Set((project.events || []).filter((s) => s.typeId === shootId && s.mode !== "online").map((s) => (s.location || "").trim()).filter(Boolean))];
+  // A house and its person stay together on one line, cut off with "…"
+  // when longer than the card.
   const pair = (house, person) => (house || person) && (
-    <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 1, minWidth: 0, maxWidth: "100%" }}>
-      {/* A very long name wraps rather than running past the card. */}
-      {house && <span style={{ fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", overflowWrap: "anywhere" }}>{house}</span>}
-      {person && <span>{person}</span>}
+    <span style={{ display: "block", minWidth: 0, maxWidth: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      {house && <span style={{ fontWeight: 700, letterSpacing: 0.3, color: "var(--text)" }}>{house}</span>}
+      {house && person && " "}{person && <span>{person}</span>}
     </span>
   );
   return (

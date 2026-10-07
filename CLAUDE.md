@@ -134,10 +134,13 @@ Start of each conversation, the owner should say which one it is:
      name (owner's call), so only the name's first line makes room for it.
      The top row is flowing text, not flex items. The equipment list's
      cards (everyone, owner's call: synced with the Projects cards) work
-     the same way: name · dates with the tag floating top right, and the
-     ⋮ menu (or a greyed card's "+ List") in a foot row at the bottom
-     right, with the "⚠ No items" warning at its left; the menu opens
-     upwards. The small boxed labels
+     the same way: name · dates, with the tag and then the ⋮ menu (or a
+     greyed card's "+ List") floating in the top right corner; then the
+     houses, the project note, locations, gear, "⚠ No items". The
+     Equipment page is capped at the Projects page's width (1236px of
+     cards), so cards are the same size on wide screens. On both kinds
+     of card a house and its person (Producer / Gaffer) stay on one line,
+     cut off with "…". The small boxed labels
      (tag, Cancelled) use the `.tag-box` class: `text-box: trim-both cap
      alphabetic` keeps the letters centred in the border in every app
      font. The Edit window shows a project's real tag ("—" when it has

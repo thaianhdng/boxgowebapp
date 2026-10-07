@@ -69,7 +69,9 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
     return [...new Set(names)];
   }
   return (
-    <>
+    // Same width as the owner's Projects page (1280 less its margins), so
+    // the cards are the same size on wide screens too.
+    <div style={{ maxWidth: 1236, margin: "0 auto" }}>
     <div style={{ position: "relative", marginBottom: 14 }}>
       <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
       <input
@@ -117,19 +119,55 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             onClick={() => (p.ghost ? onCreateFromGhost(p) : onOpen(p.id))}
           >
             {/* Flowing text: the dates follow the name and a long name wraps;
-                the tag floats in the top right corner, so only the first
-                line makes room for it. */}
+                the tag and the menu float in the top right corner, so only
+                the first line makes room for them. */}
             <div style={{ minWidth: 0, fontSize: 13, lineHeight: "18px", marginBottom: 3 }}>
-              {p.tag && (
-                <span
-                  className="tag-box"
-                  onClick={(e) => attr(e, "tag", p.tag)}
-                  title="Filter by this tag"
-                  style={{ float: "right", marginLeft: 8, marginTop: 2, fontWeight: 700, letterSpacing: 0.4, color: "var(--accent)", cursor: "pointer" }}
-                >
-                  {p.tag}
-                </span>
+              {/* Top right corner: the tag, then the ⋮ menu (or a greyed
+                  card's "+ List"); the name flows around them. */}
+              <span style={{ float: "right", display: "flex", alignItems: "center", gap: 6, marginLeft: 8, height: 18 }}>
+                {p.tag && (
+                  <span
+                    className="tag-box"
+                    onClick={(e) => attr(e, "tag", p.tag)}
+                    title="Filter by this tag"
+                    style={{ fontWeight: 700, letterSpacing: 0.4, color: "var(--accent)", cursor: "pointer" }}
+                  >
+                    {p.tag}
+                  </span>
+                )}
+            {p.ghost ? (
+              <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, fontWeight: 700, color: "var(--muted)" }}>
+                <Plus size={12} /> List
+              </span>
+            ) : (
+            <div data-card-menu style={{ position: "relative", margin: "-5px -8px -5px 0" }} onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
+                title="More"
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6, display: "flex" }}
+              >
+                <MoreVertical size={16} />
+              </button>
+              {menuId === p.id && (
+                <div style={{
+                  position: "absolute", top: "100%", right: 0, zIndex: 30, minWidth: 150, padding: 4,
+                  background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
+                }}>
+                  <MenuItem icon={<Pencil size={13} />} label={listMeta && !listMeta[p.id] ? "Edit list" : "Edit project"} onClick={() => { setMenuId(null); onEdit(p); }} />
+                  <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
+                  <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
+                  {listMeta && !listMeta[p.id] && onAddToProject && (
+                    <MenuItem icon={<FolderInput size={13} />} label="Add to project…" onClick={() => { setMenuId(null); onAddToProject(p.id); }} />
+                  )}
+                  {listMeta?.[p.id] && onRemoveFromProject && (
+                    <MenuItem icon={<FolderMinus size={13} />} label="Remove from project" onClick={() => { setMenuId(null); onRemoveFromProject(p.id); }} />
+                  )}
+                  <MenuItem icon={<Trash2 size={13} />} label={listOnly ? "Delete list" : "Delete"} danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
+                </div>
               )}
+            </div>
+            )}
+              </span>
               <span
                 onClick={(e) => attr(e, "name", p.name)}
                 title="Filter by this project name"
@@ -163,7 +201,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 3, fontSize: 11, color: "var(--muted)" }}>
               {(p.productionHouse || p.producer) && (
-                <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "baseline", columnGap: 5, ...wrapAnywhere }}>
+                <span style={pairLine}>
                   {p.productionHouse && (
                     <span
                       onClick={(e) => attr(e, "productionHouse", p.productionHouse)}
@@ -173,11 +211,11 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                       {p.productionHouse}
                     </span>
                   )}
-                  {p.producer && <span>{p.producer}</span>}
+                  {p.productionHouse && p.producer && " "}{p.producer && <span>{p.producer}</span>}
                 </span>
               )}
               {(p.rentalHouse || p.gaffer) && (
-                <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "baseline", columnGap: 5, ...wrapAnywhere }}>
+                <span style={pairLine}>
                   {p.rentalHouse && (
                     <span
                       onClick={(e) => attr(e, "rentalHouse", p.rentalHouse)}
@@ -187,10 +225,21 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                       {p.rentalHouse}
                     </span>
                   )}
-                  {p.gaffer && <span>{p.gaffer}</span>}
+                  {p.rentalHouse && p.gaffer && " "}{p.gaffer && <span>{p.gaffer}</span>}
                 </span>
               )}
             </div>
+            {p.note && (
+              <div
+                title={p.note}
+                style={{
+                  fontSize: 10.5, color: "var(--muted2)", marginTop: 4,
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                }}
+              >
+                {p.note.replace(/\s*\n+\s*/g, " · ")}
+              </div>
+            )}
             {(() => {
               const locs = [...new Set((p.days || []).map((d) => d.location).filter(Boolean))];
               return locs.length > 0 ? (
@@ -203,60 +252,11 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             {lenses.length > 0 && (
               <div title={lenses.join(" · ")} style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 2, ...oneLine }}>{lenses.join(" · ")}</div>
             )}
-            {p.note && (
-              <div
-                title={p.note}
-                style={{
-                  fontSize: 10.5, color: "var(--muted2)", marginTop: 2,
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                }}
-              >
-                {p.note.replace(/\s*\n+\s*/g, " · ")}
+            {emptyDays.length > 0 && emptyDays.length < (p.days || []).length && (
+              <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }} title="No items entered yet for these days">
+                ⚠ No items: {emptyDays.map((d) => d.label.replace("Day ", "D")).join(", ")}
               </div>
             )}
-            {/* The card's foot: a warning about empty days at the left, the
-                ⋮ menu in the bottom right corner. */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: "auto", paddingTop: 4, minWidth: 0 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {emptyDays.length > 0 && emptyDays.length < (p.days || []).length && (
-                  <div style={{ fontSize: 10.5, color: "var(--accent)" }} title="No items entered yet for these days">
-                    ⚠ No items: {emptyDays.map((d) => d.label.replace("Day ", "D")).join(", ")}
-                  </div>
-                )}
-              </div>
-              {p.ghost ? (
-                <span style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, fontWeight: 700, color: "var(--muted)" }}>
-                  <Plus size={12} /> List
-                </span>
-              ) : (
-              <div data-card-menu style={{ position: "relative", flexShrink: 0, margin: "-6px -8px -8px 0" }} onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
-                  title="More"
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6, display: "flex" }}
-                >
-                  <MoreVertical size={16} />
-                </button>
-                {menuId === p.id && (
-                  <div style={{
-                    position: "absolute", bottom: "100%", right: 0, zIndex: 30, minWidth: 150, padding: 4,
-                    background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
-                  }}>
-                    <MenuItem icon={<Pencil size={13} />} label={listMeta && !listMeta[p.id] ? "Edit list" : "Edit project"} onClick={() => { setMenuId(null); onEdit(p); }} />
-                    <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
-                    <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
-                    {listMeta && !listMeta[p.id] && onAddToProject && (
-                      <MenuItem icon={<FolderInput size={13} />} label="Add to project…" onClick={() => { setMenuId(null); onAddToProject(p.id); }} />
-                    )}
-                    {listMeta?.[p.id] && onRemoveFromProject && (
-                      <MenuItem icon={<FolderMinus size={13} />} label="Remove from project" onClick={() => { setMenuId(null); onRemoveFromProject(p.id); }} />
-                    )}
-                    <MenuItem icon={<Trash2 size={13} />} label={listOnly ? "Delete list" : "Delete"} danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
-                  </div>
-                )}
-              </div>
-              )}
-            </div>
           </div>
         );
       })}
@@ -292,14 +292,14 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
         </div>
       );
     })()}
-    </>
+    </div>
   );
 }
 
 const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
-// Long names wrap inside the card (breaking mid-word only when a single
-// word is wider than the card) instead of running off its edge.
-const wrapAnywhere = { minWidth: 0, maxWidth: "100%", overflowWrap: "anywhere" };
+// A house and its person (Producer / Gaffer) stay together on one line,
+// cut off with "…" when longer than the card.
+const pairLine = { display: "block", minWidth: 0, maxWidth: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 
 function MenuItem({ icon, label, onClick, danger }) {
   return (
