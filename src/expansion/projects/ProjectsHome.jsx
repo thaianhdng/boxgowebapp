@@ -23,17 +23,29 @@ export function StatusChip({ status, style }) {
   );
 }
 
-// What the job already has, as icons: an equipment list, and files with
-// their count (nothing when it has neither).
-function Parts({ hasList, files }) {
-  if (!hasList && !files) return null;
+// What the job has, as icons in the bottom right corner: files (paperclip
+// and count, only when there are some), then the equipment list sheet,
+// always in the corner — white when the job has a list (tap it to open the
+// list), greyed when it has none.
+function Parts({ hasList, files, onOpenList }) {
   return (
     <span style={{ marginLeft: "auto", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8, color: "var(--text)", alignSelf: "center" }}>
-      {hasList && <span title="Equipment list" style={{ display: "inline-flex" }}><FileSpreadsheet size={13} /></span>}
       {files > 0 && (
         <span title={`${files} file${files > 1 ? "s" : ""}`} style={{ display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 700 }}>
           <Paperclip size={12} />{files}
         </span>
+      )}
+      {hasList ? (
+        <button
+          type="button"
+          title="Open the equipment list"
+          onClick={(e) => { e.stopPropagation(); onOpenList(); }}
+          style={{ display: "inline-flex", background: "none", border: "none", padding: 6, margin: -6, color: "inherit", cursor: "pointer" }}
+        >
+          <FileSpreadsheet size={13} />
+        </button>
+      ) : (
+        <span title="No equipment list yet" style={{ display: "inline-flex", color: "var(--muted2)" }}><FileSpreadsheet size={13} /></span>
       )}
     </span>
   );
@@ -51,15 +63,14 @@ const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellip
 // Laid out like the equipment list's project cards (same size and lines):
 // name · shoot dates, Production House + Producer · Rental House + Gaffer,
 // the notes, shoot locations, then the next event and what the job has
-// (icons, bottom right).
+// (icons, bottom right: files, then the equipment list sheet).
 // The tag sits in the top right corner.
-function ProjectCard({ project, status, hasList, types, today, onOpen }) {
+function ProjectCard({ project, status, hasList, types, today, onOpen, onOpenList }) {
   const next = status !== "cancelled" && nextEvent(project, today, types);
   const nextType = next && typeOf(types, next.typeId);
   const dates = shootDates(project, types);
   const range = formatShootDateRange(dates.map((date) => ({ date })));
   const files = (project.files || []).length;
-  const parts = hasList || files > 0;
   const producer = roleName(project.people, "producer", /producer/i);
   const gaffer = roleName(project.people, "gaffer", /gaffer/i);
   const shootId = shootTypeId(types);
@@ -100,18 +111,16 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
       {locs.length > 0 && <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 5 }}>{locs.join(" · ")}</div>}
       {!dates.length && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ No shoot dates</div>}
       {staleSoftLock(project, types, today) && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ Shoot dates have passed: confirm or cancel?</div>}
-      {(next || parts) && (
-        // The last row, kept at the card's foot: the next event, and what
-        // the job has in the bottom right corner.
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: "auto", paddingTop: 5, fontSize: 10.5, minWidth: 0 }}>
-          {next && (
-            <span style={{ minWidth: 0, ...oneLine }}>
-              <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
-            </span>
-          )}
-          <Parts hasList={hasList} files={files} />
-        </div>
-      )}
+      {/* The last row, kept at the card's foot: the next event, and what
+          the job has in the bottom right corner. */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: "auto", paddingTop: 5, fontSize: 10.5, minWidth: 0 }}>
+        {next && (
+          <span style={{ minWidth: 0, ...oneLine }}>
+            <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
+          </span>
+        )}
+        <Parts hasList={hasList} files={files} onOpenList={onOpenList} />
+      </div>
     </div>
   );
 }
@@ -180,6 +189,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
           types={types}
           today={today}
           onOpen={() => app.go({ screen: "project", projectId: id })}
+          onOpenList={() => app.openEquipmentList(id)}
         />
       ))}
     </div>

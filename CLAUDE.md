@@ -124,8 +124,10 @@ Start of each conversation, the owner should say which one it is:
      House + Producer, Rental House +
      Gaffer, then the notes (one line), shoot locations), then a last row
      kept at the card's foot: the next event, and what the job has as
-     icons in the bottom right corner (equipment list, paperclip + file
-     count; text colour, i.e. white in dark mode; nothing when neither).
+     icons in the text colour (white in dark mode): paperclip + file count
+     (only when it has files), then the equipment list sheet, always in
+     the bottom right corner — greyed when the job has no list; tapping a
+     white one opens the list (`app.openEquipmentList`).
      The tag floats in the card's top right corner, not before the
      name (owner's call), so only the name's first line makes room for it.
      The top row is flowing text, not flex items; on the equipment
