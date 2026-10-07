@@ -15,7 +15,10 @@ import { uid, todayStr, addOneDay, cascadeDates } from "../lib/utils.js";
 export function ProjectFormModal({ initial, prefill, noList, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
   const start = initial || prefill;
   const [name, setName] = useState(start?.name || "");
-  const [tag, setTag] = useState((start && start.tag) || projectTags[0] || "");
+  // Editing shows the project's real tag, even none ("—") or one since
+  // removed from the tag list; a new project starts on the first tag.
+  const [tag, setTag] = useState(initial ? initial.tag || "" : (start && start.tag) || projectTags[0] || "");
+  const tagOptions = initial && !projectTags.includes(initial.tag || "") ? [initial.tag || "", ...projectTags] : projectTags;
   const [productionHouse, setProductionHouse] = useState(start?.productionHouse || "");
   const [producer, setProducer] = useState(start?.producer || "");
   const [rentalHouse, setRentalHouse] = useState(start?.rentalHouse || "");
@@ -102,7 +105,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
             onChange={(e) => setTag(e.target.value)}
             title="Project tag"
           >
-            {projectTags.map((t) => <option key={t} value={t}>{t}</option>)}
+            {tagOptions.map((t) => <option key={t} value={t}>{t || "—"}</option>)}
           </select>
           <Combobox
             value={name}

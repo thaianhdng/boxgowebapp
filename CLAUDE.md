@@ -122,16 +122,18 @@ Start of each conversation, the owner should say which one it is:
      Project cards copy the equipment list's card layout and size
      (owner's call; 240px grid, same lines: name · dates, Production
      House + Producer, Rental House +
-     Gaffer, shoot locations), then the next event, the notes, and a
-     bottom row kept at the card's foot: the tag at the left, what the job
-     has at the right ("List · 3 files", nothing when neither). The tag
-     sits there, not before the name (owner's call), so long names wrap
-     less. The top row is flowing text, not flex items; on the equipment
+     Gaffer, shoot locations), then the next event with what the job has
+     at the right end ("List · 3 files", nothing when neither), and the
+     notes. The tag floats in the card's top right corner, not before the
+     name (owner's call), so only the name's first line makes room for it.
+     The top row is flowing text, not flex items; on the equipment
      list's cards (v1.0 for everyone) it is tag · name · dates, so a long
      name continues after the tag and wraps there. The small boxed labels
      (tag, Cancelled) use the `.tag-box` class: `text-box: trim-both cap
      alphabetic` keeps the letters centred in the border in every app
-     font. The Projects home keeps the list's 22px page margins on a phone
+     font. The Edit window shows a project's real tag ("—" when it has
+     none, or one since removed from the tag list), not the first tag.
+     The Projects home keeps the list's 22px page margins on a phone
      (Calendar / Project pages: 14px, class `x-tight`). The Budget feature
      was removed (owner's call); old `project.budget` data is kept but
      unused. **Settings for the owner** (`AttributesManagerModal` with
