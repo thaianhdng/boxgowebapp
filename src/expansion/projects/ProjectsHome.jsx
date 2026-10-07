@@ -40,8 +40,8 @@ const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellip
 
 // Laid out like the equipment list's project cards (same size and lines):
 // name · shoot dates, Production House + Producer · Rental House + Gaffer,
-// shoot locations, then the next event and what the job has, and the
-// notes. The tag sits in the top right corner.
+// the notes, shoot locations, then the next event and what the job has.
+// The tag sits in the top right corner.
 function ProjectCard({ project, status, hasList, types, today, onOpen }) {
   const next = status !== "cancelled" && nextEvent(project, today, types);
   const nextType = next && typeOf(types, next.typeId);
@@ -82,6 +82,9 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
           {pair(project.rentalHouse, gaffer)}
         </div>
       )}
+      {project.notes && (
+        <div title={project.notes} style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 4, ...oneLine }}>{project.notes.replace(/\s*\n+\s*/g, " · ")}</div>
+      )}
       {locs.length > 0 && <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 5 }}>{locs.join(" · ")}</div>}
       {!dates.length && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ No shoot dates</div>}
       {staleSoftLock(project, types, today) && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ Shoot dates have passed: confirm or cancel?</div>}
@@ -94,9 +97,6 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
           )}
           {parts && <span style={{ marginLeft: "auto", flexShrink: 0, color: "var(--muted2)" }}>{parts}</span>}
         </div>
-      )}
-      {project.notes && (
-        <div title={project.notes} style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 2, ...oneLine }}>{project.notes.replace(/\s*\n+\s*/g, " · ")}</div>
       )}
     </div>
   );

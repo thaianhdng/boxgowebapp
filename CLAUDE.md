@@ -122,9 +122,9 @@ Start of each conversation, the owner should say which one it is:
      Project cards copy the equipment list's card layout and size
      (owner's call; 240px grid, same lines: name · dates, Production
      House + Producer, Rental House +
-     Gaffer, shoot locations), then the next event with what the job has
-     at the right end ("List · 3 files", nothing when neither), and the
-     notes. The tag floats in the card's top right corner, not before the
+     Gaffer, then the notes (one line), shoot locations), then the next
+     event with what the job has at the right end ("List · 3 files",
+     nothing when neither). The tag floats in the card's top right corner, not before the
      name (owner's call), so only the name's first line makes room for it.
      The top row is flowing text, not flex items; on the equipment
      list's cards (v1.0 for everyone) it is tag · name · dates, so a long
