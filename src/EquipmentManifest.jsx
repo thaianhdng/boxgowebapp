@@ -2416,11 +2416,12 @@ export default function EquipmentManifest({ session }) {
           onOpenCatalog={() => { setShowTagManager(false); setView("catalog"); }}
           onExportBackup={exportFullBackup}
           onRestoreFileSelect={handleBackupFileSelect}
-          dataTop={isCatalogOwner || dbMode() === "test" ? (
-            <>
-              <DbSwitch />
+          testDatabase={isCatalogOwner || dbMode() === "test" ? (
+            <div style={{ marginBottom: 22 }}>
+              <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Test Database</div>
+              <DbSwitch bare />
               <TestDataCleaner count={testIds.length} onLoad={loadTestData} onRemove={removeTestData} />
-            </>
+            </div>
           ) : null}
           librarySections={isCatalogOwner ? [{
             id: "eventTypes",

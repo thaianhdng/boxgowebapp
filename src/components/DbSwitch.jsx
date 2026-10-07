@@ -1,9 +1,10 @@
 import { dbMode, setDbMode, testDbConfigured } from "../lib/dbMode.js";
 
-// Owner only (Settings → Data): switch this device between the
-// live database and the separate TEST one. Switching reloads the app; each
-// database has its own sign-in, projects, catalog and Calendar data.
-export function DbSwitch() {
+// Owner only (Settings → Data → Test Database): switch this device between
+// the live database and the separate TEST one. Switching reloads the app;
+// each database has its own sign-in, projects, catalog and Calendar data.
+// `bare`: no heading (the segment around it has one).
+export function DbSwitch({ bare }) {
   const mode = dbMode();
   const ready = testDbConfigured();
   const option = (value, label) => {
@@ -25,8 +26,8 @@ export function DbSwitch() {
     );
   };
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Database</div>
+    <div style={{ marginBottom: bare ? 12 : 20 }}>
+      {!bare && <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Database</div>}
       <div style={{ display: "flex", gap: 3, background: "var(--surface2)", borderRadius: 4, padding: 3, marginBottom: 6 }}>
         {option("live", "Live BOXGO")}
         {option("test", "Test BOXGO")}

@@ -4,7 +4,7 @@ import { SWATCHES } from "./eventTypes.js";
 import { uid } from "../../lib/utils.js";
 
 // Add, rename, recolour, reorder and remove event types (Settings →
-// Library → Event Types). The order here is the order of the types in the event window,
+// Preferences → Event Types). The order here is the order of the types in the event window,
 // and breaks ties between events on the same day (see compareEvents in
 // events.js).
 export function EventTypesEditor({ types, usage, onChange }) {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { dbMode } from "../lib/dbMode.js";
 
-// Owner only (Settings → Data): load or remove the made-up test
+// Owner only (Settings → Data → Test Database): load or remove the made-up test
 // data (src/lib/testData.js — every id starts with 7e57). Loading adds it
 // with dates around today; removing deletes just it, never your own
 // projects. `count` = test projects in this database now.

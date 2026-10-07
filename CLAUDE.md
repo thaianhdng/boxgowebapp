@@ -129,13 +129,16 @@ Start of each conversation, the owner should say which one it is:
      was removed (owner's call); old `project.budget` data is kept but
      unused. **Settings for the owner** (`AttributesManagerModal` with
      `librarySections`; everyone else keeps v1.0's Profile · Appearance ·
-     Lists · Catalog & Data): one row of tabs Profile · Appearance ·
-     **Library** · **Data**, window 520px wide on bigger screens. Library =
-     fold-out sections, one open at a time: Project Tags, Production
-     Houses, Rental Houses, Templates, **Event Types**
-     (`<Expansion part="settings">` — event types are edited only here,
-     not from the calendars). Data = Database switch, Test data, Master
-     Catalog, Backup / Restore (owner's own backup note). A clash (red dot) = two projects' shoots / prelights on one
+     Lists · Catalog & Data): one row of tabs, window 520px wide on bigger
+     screens. **General** = Your details (name / email / phone, "in PDF"
+     ticks) + Appearance. **Preferences** = a hint, then fold-out
+     sections, one open at a time: Project Tags, Production Houses,
+     Rental Houses (A–Z: add, rename, remove), **Event Types**
+     (`<Expansion part="settings">`; also recolour and reorder — edited
+     only here, not from the calendars). **Data** = Backup & Restore
+     (owner's own backup note), Master Equipment Catalog, Equipment
+     Templates, Test Database (`testDatabase` prop: Live / Test switch +
+     Test data box). A clash (red dot) = two projects' shoots / prelights on one
      day, or overlapping set times (`clashDates`); a full day box shows
      as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
      owner: its crumb root reads "Equipment" (others: "Project Manager"),

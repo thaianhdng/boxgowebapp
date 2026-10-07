@@ -27,18 +27,22 @@ export function AttributesManagerModal({
   includeUsernameInPdf, onSetIncludeUsernameInPdf, includeEmailInPdf, onSetIncludeEmailInPdf, includePhoneInPdf, onSetIncludePhoneInPdf,
   theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId, uiSize, onSetUiSize,
   onOpenCatalog, onExportBackup, onRestoreFileSelect, backupError, onClose, onSignOut,
-  librarySections, dataTop, backupNote,
+  librarySections, testDatabase, backupNote,
 }) {
   const restoreInputRef = useRef(null);
-  const [tab, setTab] = useState(SETTINGS_TABS[0].id);
-  // Owner layout (`librarySections` given): "Lists" is "Library" — tags,
-  // houses, templates and the extra sections (e.g. Event types), each a
-  // fold-out, one open at a time — and "Catalog & Data" is "Data".
+  // Owner layout (`librarySections` given), three tabs:
+  //   General     — your details (the old Profile) and Appearance
+  //   Preferences — tags, houses and the extra sections (e.g. Event
+  //                 Types), each a fold-out, one open at a time
+  //   Data        — Backup & Restore, Master Equipment Catalog, Equipment
+  //                 Templates, Test Database (`testDatabase`)
   // Everyone else keeps the v1.0 tabs.
   const owner = !!librarySections;
   const tabs = owner
-    ? SETTINGS_TABS.map((t) => ({ ...t, label: { lists: "Library", data: "Data" }[t.id] || t.label }))
+    ? [{ id: "general", label: "General" }, { id: "lists", label: "Preferences" }, { id: "data", label: "Data" }]
     : SETTINGS_TABS;
+  const [tab, setTab] = useState(tabs[0].id);
+  const segmentTitle = (text) => <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>{text}</div>;
   const [openSection, setOpenSection] = useState(null);
   const fold = (id, title, body) => {
     const open = openSection === id;
@@ -94,10 +98,10 @@ export function AttributesManagerModal({
           ))}
         </div>
 
-        {tab === "profile" && (
+        {(tab === "profile" || (owner && tab === "general")) && (
           <>
           <div style={{ marginBottom: 20 }}>
-            <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Username</div>
+            <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>{owner ? "Your details" : "Username"}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <input
                 value={userName}
@@ -136,11 +140,16 @@ export function AttributesManagerModal({
                 in PDF
               </label>
             </div>
+            {owner && (
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
+                Ticked details are printed on your PDFs and shown on your share links.
+              </div>
+            )}
           </div>
           </>
         )}
 
-        {tab === "appearance" && (
+        {(tab === "appearance" || (owner && tab === "general")) && (
           <>
           <div style={{ marginBottom: 20 }}>
             <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Appearance</div>
@@ -215,6 +224,10 @@ export function AttributesManagerModal({
         )}
 
         {tab === "lists" && owner && (
+          <>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.5, marginBottom: 10 }}>
+            The choices offered when you create and edit projects and events. Open one to add, rename or remove entries: tags and houses are listed A–Z; event types can also be recoloured and put in any order.
+          </div>
           <div style={{ marginBottom: 20, borderTop: "1px solid var(--border)" }}>
             {fold("tags", "Project Tags", <>
               <EditableAttrSection bare placeholder="New tag…" items={tags} onAdd={onAddTag} onRename={onRenameTag} onRemove={onRemoveTag} uppercase />
@@ -228,22 +241,9 @@ export function AttributesManagerModal({
               <EditableAttrSection bare placeholder="New rental house…" items={rentalHouses} onAdd={onAddRentalHouse} onRename={onRenameRentalHouse} onRemove={onRemoveRentalHouse} />
               {renameHint}
             </>)}
-            {fold("templates", "Templates", <>
-              {templates.map((t) => (
-                <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
-                  <span style={{ fontSize: 13 }}>{t.name}</span>
-                  <button onClick={() => onDeleteTemplate(t.id)} title="Delete template" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))}
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
-                {templates.length === 0 && "No templates yet. "}
-                To make one, open an equipment list → Edit project → Save as Template. New equipment lists can then start from it (the "Start from" menu in Create New).
-              </div>
-            </>)}
             {librarySections.map((sec) => fold(sec.id, sec.title, sec.content))}
           </div>
+          </>
         )}
 
         {tab === "lists" && !owner && (
@@ -296,10 +296,52 @@ export function AttributesManagerModal({
           </>
         )}
 
-        {tab === "data" && (
+        {tab === "data" && owner && (
           <>
-          {/* Owner only: the Live / Test database switch. */}
-          {dataTop}
+          <div style={{ marginBottom: 22 }}>
+            {segmentTitle("Backup & Restore")}
+            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              <button className="btn btn-ghost" style={{ flex: 1, justifyContent: "center" }} onClick={onExportBackup}>
+                <FileSpreadsheet size={14} /> Backup
+              </button>
+              <button className="btn btn-ghost" style={{ flex: 1, justifyContent: "center" }} onClick={() => restoreInputRef.current?.click()}>
+                <ClipboardPaste size={14} /> Restore
+              </button>
+              <input ref={restoreInputRef} type="file" accept=".json" onChange={onRestoreFileSelect} style={{ display: "none" }} />
+            </div>
+            {backupError && <div style={{ fontSize: 11.5, color: "#AA0000", marginBottom: 8 }}>{backupError}</div>}
+            <div style={{ fontSize: 11, color: "var(--muted)" }}>{backupNote}</div>
+          </div>
+
+          <div style={{ marginBottom: 22 }}>
+            {segmentTitle("Master Equipment Catalog")}
+            <button className="btn btn-ghost" style={{ width: "100%", justifyContent: "center" }} onClick={onOpenCatalog}>
+              <Logo size={15} /> Manage Master Catalog
+            </button>
+          </div>
+
+          <div style={{ marginBottom: 22 }}>
+            {segmentTitle("Equipment Templates")}
+            {templates.map((t) => (
+              <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ fontSize: 13 }}>{t.name}</span>
+                <button onClick={() => onDeleteTemplate(t.id)} title="Delete template" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
+              {templates.length === 0 && "No templates yet. "}
+              To make one, open an equipment list → Edit project → Save as Template. New equipment lists can then start from it (the "Start from" menu in Create New).
+            </div>
+          </div>
+
+          {testDatabase}
+          </>
+        )}
+
+        {tab === "data" && !owner && (
+          <>
           <div style={{ marginBottom: 20 }}>
             <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Master Catalog</div>
             <button

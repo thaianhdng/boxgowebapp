@@ -13,7 +13,7 @@
 //                             equipment list in step (projects/sync.js)
 //   <Expansion part="crumb">  the project's name in the breadcrumb
 //                             (PROJECTS / HONDA TVC)
-//   <Expansion part="settings"> Settings → Library → Event Types
+//   <Expansion part="settings"> Settings → Preferences → Event Types
 //   <Expansion part="screen"> under BOXGO's header, by app.route.screen:
 //                             "projects" the Projects home (every project
 //                             by status), "calendar" the Calendar (every
@@ -50,7 +50,7 @@ function Crumb({ app }) {
   );
 }
 
-// Settings → Library → Event Types (owner only): the event types, their colours /
+// Settings → Preferences → Event Types (owner only): the event types, their colours /
 // order. Shown inside BOXGO's Settings window.
 function CalendarSettings() {
   const x = useXStore();
