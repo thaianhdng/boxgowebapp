@@ -124,7 +124,9 @@ Start of each conversation, the owner should say which one it is:
      House + Producer, Rental House +
      Gaffer, shoot locations), then the next event, what the job has
      ("List · 3 files", nothing when neither) and the notes; long names
-     wrap. The Projects home keeps the list's 22px page margins on a phone
+     wrap. On both kinds of card the top row (tag · name · dates) is
+     flowing text, not flex items, so a long name continues after the tag
+     and wraps there; the tag is an inline-block centred on line 1. The Projects home keeps the list's 22px page margins on a phone
      (Calendar / Project pages: 14px, class `x-tight`). The Budget feature
      was removed (owner's call); old `project.budget` data is kept but
      unused. **Settings for the owner** (`AttributesManagerModal` with

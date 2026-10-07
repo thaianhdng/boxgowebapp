@@ -69,12 +69,14 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 3 }}>
+        {/* Flowing text, like the equipment list's cards: a long name carries
+            on after the tag and wraps there; the tag sits centred on line 1. */}
+        <div style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: "18px" }}>
           {project.tag && (
-            <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px", flexShrink: 0, marginRight: 4 }}>{project.tag}</span>
+            <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px", marginRight: 7, display: "inline-block", verticalAlign: "middle", lineHeight: "11px", position: "relative", top: -1 }}>{project.tag}</span>
           )}
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", marginRight: 4, textDecoration: status === "cancelled" ? "line-through" : "none" }}>{project.name || "Untitled"}</span>
-          {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)" }}>{range}</span>}
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", marginRight: 7, overflowWrap: "anywhere", textDecoration: status === "cancelled" ? "line-through" : "none" }}>{project.name || "Untitled"}</span>
+          {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", whiteSpace: "nowrap" }}>{range}</span>}
         </div>
       </div>
       {(project.productionHouse || producer || project.rentalHouse || gaffer) && (

@@ -113,7 +113,10 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             onClick={() => (p.ghost ? onCreateFromGhost(p) : onOpen(p.id))}
           >
             <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 3 }}>
+            {/* One line of flowing text (not separate blocks), so a long name
+                carries on after the tag and wraps there, instead of dropping
+                below it; the tag sits centred on the first line. */}
+            <div style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: "18px" }}>
               {p.tag && (
                 <span
                   onClick={(e) => attr(e, "tag", p.tag)}
@@ -121,7 +124,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                   style={{
                     fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase",
                     color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px",
-                    cursor: "pointer", flexShrink: 0, marginRight: 4,
+                    cursor: "pointer", marginRight: 7, display: "inline-block", verticalAlign: "middle", lineHeight: "11px", position: "relative", top: -1,
                   }}
                 >
                   {p.tag}
@@ -130,15 +133,15 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               <span
                 onClick={(e) => attr(e, "name", p.name)}
                 title="Filter by this project name"
-                style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", cursor: "pointer", marginRight: 4, ...wrapAnywhere }}
+                style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", cursor: "pointer", marginRight: 7, overflowWrap: "anywhere" }}
               >
                 {p.name}
               </span>
               {formatShootDateRange(p.days) && (
-                <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)" }}>{formatShootDateRange(p.days)}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", whiteSpace: "nowrap" }}>{formatShootDateRange(p.days)}</span>
               )}
               {cancelledIds?.has(p.id) && (
-                <span style={{ flexShrink: 0, marginLeft: 6, alignSelf: "center", fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px" }}>Cancelled</span>
+                <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px", display: "inline-block", verticalAlign: "middle", lineHeight: "11px", position: "relative", top: -1 }}>Cancelled</span>
               )}
             </div>
             {p.ghost ? (
