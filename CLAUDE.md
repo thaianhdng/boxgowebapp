@@ -190,7 +190,7 @@ Start of each conversation, the owner should say which one it is:
      `projects/actions.js`); list changes pull into the Project
      (`projectWithList`, from the sync part). **Shoot dates are the
      fundamental detail of a project:** one Shooting event per shoot day
-     (single date, location, type of shooting in `event.label`), exactly
+     (single date, location, shoot type in `event.label`), exactly
      one-to-one with the list's days (same ids; `label` ↔ `projectLabel`);
      non-consecutive days are just separate events. Older multi-day
      Shooting events are split into days (ids `<id>`, `<id>~1`…) by
@@ -209,10 +209,17 @@ Start of each conversation, the owner should say which one it is:
      (owner's call): a Project has 0–5 equipment lists, `project.lists =
      [{ id, v }]` (V numbers never reused; `MAX_VERSIONS`), and
      `currentList` (else the newest is current). A list is in one Project
-     at most; one in none is a draft ("No project"): a draft has no
-     production / rental house, Producer or Gaffer (they belong to a
-     project: Create New's draft form hides them, `noHouses`, and a list
-     that leaves its project, or a copy to no project, loses them). Each
+     at most; one in none is a **draft list** (there are no draft
+     projects): the bare-bone list. It has no production / rental house,
+     Producer, Gaffer or project note (Create New's draft form,
+     `ProjectFormModal` `draft`, hides them; a list that leaves its
+     project, or a copy to no project, loses the houses; the sync part
+     turns a draft's leftover `note` into its list note). Its name is
+     optional ("Untitled list"), its tag starts as none ("—"), and its days
+     may have no date (empty date fields read "Select date"). Inside a
+     draft the info box is replaced by a hint and an "Add to project"
+     button, and the row under it reads "V1 of 1" with its list note,
+     which it keeps when it joins a project. Each
      list has its own **list note** (`list.listNote`, edited under the
      composer's info box and on the Project page; older notes on the link,
      `link.note`, are read as a fallback, `listNoteOf`); copies start
@@ -238,8 +245,9 @@ Start of each conversation, the owner should say which one it is:
      Remove from project. Equipment shows one card per Project, its
      current version, with "V3 · note · 3 lists" when there are several
      or a list note, and drafts marked "No project"; inside a list, under
-     the info box, a row with the version switch ("V2 of 3 ▾", or "No
-     project" for a draft) and the list note (owner). The composer's item
+     the info box, a row with the version switch ("V2 of 3 ▾"; "V1 of
+     1" for a single list or a draft) and the list note (owner). Day
+     fields everywhere read "Shoot type…" and "Location and note". The composer's item
      search reads "Search items…" (everyone; every list uses the same
      master catalog). The Project page's equipment section lists every
      version (list note, Make current, Edit, Preview, Duplicate,

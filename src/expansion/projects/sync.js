@@ -30,7 +30,7 @@ const PRODUCER = ["producer", /producer/i, "Producer"];
 const GAFFER = ["gaffer", /gaffer/i, "Gaffer"];
 
 // Shoot days work like the equipment list's days: one Shooting event per
-// day (date, location, type of shooting in `label`), consecutive or not.
+// day (date, location, shoot type in `label`), consecutive or not.
 // Older Projects could have a multi-day Shooting event; it splits into one
 // event per date with ids "<id>", "<id>~1", "<id>~2"… — the same ids its
 // equipment list days already had, so quantities stay attached.
@@ -110,7 +110,7 @@ function placeOf(event, day) {
 
 // The Project updated with what one of its equipment lists now says, or
 // null when they already agree. Each list day is the Shooting event with the same id:
-// its date, location and type of shooting are copied over. New days become
+// its date, location and shoot type are copied over. New days become
 // new Shooting events (tentative until confirmed); events whose day was
 // removed go.
 export function projectWithList(project, list, types) {

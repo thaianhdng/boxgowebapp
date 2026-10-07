@@ -182,7 +182,7 @@ const L = [
   list(25, { name: "Empty List — Nothing Added", tag: "Short", ph: "", rh: "",
     days: [["2026-11-25", "", ""], ["2026-11-26", "", ""]], items: {} }),
   list(26, { name: "A Very Very Long Project Name To Test Wrapping On Cards, Crumbs And PDF Headers 2026", tag: "",
-    days: [["2026-10-28", "Somewhere with a really long location name — District 2, Thủ Đức City", "A long type of shooting label"]], items: kit("doc") }),
+    days: [["2026-10-28", "Somewhere with a really long location name — District 2, Thủ Đức City", "A long shoot type label"]], items: kit("doc") }),
   list(27, { name: "Vietcombank Digibank (Reshoot)", ph: "Ogilvy Films", producer: "Linh Trần", rh: "VTS Rental", gaffer: "Tuấn Lê",
     days: [["2026-10-28", "Vietcombank Tower – Q.1", "Pickups"]], items: kit("bigTVC", 0.3) }),
 ];
@@ -197,7 +197,7 @@ L.push(
   again(33, 17, { perDayQty: true, vary, items: { ...kit("mv", 1.5), [item("SONY FX6")]: 1 }, font: "plex" }),
   again(34, 17, { perDayQty: true, vary, items: kit("mv", 1.5), font: "plex" }),
   // A draft: in no project.
-  list(35, { name: "Draft — Spec Rig Ideas", tag: "Short", days: [["", "", ""]], items: kit("doc", 0.5), note: "Not for a job yet: a rig to pitch." }),
+  { ...list(35, { name: "Draft — Spec Rig Ideas", tag: "", days: [["", "", "Handheld"], ["", "", "Car rig"], ["", "", ""]], items: kit("doc", 0.5) }), listNote: "Not for a job yet: a rig to pitch." },
 );
 
 const templates = [

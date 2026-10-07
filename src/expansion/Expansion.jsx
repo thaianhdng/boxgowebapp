@@ -28,7 +28,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { useXStore, load, refresh, putProject, setEventTypes, getState, exportBackup, restoreBackup, wipeAll, removeProjects, projectIds } from "./store.js";
 import { projectActions } from "./projects/actions.js";
-import { currentLink, equipmentPatch, fitList, linksOf, listLike, listNoteOf, mergedNotes, projectWithList, shootDaysOf, splitShootRanges } from "./projects/sync.js";
+import { currentLink, equipmentPatch, fitList, linksOf, listLike, listNoteOf, mergedNotes, ownersOf, projectWithList, shootDaysOf, splitShootRanges } from "./projects/sync.js";
 import { shootDates, statusOf } from "./projects/status.js";
 import { todayStr } from "./shared/dates.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
@@ -168,6 +168,20 @@ function Sync({ app }) {
       }
     }
   }, [x.status, app.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A draft list (in no project) has no project note: a note it still has
+  // (it left a project, or was made before drafts were bare-bone) becomes
+  // its list note.
+  useEffect(() => {
+    if (x.status !== "ready") return;
+    const owners = ownersOf(x.projects, new Set(app.projects.map((l) => l.id)));
+    for (const l of app.projects) {
+      const own = (l.note || "").trim();
+      if (!own || owners.has(l.id)) continue;
+      const listNote = (l.listNote || "").includes(own) ? l.listNote : [l.listNote, own].filter(Boolean).join("\n");
+      app.updateEquipmentList(l.id, { note: "", listNote });
+    }
+  }, [x.status, x.projects, app.projects]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Older Projects could have a multi-day Shooting event: split it into one
   // Shooting event per day (lists' day ids are unchanged by this).

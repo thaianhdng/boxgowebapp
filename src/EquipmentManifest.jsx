@@ -190,6 +190,7 @@ export default function EquipmentManifest({ session }) {
   const activeProject = projects.find((p) => p.id === activeProjectId) || null;
   // Owner: the open list's project and version (null: none, or not known).
   const activeMeta = (isCatalogOwner && xListMeta?.[activeProjectId]) || null;
+  const activeIsDraft = isCatalogOwner && !!xListMeta && !activeMeta;
   const days = activeProject ? activeProject.days : [];
   const itemData = activeProject ? (activeProject.itemData || {}) : {};
   const customItems = activeProject ? (activeProject.customItems || []) : [];
@@ -1963,7 +1964,7 @@ export default function EquipmentManifest({ session }) {
                         <span style={{ fontSize: 11, flexShrink: 0, color: "var(--muted)" }}>{activeProject.tag}</span>
                       )}
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--accent)" }}>
-                        {activeProject?.name || "Project"}
+                        {activeProject?.name || (activeIsDraft ? "Untitled list" : "Project")}
                       </span>
                       {isCatalogOwner && xCancelledSet.has(activeProjectId) && <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px" }}>Cancelled</span>}
                       {activeMeta && <CalendarDays size={13} style={{ flexShrink: 0, color: "var(--muted)" }} />}
@@ -1999,9 +2000,9 @@ export default function EquipmentManifest({ session }) {
                   <button
                     className="btn btn-ghost"
                     onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }}
-                    title="Edit project details, days and quantity mode"
+                    title={activeIsDraft ? "Edit this draft list's name, tag, days and quantity mode" : "Edit project details, days and quantity mode"}
                   >
-                    <Pencil size={14} /> Edit project
+                    <Pencil size={14} /> {activeIsDraft ? "Edit list" : "Edit project"}
                   </button>
                 )}
                 {view === "manifest" && (
@@ -2134,6 +2135,19 @@ export default function EquipmentManifest({ session }) {
                 ].filter((pair) => pair.values.length > 0);
                 return (
                   <>
+                    {isDraft ? (
+                      // Owner: a draft list (in no project) is the bare-bone
+                      // list — no production details or project note. Adding
+                      // it to a project brings those.
+                      <div style={{ marginBottom: 8, border: "1px dashed var(--border2)", borderRadius: 4, padding: "10px 14px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                        <div style={{ flex: "1 1 220px", fontSize: 12, color: "var(--muted)" }}>
+                          <b style={{ color: "var(--text)" }}>Draft list</b>, in no project. Add it to a project for production details, a project note, shoot schedule, calendar, files and up to 5 list versions.
+                        </div>
+                        <button className="btn btn-ghost" style={{ flexShrink: 0 }} onClick={() => askListTarget("attach", activeProjectId)}>
+                          <Plus size={14} /> Add to project
+                        </button>
+                      </div>
+                    ) : (
                     <div style={{ marginBottom: listRow ? 8 : 20, border: "1px solid var(--border)", borderRadius: 4, padding: "12px 14px" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                         {infoPairs.length > 0 ? (
@@ -2146,7 +2160,7 @@ export default function EquipmentManifest({ session }) {
                             ))}
                           </div>
                         ) : (
-                          <div style={{ fontSize: 12, color: "var(--muted2)" }}>{isDraft ? "Draft (no project): production details come with a project." : "No production details set yet."}</div>
+                          <div style={{ fontSize: 12, color: "var(--muted2)" }}>No production details set yet.</div>
                         )}
                       </div>
                       <textarea
@@ -2165,19 +2179,20 @@ export default function EquipmentManifest({ session }) {
                         }}
                       />
                     </div>
+                    )}
 
                     {listRow && (
                       // Owner: which of the project's lists this is (switch
                       // between versions; the box shows "V2 ▾", tapping opens
                       // the full list) and this list's own note.
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                        {activeMeta ? (
+                        {activeMeta || isDraft ? (
                           <span
-                            title={activeMeta.count > 1 ? "Switch to another of this project's lists" : "This project's only list"}
+                            title={isDraft ? "A draft list: on its own, in no project" : activeMeta.count > 1 ? "Switch to another of this project's lists" : "This project's only list"}
                             style={{ position: "relative", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 2, border: "1px solid var(--border2)", borderRadius: 3, padding: "6px 6px 6px 8px", fontSize: 12, fontWeight: 800, color: "var(--accent)" }}
                           >
-                            V{activeMeta.v}{activeMeta.count > 1 && <><span style={{ color: "var(--muted)", fontWeight: 600 }}>&nbsp;of {activeMeta.count}</span><ChevronDown size={12} /></>}
-                            {activeMeta.count > 1 && (
+                            V{activeMeta ? activeMeta.v : 1}<span style={{ color: "var(--muted)", fontWeight: 600 }}>&nbsp;of {activeMeta ? activeMeta.count : 1}</span>{activeMeta?.count > 1 && <ChevronDown size={12} />}
+                            {activeMeta?.count > 1 && (
                               <select
                                 value={activeProjectId}
                                 onChange={(e) => openProject(e.target.value)}
@@ -2488,8 +2503,8 @@ export default function EquipmentManifest({ session }) {
       {showProjectForm && (
         <ProjectFormModal
           initial={projects.find((p) => p.id === editingProjectId)}
-          heading={!editingProjectId && isCatalogOwner && xLinksRef.current && !newListTarget ? "New draft list" : undefined}
-          noHouses={isCatalogOwner && xLinksRef.current ? (editingProjectId ? !!xListMeta && !xListMeta[editingProjectId] : !newListTarget) : false}
+          heading={isCatalogOwner && xLinksRef.current ? (editingProjectId ? (xListMeta && !xListMeta[editingProjectId] ? "Edit draft list" : undefined) : (!newListTarget ? "New draft list" : undefined)) : undefined}
+          draft={isCatalogOwner && xLinksRef.current ? (editingProjectId ? !!xListMeta && !xListMeta[editingProjectId] : !newListTarget) : false}
           saveLabel={!editingProjectId && isCatalogOwner && xLinksRef.current && !newListTarget ? "Create list" : undefined}
           productionHouses={productionHouses}
           rentalHouses={rentalHouses}

@@ -5194,7 +5194,7 @@
      "label": "Day 1",
      "date": "2026-10-28",
      "location": "Somewhere with a really long location name — District 2, Thủ Đức City",
-     "projectLabel": "A long type of shooting label"
+     "projectLabel": "A long shoot type label"
     }
    ],
    "perDayQty": false,
@@ -7258,7 +7258,7 @@
   {
    "id": "7e570000-0000-4000-8000-000000000035",
    "name": "Draft — Spec Rig Ideas",
-   "tag": "Short",
+   "tag": "",
    "productionHouse": "",
    "producer": "",
    "rentalHouse": "",
@@ -7269,6 +7269,20 @@
      "label": "Day 1",
      "date": "",
      "location": "",
+     "projectLabel": "Handheld"
+    },
+    {
+     "id": "t35d2",
+     "label": "Day 2",
+     "date": "",
+     "location": "",
+     "projectLabel": "Car rig"
+    },
+    {
+     "id": "t35d3",
+     "label": "Day 3",
+     "date": "",
+     "location": "",
      "projectLabel": ""
     }
    ],
@@ -7276,63 +7290,82 @@
    "itemData": {
     "muh4f14q": {
      "quantities": {
-      "t35d1": 1
+      "t35d1": 1,
+      "t35d2": 1,
+      "t35d3": 1
      },
      "notes": ""
     },
     "2pu5zvl6": {
      "quantities": {
-      "t35d1": 1
+      "t35d1": 1,
+      "t35d2": 1,
+      "t35d3": 1
      },
      "notes": ""
     },
     "8v18txdc": {
      "quantities": {
-      "t35d1": 1
+      "t35d1": 1,
+      "t35d2": 1,
+      "t35d3": 1
      },
      "notes": ""
     },
     "kelvvicl": {
      "quantities": {
-      "t35d1": 1
+      "t35d1": 1,
+      "t35d2": 1,
+      "t35d3": 1
      },
      "notes": ""
     },
     "vwofhqzg": {
      "quantities": {
-      "t35d1": 1
+      "t35d1": 1,
+      "t35d2": 1,
+      "t35d3": 1
      },
      "notes": ""
     },
     "1wmg5cyc": {
      "quantities": {
-      "t35d1": 1
+      "t35d1": 1,
+      "t35d2": 1,
+      "t35d3": 1
      },
      "notes": ""
     },
     "19kgbp1y": {
      "quantities": {
-      "t35d1": 1
+      "t35d1": 1,
+      "t35d2": 1,
+      "t35d3": 1
      },
      "notes": ""
     },
     "2ay0zzi3": {
      "quantities": {
-      "t35d1": 1
+      "t35d1": 1,
+      "t35d2": 1,
+      "t35d3": 1
      },
      "notes": ""
     },
     "mimhtkrq": {
      "quantities": {
-      "t35d1": 1
+      "t35d1": 1,
+      "t35d2": 1,
+      "t35d3": 1
      },
      "notes": ""
     }
    },
    "customItems": [],
-   "note": "Not for a job yet: a rig to pitch.",
+   "note": "",
    "pdfFont": "jetbrains",
-   "createdAt": 1756857600000
+   "createdAt": 1756857600000,
+   "listNote": "Not for a job yet: a rig to pitch."
   }
  ],
  "expansion": {
@@ -9365,7 +9398,7 @@
       "link": "",
       "note": "",
       "confirmed": false,
-      "label": "A long type of shooting label"
+      "label": "A long shoot type label"
      }
     ],
     "lists": [

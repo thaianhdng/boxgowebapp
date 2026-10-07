@@ -47,4 +47,5 @@ Run → open BOXGO again.
   projects, and clashes on 2, 8, 9 and 28 October 2026.
 - List versions: Samsung has 2 lists (V2 current), Pepsi 3 (V2 chosen as
   current), Đen Vâu 5 (the most a project can have), each with a list note; and
-  one draft list in no project ("Draft — Spec Rig Ideas").
+  one draft list in no project ("Draft — Spec Rig Ideas": no tag, 3 days
+  without dates, a list note only).

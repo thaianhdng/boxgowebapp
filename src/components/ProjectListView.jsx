@@ -136,7 +136,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 title="Filter by this project name"
                 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", cursor: "pointer", marginRight: 7, overflowWrap: "anywhere" }}
               >
-                {p.name}
+                {p.name || (listMeta && !listMeta[p.id] ? <span style={{ color: "var(--muted)" }}>Untitled list</span> : null)}
               </span>
               {formatShootDateRange(p.days) && (
                 <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", whiteSpace: "nowrap" }}>{formatShootDateRange(p.days)}</span>
@@ -146,6 +146,9 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               )}
               {listMeta && !p.ghost && !listMeta[p.id] && (
                 <span className="tag-box" style={{ fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)", verticalAlign: "middle", position: "relative", top: -1 }} title="This list isn't in any project (a draft)">No project</span>
+              )}
+              {listMeta && !p.ghost && !listMeta[p.id] && p.listNote && (
+                <div style={{ fontSize: 10.5, lineHeight: "14px", color: "var(--muted)", marginTop: 1, overflowWrap: "anywhere" }}>{p.listNote}</div>
               )}
               {(() => {
                 const m = listMeta?.[p.id];
@@ -177,7 +180,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                   position: "absolute", top: "100%", right: 0, zIndex: 30, minWidth: 150, padding: 4,
                   background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
                 }}>
-                  <MenuItem icon={<Pencil size={13} />} label="Edit project" onClick={() => { setMenuId(null); onEdit(p); }} />
+                  <MenuItem icon={<Pencil size={13} />} label={listMeta && !listMeta[p.id] ? "Edit list" : "Edit project"} onClick={() => { setMenuId(null); onEdit(p); }} />
                   <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
                   <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
                   {listMeta && !listMeta[p.id] && onAddToProject && (
@@ -269,7 +272,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 ? listMeta[target.id].count > 1
                   ? <>Delete V{listMeta[target.id].v} of "{target.name}"? The project and its other lists stay.</>
                   : <>Delete the equipment list for "{target.name}"? The project, its schedule and files stay in Projects.</>
-                : <>Delete "{target.name}"? This can't be undone.</>}
+                : target.name ? <>Delete "{target.name}"? This can't be undone.</> : <>Delete this untitled list? This can't be undone.</>}
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button className="btn btn-ghost" onClick={() => setConfirmId(null)}>Cancel</button>
