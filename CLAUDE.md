@@ -334,9 +334,9 @@ Start of each conversation, the owner should say which one it is:
   the right; tag + name at the left in the space beside it (a long name
   wraps; the shoot dates follow it, or take their own line when they
   don't fit); then Production House and Rental House (house, with the
-  Producer / Gaffer on the line below; cut with "…" when too wide) and
-  Created On (date, time below) at the right; the project note has no
-  label. Font is per project (`project.pdfFont`,
+  Producer / Gaffer on the line below, same bold font; cut with "…"
+  when too wide) and Created On (date, time below) at the right; a thin
+  (1.5pt) accent line; the project note has no label. Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
   default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and share page draw
   the real PDF with pdf.js (`src/lib/pdfPreview.js`). Downloads go through

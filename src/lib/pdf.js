@@ -166,8 +166,8 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       const width = (text, style, size) => { doc.setFont(FONT, style); doc.setFontSize(size); return doc.getTextWidth(text); };
       const createdW = hasCreatedOn ? Math.max(width("CREATED ON", "bold", 8), ...createdLines.map((t) => width(t, "bold", 11))) : 0;
       const cols = [
-        { label: "Production House", lines: [[project?.productionHouse, "bold"], [project?.producer, "normal"]] },
-        { label: "Rental House", lines: [[project?.rentalHouse, "bold"], [project?.gaffer, "normal"]] },
+        { label: "Production House", lines: [[project?.productionHouse, "bold"], [project?.producer, "bold"]] },
+        { label: "Rental House", lines: [[project?.rentalHouse, "bold"], [project?.gaffer, "bold"]] },
       ].map((c) => ({ ...c, lines: c.lines.filter(([t]) => t) })).filter((c) => c.lines.length);
       const natural = cols.map((c) => Math.max(width(c.label.toUpperCase(), "bold", 8), ...c.lines.map(([t, st]) => width(t, st, 11))));
       const avail = usableWidth - (hasCreatedOn ? createdW + gap : 0);
@@ -212,7 +212,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
 
     // Divider
     doc.setDrawColor(...accentRgb);
-    doc.setLineWidth(3);
+    doc.setLineWidth(1.5);
     doc.line(marginX, y, marginX + usableWidth, y);
     doc.setLineWidth(1);
     y += 14;
