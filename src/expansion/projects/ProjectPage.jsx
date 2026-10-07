@@ -77,11 +77,17 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
   const list = actions.listOf(id);
   const update = (patch) => actions.update(id, (p) => ({ ...p, ...patch }));
 
-  // The header's "Edit project" button.
+  // The header's "Edit project" button, and a card's paperclip (opens
+  // the page at its Files).
   useEffect(() => {
     // One-shot: cleared once used, so returning from Preview doesn't
     // open the window again.
     if (intent === "edit") { setShowInfo(true); app.clearIntent(); }
+    if (intent === "files") {
+      app.clearIntent();
+      // After the page has drawn, so it lands in place.
+      requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById("x-files")?.scrollIntoView({ block: "start" })));
+    }
   }, [intent, app.route.t]);
 
   // Other projects' events show greyed in this calendar, except cancelled ones.

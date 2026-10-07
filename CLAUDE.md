@@ -125,7 +125,8 @@ Start of each conversation, the owner should say which one it is:
      Gaffer, then the notes (one line), shoot locations), then a last row
      kept at the card's foot: the next event, and what the job has as
      icons in the text colour (white in dark mode): paperclip + file count
-     (only when it has files), then the equipment list sheet, always in
+     (only when it has files; tapping it opens the Project page at its
+     Files, route `intent: "files"`), then the equipment list sheet, always in
      the bottom right corner — greyed when the job has no list; tapping a
      white one opens the list (`app.openEquipmentList`).
      The tag floats in the card's top right corner, not before the

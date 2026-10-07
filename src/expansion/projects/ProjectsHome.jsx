@@ -24,16 +24,22 @@ export function StatusChip({ status, style }) {
 }
 
 // What the job has, as icons in the bottom right corner: files (paperclip
-// and count, only when there are some), then the equipment list sheet,
+// and count, only when there are some; tap it for the project's Files),
+// then the equipment list sheet,
 // always in the corner — white when the job has a list (tap it to open the
 // list), greyed when it has none.
-function Parts({ hasList, files, onOpenList }) {
+function Parts({ hasList, files, onOpenList, onOpenFiles }) {
   return (
     <span style={{ marginLeft: "auto", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 8, color: "var(--text)", alignSelf: "center" }}>
       {files > 0 && (
-        <span title={`${files} file${files > 1 ? "s" : ""}`} style={{ display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 700 }}>
+        <button
+          type="button"
+          title={`${files} file${files > 1 ? "s" : ""}: open the project's Files`}
+          onClick={(e) => { e.stopPropagation(); onOpenFiles(); }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 700, fontSize: "inherit", fontFamily: "inherit", background: "none", border: "none", padding: 6, margin: -6, color: "inherit", cursor: "pointer" }}
+        >
           <Paperclip size={12} />{files}
-        </span>
+        </button>
       )}
       {hasList ? (
         <button
@@ -65,7 +71,7 @@ const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellip
 // the notes, shoot locations, then the next event and what the job has
 // (icons, bottom right: files, then the equipment list sheet).
 // The tag sits in the top right corner.
-function ProjectCard({ project, status, hasList, types, today, onOpen, onOpenList }) {
+function ProjectCard({ project, status, hasList, types, today, onOpen, onOpenList, onOpenFiles }) {
   const next = status !== "cancelled" && nextEvent(project, today, types);
   const nextType = next && typeOf(types, next.typeId);
   const dates = shootDates(project, types);
@@ -119,7 +125,7 @@ function ProjectCard({ project, status, hasList, types, today, onOpen, onOpenLis
             <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
           </span>
         )}
-        <Parts hasList={hasList} files={files} onOpenList={onOpenList} />
+        <Parts hasList={hasList} files={files} onOpenList={onOpenList} onOpenFiles={onOpenFiles} />
       </div>
     </div>
   );
@@ -190,6 +196,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
           today={today}
           onOpen={() => app.go({ screen: "project", projectId: id })}
           onOpenList={() => app.openEquipmentList(id)}
+          onOpenFiles={() => app.go({ screen: "project", projectId: id, intent: "files" })}
         />
       ))}
     </div>
