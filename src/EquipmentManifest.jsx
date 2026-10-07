@@ -1856,9 +1856,10 @@ export default function EquipmentManifest({ session }) {
           .mf-item-col { min-width: 80px; }
           .mf-pad { padding-left: 8px; padding-right: 8px; }
           /* Phones: breadcrumb and buttons always on their own rows, buttons on
-             one line, so the header is the same height on every page. The
-             "saved" word goes (the tick stays) to make room. */
-          .hdr-crumb { width: 100%; height: 24px; }
+             one line. A name too long to sit beside the section name takes a
+             second breadcrumb line. The "saved" word goes (the tick stays) to
+             make room. */
+          .hdr-crumb { width: 100%; min-height: 24px; }
           /* Right-aligned via margin-left: auto rather than flex-end, so on the
              narrowest phones the row scrolls instead of cutting off its left end. */
           .hdr-actions { width: 100%; flex-wrap: nowrap !important; overflow-x: auto; justify-content: flex-start !important; }
@@ -1885,23 +1886,35 @@ export default function EquipmentManifest({ session }) {
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, ...(isCatalogOwner ? { flexShrink: 0 } : {}) }}>
-                <Logo size={20} />
+                {isCatalogOwner ? (
+                  // The owner: the logo (and wordmark) is the Projects module's
+                  // button — accent while Projects is showing.
+                  <button
+                    onClick={() => goX({ screen: "projects" })}
+                    title="Projects"
+                    style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", padding: 0, cursor: "pointer", color: view === "x" && xModule === "projects" ? "var(--accent)" : "var(--text)" }}
+                  >
+                    <Logo size={20} />
+                    {/* The owner's phone: the logo alone, to leave room for the modules. */}
+                    <span className="stencil hdr-wordmark-x" style={{ fontSize: 17, letterSpacing: "0.08em", color: "inherit" }}>BOXGO</span>
+                  </button>
+                ) : (<>
+                  <Logo size={20} />
+                  <span className="stencil" style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
+                    BOXGO
+                  </span>
+                </>)}
                 {dbMode() === "test" && <TestBadge />}
-                {/* The owner's phone: the logo alone, to leave room for three modules. */}
-                <span className={isCatalogOwner ? "stencil hdr-wordmark-x" : "stencil"} style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
-                  BOXGO
-                </span>
                 {isCatalogOwner ? (
                   // The owner's three modules, sharing one projects database: Projects and Calendar
                   // (src/expansion/), and the equipment list composer, which works exactly as v1.0.
                   <span style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 2 }}>
                     {[
-                      ["Projects", view === "x" && xModule === "projects", () => goX({ screen: "projects" })],
                       ["Calendar", view === "x" && xModule === "calendar", () => goX({ screen: "calendar" })],
                       ["Equipment", view !== "x", () => { setActiveProjectId(null); setView("projects"); }],
-                    ].map(([label, on, go], i) => (
+                    ].map(([label, on, go]) => (
                       <span key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        {i > 0 && <span style={{ color: "var(--border2)", fontSize: 10 }}>|</span>}
+                        <span style={{ color: "var(--border2)", fontSize: 10 }}>|</span>
                         <button
                           className="stencil"
                           onClick={go}
@@ -1938,7 +1951,10 @@ export default function EquipmentManifest({ session }) {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-              <div className="hdr-crumb" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              {/* The crumb wraps: a name that doesn't fit beside the section
+                  name takes the next line, so it's cut with "…" only when it
+                  is longer than the whole row. */}
+              <div className="hdr-crumb" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", columnGap: 10, rowGap: 2, minWidth: 0 }}>
                 <button
                   className="stencil"
                   onClick={() => (view === "x" ? goX({ screen: xModule }) : (setActiveProjectId(null), setView("projects")))}
@@ -1948,7 +1964,7 @@ export default function EquipmentManifest({ session }) {
                     color: view === "projects" || (view === "x" && xRoute.screen !== "project") ? "var(--accent)" : "var(--text)",
                   }}
                 >
-                  {view === "x" ? (xModule === "calendar" ? "Calendar" : "Projects") : isCatalogOwner ? "Equipment" : "Project Manager"}
+                  {view === "x" ? (xModule === "calendar" ? "Calendar" : "Projects Manager") : isCatalogOwner ? "Equipment Lists Manager" : "Project Manager"}
                 </button>
                 {view === "x" && xRoute.screen === "project" && (
                   <>
@@ -1967,8 +1983,10 @@ export default function EquipmentManifest({ session }) {
                       onClick={activeMeta ? () => goX({ screen: "project", projectId: activeMeta.projectId }) : undefined}
                       title={activeMeta ? "Open this project's page (status, schedule, files)" : undefined}
                       style={{
-                        fontSize: 15, display: "flex", alignItems: "center", gap: 6,
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200,
+                        // As wide as the row allows: the name is cut with "…"
+                        // only when it doesn't fit.
+                        fontSize: 15, display: "flex", alignItems: "center", gap: 6, minWidth: 0,
+                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                         cursor: activeMeta ? "pointer" : undefined,
                       }}
                     >

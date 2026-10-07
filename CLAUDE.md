@@ -82,12 +82,18 @@ Start of each conversation, the owner should say which one it is:
      `src/expansion/`) so it can be promoted or removed cleanly later.
    - How it's wired: the owner has three modules sharing one projects
      database — **Projects** and **Calendar** (the expansion) and
-     **Equipment** (v1.0 composer). BOXGO's header top row has a
-     PROJECTS | CALENDAR | EQUIPMENT switch (instead of the "Equipment List
-     Composer" caption; on the owner's phone the BOXGO wordmark hides and
-     the name shrinks so it fits). `EquipmentManifest` starts on view `"x"`,
-     route `{ screen: "projects" }`: BOXGO's header (crumb PROJECTS or
-     CALENDAR / <project>, Edit project, Settings, one save tick) with
+     **Equipment** (v1.0 composer). BOXGO's header top row has the
+     module switch instead of the "Equipment List Composer" caption: the
+     BOXGO logo (and wordmark) is the Projects button (accent while
+     Projects shows), then | CALENDAR | EQUIPMENT (on the owner's phone
+     the wordmark hides and the name shrinks so it fits). The crumb's
+     section names: "Projects Manager", "Calendar", "Equipment Lists
+     Manager" (others keep "Project Manager"); the crumb wraps, so a list /
+     project name too long to sit beside it takes the next line and is cut
+     with "…" only when longer than the row (everyone; no fixed width).
+     `EquipmentManifest` starts on view `"x"`,
+     route `{ screen: "projects" }`: BOXGO's header (crumb PROJECTS MANAGER
+     or CALENDAR / <project>, Edit project, Settings, one save tick) with
      `<Expansion part="screen">` under it — `screen` "projects" = Projects
      home (search, Create New, projects grouped by status under bold
      headings — the heading and the card's coloured left edge are the only
@@ -168,8 +174,9 @@ Start of each conversation, the owner should say which one it is:
      Test data box). A clash (red dot) = two projects' shoots / prelights on one
      day, or overlapping set times (`clashDates`); a full day box shows
      as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
-     owner: its crumb root reads "Equipment" (others: "Project Manager"),
-     tapping the project name in its crumb opens the Project page,
+     owner: its crumb root reads "Equipment Lists Manager" (others:
+     "Project Manager"), tapping the project name in its crumb opens the
+     Project page (the small calendar icon after the name marks that),
      Cancelled jobs' lists get a "Cancelled" mark on their card and crumb
      (`app.reportCancelled`; never in the preview, PDF or share page),
      Cancelled projects get no greyed card, and the floating back-to-top
