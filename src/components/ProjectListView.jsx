@@ -14,8 +14,8 @@ import { formatShootDateRange, inCardPreview } from "../lib/utils.js";
 // `previewOff`: camera / lens (sub)categories left out of the camera and
 // lens lines (set in the Master Catalog).
 // `listMeta` (owner only; null until known): each list's project and
-// version ({ v, note, count }), shown under the name; lists in no project
-// get a "No project" mark. With it, the ⋮ menu offers Add to project… /
+// version ({ v, note, count }), shown under the project note (one row);
+// lists in no project get a "No project" mark. With it, the ⋮ menu offers Add to project… /
 // Remove from project (onAddToProject / onRemoveFromProject).
 export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost, listOnly, cancelledIds, listMeta, onAddToProject, onRemoveFromProject, previewOff }) {
   const [confirmId, setConfirmId] = useState(null);
@@ -153,20 +153,6 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                   <span className="tag-box" style={{ fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)" }} title="This list isn't in any project (a draft)">No project</span>
                 </div>
               )}
-              {listMeta && !p.ghost && !listMeta[p.id] && p.listNote && (
-                <div style={{ fontSize: 10.5, lineHeight: "14px", color: "var(--muted)", marginTop: 1, overflowWrap: "anywhere" }}>{p.listNote}</div>
-              )}
-              {(() => {
-                const m = listMeta?.[p.id];
-                if (!m || (m.count < 2 && !m.note)) return null;
-                return (
-                  <div style={{ fontSize: 10.5, lineHeight: "14px", color: "var(--muted)", marginTop: 1, overflowWrap: "anywhere" }}>
-                    <b style={{ color: "var(--accent)" }}>V{m.v}</b>
-                    {m.note && <span> · {m.note}</span>}
-                    {m.count > 1 && <span style={{ color: "var(--muted2)" }}> · {m.count} lists</span>}
-                  </div>
-                );
-              })()}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 3, fontSize: 11, color: "var(--muted)" }}>
               {(p.productionHouse || p.producer) && (
@@ -209,6 +195,23 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 {p.note.replace(/\s*\n+\s*/g, " · ")}
               </div>
             )}
+            {/* The version and its list note, under the project note: one
+                row, the note cut with "…" (the version and "N lists" stay). */}
+            {(() => {
+              const m = listMeta?.[p.id];
+              const draftNote = listMeta && !p.ghost && !m ? p.listNote : "";
+              if (draftNote) {
+                return <div title={draftNote} style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 4, ...oneLine }}>{draftNote}</div>;
+              }
+              if (!m || (m.count < 2 && !m.note)) return null;
+              return (
+                <div title={m.note || undefined} style={{ display: "flex", fontSize: 10.5, color: "var(--muted)", marginTop: 4, minWidth: 0, whiteSpace: "nowrap" }}>
+                  <b style={{ color: "var(--accent)", flexShrink: 0 }}>V{m.v}</b>
+                  {m.note && <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>&nbsp;· {m.note}</span>}
+                  {m.count > 1 && <span style={{ color: "var(--muted2)", flexShrink: 0 }}>&nbsp;· {m.count} lists</span>}
+                </div>
+              );
+            })()}
             {(() => {
               const locs = [...new Set((p.days || []).map((d) => d.location).filter(Boolean))];
               return locs.length > 0 ? (

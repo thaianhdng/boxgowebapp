@@ -142,7 +142,9 @@ Start of each conversation, the owner should say which one it is:
      cards (everyone, owner's call: synced with the Projects cards) work
      the same way: name · dates with the tag floating in the top right
      corner (a draft's "No project" mark on its own line under the name);
-     then the houses, the project note, locations, gear; and a foot row
+     then the houses, the project note, the version row (owner: "V3 ·
+     list note · 3 lists", or a draft's list note; one line, the note cut
+     with "…"), locations, gear; and a foot row
      with "⚠ No items" at the left and the ⋮ menu (or a greyed card's
      "+ List") in the bottom right corner, opening upwards. The cards'
      camera and lens lines leave out the camera / lens categories and
@@ -267,8 +269,8 @@ Start of each conversation, the owner should say which one it is:
      new project / Add to existing project; a "—" (no tag) option is
      always first in the tag list. Equipment cards' ⋮ menu (owner): Add to project… /
      Remove from project. Equipment shows one card per Project, its
-     current version, with "V3 · note · 3 lists" when there are several
-     or a list note, and drafts marked "No project"; inside a list, under
+     current version, with "V3 · note · 3 lists" (under the project
+     note) when there are several or a list note, and drafts marked "No project"; inside a list, under
      the info box, a row with the version switch ("V2 ▾"; just "V1" for a
      single list or a draft) and the list note (owner). Day
      fields everywhere read "Shoot type…" and "Location and note". The composer's item
