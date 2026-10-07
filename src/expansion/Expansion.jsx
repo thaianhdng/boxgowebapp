@@ -7,13 +7,17 @@
 // catalog, houses, and ways to open / create / update a list). Add fields
 // there rather than reaching into BOXGO's internals from here.
 //
-// BOXGO renders this in three places:
+// BOXGO renders this in these places:
 //   <Expansion part="sync">   always (owner signed in), renders nothing:
 //                             loads Projects and keeps each Project and its
-//                             equipment list in step (projects/sync.js)
+//                             equipment lists (versions) in step
+//                             (projects/sync.js)
 //   <Expansion part="crumb">  the project's name in the breadcrumb
 //                             (PROJECTS / HONDA TVC)
 //   <Expansion part="settings"> Settings → Preferences → Event Types
+//   <Expansion part="target">  "where does this list go?" (Duplicate,
+//                             Create New, Add to project… in the equipment
+//                             list composer)
 //   <Expansion part="screen"> under BOXGO's header, by app.route.screen:
 //                             "projects" the Projects home (every project
 //                             by status), "calendar" the Calendar (every
@@ -24,16 +28,18 @@ import { useEffect, useMemo, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { useXStore, load, refresh, putProject, setEventTypes, getState, exportBackup, restoreBackup, wipeAll, removeProjects, projectIds } from "./store.js";
 import { projectActions } from "./projects/actions.js";
-import { listLike, projectFromList, projectWithList, splitShootRanges } from "./projects/sync.js";
+import { currentLink, equipmentPatch, fitList, linksOf, listLike, projectWithList, shootDaysOf, splitShootRanges } from "./projects/sync.js";
 import { shootDates, statusOf } from "./projects/status.js";
 import { todayStr } from "./shared/dates.js";
 import { ProjectsHome } from "./projects/ProjectsHome.jsx";
 import { ProjectPage } from "./projects/ProjectPage.jsx";
 import { CalendarHome } from "./calendar/CalendarHome.jsx";
+import { ListTarget } from "./projects/ListTarget.jsx";
 import { EventTypesEditor } from "./schedule/EventTypesEditor.jsx";
 
-export default function Expansion({ app, part }) {
+export default function Expansion({ app, part, request }) {
   if (part === "sync") return <Sync app={app} />;
+  if (part === "target") return <Target app={app} request={request} />;
   if (part === "crumb") return <Crumb app={app} />;
   if (part === "settings") return <CalendarSettings />;
   return <Screen app={app} />;
@@ -52,6 +58,17 @@ function Crumb({ app }) {
 
 // Settings → Preferences → Event Types (owner only): the event types, their colours /
 // order. Shown inside BOXGO's Settings window.
+// The equipment list composer's "where does this list go?" window
+// (Duplicate, Create New, Add to project…): `request` = { mode, listId,
+// onPick, onClose } (see projects/ListTarget.jsx).
+function Target({ app, request }) {
+  const x = useXStore();
+  const types = x.settings.eventTypes;
+  const actions = useMemo(() => projectActions(app, types), [app, types]);
+  if (x.status !== "ready" || !request) return null;
+  return <ListTarget mode={request.mode} listId={request.listId} projects={x.projects} types={types} actions={actions} onPick={request.onPick} onClose={request.onClose} />;
+}
+
 function CalendarSettings() {
   const x = useXStore();
   const types = x.settings.eventTypes;
@@ -67,7 +84,9 @@ function CalendarSettings() {
 function Sync({ app }) {
   const x = useXStore();
   const types = x.settings.eventTypes;
-  const checked = useRef(new Map()); // list id -> [list, project] last compared
+  const checked = useRef(new Map()); // list id -> list object last compared
+  const live = useRef({ app, types });
+  live.current = { app, types };
 
   useEffect(() => {
     if (getState().status === "idle") load();
@@ -77,33 +96,66 @@ function Sync({ app }) {
   }, []);
 
   // BOXGO's Backup / Restore (Settings) carries the Projects and Calendar
-  // data too, for the owner.
+  // data too, for the owner. And the equipment list composer links lists
+  // to Projects through these (Create New, Duplicate, Add to project…).
   useEffect(() => {
     app.registerBackup({ export: exportBackup, restore: restoreBackup, wipe: wipeAll, remove: removeProjects, ids: projectIds });
-    return () => app.registerBackup(null);
+    const acts = () => projectActions(live.current.app, live.current.types);
+    app.registerLinks({
+      link: (list, target) => acts().link(list, target),
+      attach: (listId, target) => acts().attach(listId, target),
+      unlink: (listId) => acts().unlink(listId),
+    });
+    return () => { app.registerBackup(null); app.registerLinks(null); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // BOXGO's header shows one save indicator for everything.
   useEffect(() => { app.reportSaveState(x.saveState); }, [x.saveState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Whenever an equipment list changes (edited in the equipment list
-  // composer, or loaded), bring its Project in line: lists without one
-  // get a Project; otherwise the list's name, houses, Producer, Gaffer and
-  // shoot days are copied over. Project edits reach the list straight away
-  // (projects/actions.js), so here they already agree. Only after a
-  // successful load, so a failed load can never write over real Projects.
+  // composer, or loaded), bring its Project in line — the list's name,
+  // houses, Producer, Gaffer and shoot days are copied over — and from
+  // there its other versions. Lists in no Project (drafts) are left alone.
+  // Project edits reach the lists straight away (projects/actions.js), so
+  // here they already agree. Per Project, only one changed list is read
+  // per pass (the current version first); its other versions are brought
+  // in line with it rather than read, so two versions can never undo each
+  // other. Only after a successful load, so a failed load can never write
+  // over real Projects.
   useEffect(() => {
     if (x.status !== "ready") return;
-    for (const list of app.projects) {
-      const cur = getState().projects[list.id];
-      const seen = checked.current.get(list.id);
-      if (seen && seen[0] === list && seen[1] === cur) continue;
-      if (!cur) putProject(list.id, projectFromList(list, types));
-      else {
-        const next = projectWithList(cur, list, types);
-        if (next) putProject(list.id, next);
+    const listIds = new Set(app.projects.map((p) => p.id));
+    const byId = new Map(app.projects.map((l) => [l.id, l]));
+    const done = new Set();
+    for (const [pid, p0] of Object.entries(getState().projects)) {
+      const links = linksOf(pid, p0, listIds);
+      if (!links.length) continue;
+      const cur = currentLink(links, p0);
+      const ordered = [cur, ...links.filter((l) => l !== cur)];
+      for (const l of ordered) {
+        const list = byId.get(l.id);
+        if (checked.current.get(l.id) === list) continue;
+        checked.current.set(l.id, list);
+        if (done.has(pid)) continue;
+        const project = getState().projects[pid];
+        // A list that has just joined and doesn't have the Project's shoot
+        // days yet is brought to the Project, never read into it.
+        const shootIds = new Set(shootDaysOf(project, types).map((d) => d.id));
+        if (shootIds.size && !(list.days || []).some((d) => shootIds.has(d.id))) {
+          const { id: _id, ...patch } = fitList(list, project, types); // eslint-disable-line no-unused-vars
+          app.updateEquipmentList(l.id, patch);
+          continue;
+        }
+        const next = projectWithList(project, list, types);
+        if (!next) continue;
+        done.add(pid);
+        putProject(pid, next);
+        for (const o of links) {
+          if (o.id === l.id) continue;
+          const patch = equipmentPatch(next, types, byId.get(o.id));
+          if (patch) app.updateEquipmentList(o.id, patch);
+        }
       }
-      checked.current.set(list.id, [list, getState().projects[list.id]]);
     }
   }, [x.status, app.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -124,20 +176,35 @@ function Sync({ app }) {
     }
   }, [x.status, x.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Projects with no equipment list show greyed in the equipment list
-  // composer's project list.
+  // What the equipment list composer's project list needs: each list's
+  // Project and version (only current versions get a card), greyed cards
+  // for Projects with no list, and a "Cancelled" mark for cancelled jobs'
+  // lists (owner's project list and crumb only — never the preview, PDF or
+  // share page).
   useEffect(() => {
     if (x.status !== "ready") return;
-    const lists = new Set(app.projects.map((p) => p.id));
+    const listIds = new Set(app.projects.map((p) => p.id));
     const today = todayStr();
-    app.reportGhosts(Object.entries(x.projects)
-      .filter(([id, p]) => !lists.has(id) && statusOf(p, types, today) !== "cancelled")
-      .map(([id, p]) => ({ ...listLike(id, p, types), ghost: true })));
-    // Cancelled jobs' equipment lists get a "Cancelled" mark (owner's
-    // project list and crumb only — never the preview, PDF or share page).
-    app.reportCancelled(Object.entries(x.projects)
-      .filter(([id, p]) => lists.has(id) && statusOf(p, types, today) === "cancelled")
-      .map(([id]) => id));
+    const meta = {};
+    const ghosts = [];
+    const cancelled = [];
+    for (const [pid, p] of Object.entries(x.projects)) {
+      const links = linksOf(pid, p, listIds);
+      const isCancelled = statusOf(p, types, today) === "cancelled";
+      if (!links.length) {
+        if (!isCancelled) ghosts.push({ ...listLike(pid, p, types), ghost: true });
+        continue;
+      }
+      const cur = currentLink(links, p);
+      const versions = [...links].sort((a, b) => a.v - b.v).map(({ id, v, note }) => ({ id, v, note: note || "" }));
+      for (const l of links) {
+        meta[l.id] = { projectId: pid, v: l.v, note: l.note || "", count: links.length, current: l === cur, versions };
+        if (isCancelled) cancelled.push(l.id);
+      }
+    }
+    app.reportGhosts(ghosts);
+    app.reportCancelled(cancelled);
+    app.reportListMeta(meta);
   }, [x.status, x.projects, app.projects, types]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;

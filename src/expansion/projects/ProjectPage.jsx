@@ -11,6 +11,8 @@ import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { listLike } from "./sync.js";
 import { SET_STATUSES, setStatus, staleSoftLock, statusInfo, statusOf } from "./status.js";
 import { FilesSection } from "../files/FilesSection.jsx";
+import { ListTarget, nextV } from "./ListTarget.jsx";
+import { Modal } from "../shared/ui.jsx";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 
 // Jump bar at the top of the page: each section of the job.
@@ -74,7 +76,12 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
   // Opens the schedule's event window from the calendar to edit an event:
   // { event, n } (`n` so the same request can repeat).
   const [eventRequest, setEventRequest] = useState(null);
-  const list = actions.listOf(id);
+  // The project's equipment lists (versions); the current one is what the
+  // Edit project window edits (every version shares those details).
+  const versions = actions.versionsOf(id);
+  const list = actions.currentListOf(id);
+  const [duplicating, setDuplicating] = useState(null); // list id
+  const [deleting, setDeleting] = useState(false);
   const update = (patch) => actions.update(id, (p) => ({ ...p, ...patch }));
 
   // The header's "Edit project" button, and a card's paperclip (opens
@@ -192,9 +199,17 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
 
       <EquipmentPanel
         app={app}
-        list={list}
+        versions={versions}
+        currentId={list?.id}
         hasShootEvents={(project.events || []).some((s) => s.typeId === shootTypeId(types))}
         onCreate={() => setCreatingList(true)}
+        onDuplicate={setDuplicating}
+        onSetCurrent={(listId) => actions.setCurrent(id, listId)}
+        onSetNote={(listId, note) => actions.setNote(id, listId, note)}
+        onRemove={(listId) => actions.unlink(listId)}
+        onDelete={(listId, v) => {
+          if (window.confirm(`Delete V${v} of "${project.name}"? Its equipment and quantities go; the project${versions.length > 1 ? " and its other lists" : ""} stay.`)) app.deleteEquipmentList(listId);
+        }}
       />
 
       <FilesSection files={project.files} onChange={(files) => update({ files })} />
@@ -204,10 +219,8 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
           className="btn btn-ghost"
           style={{ padding: "3px 8px", fontSize: 11, color: "var(--danger)" }}
           onClick={() => {
-            const msg = list
-              ? `Delete "${project.name}" — its schedule, files and its equipment list? This can't be undone.`
-              : `Delete "${project.name}" — its schedule and files? This can't be undone.`;
-            if (!window.confirm(msg)) return;
+            if (versions.length) { setDeleting(true); return; }
+            if (!window.confirm(`Delete "${project.name}" — its schedule and files? This can't be undone.`)) return;
             actions.remove(id);
             app.go({ screen: app.route.from === "calendar" ? "calendar" : "projects" });
           }}
@@ -216,12 +229,53 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         </button>
       </div>
 
+      {deleting && (
+        // With equipment lists: delete them too, or keep them as drafts.
+        <Modal title="Delete project" onClose={() => setDeleting(false)} maxWidth={380}>
+          <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
+            Delete "{project.name}" — its schedule and files? This can't be undone.
+            It has {versions.length} equipment list{versions.length > 1 ? "s" : ""}: delete {versions.length > 1 ? "them" : "it"} too, or keep {versions.length > 1 ? "them" : "it"} in Equipment as {versions.length > 1 ? "drafts" : "a draft"} (no project)?
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[[false, `Delete the project and ${versions.length > 1 ? `its ${versions.length} lists` : "its list"}`], [true, `Delete the project, keep ${versions.length > 1 ? "the lists" : "the list"}`]].map(([keepLists, text]) => (
+              <button
+                key={String(keepLists)}
+                className="btn btn-primary"
+                style={{ justifyContent: "center", ...(keepLists ? {} : { background: "var(--danger)", borderColor: "var(--danger)", color: "#FFFFFF" }) }}
+                onClick={() => {
+                  setDeleting(false);
+                  actions.remove(id, { keepLists });
+                  app.go({ screen: app.route.from === "calendar" ? "calendar" : "projects" });
+                }}
+              >
+                {text}
+              </button>
+            ))}
+            <button className="btn btn-ghost" style={{ justifyContent: "center" }} onClick={() => setDeleting(false)}>Cancel</button>
+          </div>
+        </Modal>
+      )}
+
+      {duplicating && (
+        <ListTarget
+          mode="duplicate"
+          listId={duplicating}
+          projects={allProjects}
+          types={types}
+          actions={actions}
+          onClose={() => setDuplicating(null)}
+          onPick={(t) => { const from = duplicating; setDuplicating(null); app.duplicateEquipmentList(from, t); }}
+        />
+      )}
+
       {creatingList && (
         // The equipment list composer's own Create New, starting from this
         // Project's info and Shooting days (template and quantities too).
         <ProjectForm
           app={app}
           prefill={listLike(id, project, types)}
+          heading={versions.length ? `New version · V${nextV(project, actions, id)}` : "New equipment list"}
+          saveLabel="Create list"
           onClose={() => setCreatingList(false)}
           onSave={(data) => { setCreatingList(false); app.createEquipmentList(id, data); }}
         />

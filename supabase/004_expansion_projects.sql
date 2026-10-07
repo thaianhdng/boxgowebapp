@@ -2,9 +2,10 @@
 -- BOXGO expansion — Projects, schedules and step types (owner only)
 -- Run once in the Supabase SQL Editor (New query).
 -- ============================================================
--- x_projects: one row per Project. `id` is the same id as the project's
--- equipment list in `projects` (when it has one). `data` holds the
--- Project's info, people and schedule steps.
+-- x_projects: one row per Project. `data` holds the Project's info,
+-- people and schedule, and which equipment lists in `projects` are its
+-- versions (`data.lists`; Projects from before versions share their one
+-- list's id instead).
 -- x_settings: the owner's expansion settings (step types and colours).
 --
 -- Both are readable and writable by the owner's account only — not by

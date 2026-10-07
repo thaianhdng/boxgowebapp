@@ -12,7 +12,9 @@ import { uid, todayStr, addOneDay, cascadeDates } from "../lib/utils.js";
 // project from given values, and `noList` is for a project without an
 // equipment list — it hides the list-only parts (template, quantity mode,
 // save as template) and requires every shoot day to have a date.
-export function ProjectFormModal({ initial, prefill, noList, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
+// `heading` / `saveLabel` (owner only) replace "New Project" / "Create
+// project" when the window makes a list for an existing project or a draft.
+export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
   const start = initial || prefill;
   const [name, setName] = useState(start?.name || "");
   // Editing shows the project's real tag, even none ("—") or one since
@@ -81,7 +83,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
     }}>
       <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 440, maxHeight: "90vh", overflowY: "auto", padding: 22, border: "1px solid var(--border2)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div className="stencil" style={{ fontSize: 14 }}>{initial ? "Edit Project" : "New Project"}</div>
+          <div className="stencil" style={{ fontSize: 14 }}>{heading || (initial ? "Edit Project" : "New Project")}</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
 
@@ -265,7 +267,7 @@ export function ProjectFormModal({ initial, prefill, noList, productionHouses, r
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={submit}>{initial ? "Save changes" : "Create project"}</button>
+          <button className="btn btn-primary" onClick={submit}>{saveLabel || (initial ? "Save changes" : "Create project")}</button>
         </div>
       </div>
     </div>

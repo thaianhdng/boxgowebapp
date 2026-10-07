@@ -193,14 +193,19 @@ export function exportBackup() {
 }
 
 // Restoring it adds the backup's Projects (overwriting ones with the same
-// id; `skipIds` = equipment lists the owner chose not to restore) and keeps
-// every other current Project. Event types missing here are added; the
+// id; `skipIds` = equipment lists the owner chose not to restore: a
+// Project whose lists were all left out stays out too) and keeps every
+// other current Project. Event types missing here are added; the
 // owner's own types and colours stay as they are. Returns how many
 // Projects came back, or null when the data isn't loaded yet.
 export function restoreBackup(part, { skipIds = new Set() } = {}) {
   if (state.status !== "ready" || !part) return null;
   const incoming = Object.entries(part.projects || {})
-    .filter(([id, data]) => !skipIds.has(id) && data && typeof data === "object")
+    .filter(([id, data]) => data && typeof data === "object")
+    .filter(([id, data]) => {
+      const lists = Array.isArray(data.lists) ? data.lists.map((l) => l.id) : [id];
+      return !(lists.length && lists.every((l) => skipIds.has(l)));
+    })
     .map(([id, data]) => [id, renamedProject(data) || data]);
   const have = new Set(state.settings.eventTypes.map((t) => t.id));
   const newTypes = (part.eventTypes || []).filter((t) => t && t.id && !have.has(t.id));

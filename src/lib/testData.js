@@ -1,9 +1,10 @@
 // Made-up test data for every screen of BOXGO and the owner's Projects /
-// Calendar: 27 equipment lists (1–10 shoot days, per-day quantities,
+// Calendar: 35 equipment lists (1–10 shoot days, per-day quantities,
 // notes, custom / subrent items, empty lists, no dates, long names,
 // Vietnamese text, every PDF font, a full-catalog list…), their Projects /
-// Calendar details (every status, event type, files, clashes) and 4
-// Calendar-only projects. Every id starts with 7e57 ("test"), so it can be
+// Calendar details (every status, event type, files, clashes; projects
+// with 2, 3 and 5 list versions, one with a chosen current version, and a
+// draft list in no project) and 4 Calendar-only projects. Every id starts with 7e57 ("test"), so it can be
 // removed again without touching anything else.
 //
 // Used by Settings → Data → Load test data (built at that
@@ -55,9 +56,10 @@ const KITS = {
 const kit = (name, scale = 1) => Object.fromEntries(Object.entries(KITS[name]).map(([n, q]) => [item(n), Math.max(1, Math.round(q * scale))]));
 
 // ---------------------------------------------------------------- lists
-// days: [date, location, projectLabel]
+// days: [date, location, projectLabel]. A later version of list `o.of`
+// (same project) has that list's days, with the same ids.
 function list(n, o) {
-  const days = o.days.map(([date, location, projectLabel], i) => ({ id: `t${n}d${i + 1}`, label: `Day ${i + 1}`, date, location: location || "", projectLabel: projectLabel || "" }));
+  const days = o.days.map(([date, location, projectLabel], i) => ({ id: `t${o.of || n}d${i + 1}`, label: `Day ${i + 1}`, date, location: location || "", projectLabel: projectLabel || "" }));
   const itemData = {};
   for (const [id, base] of Object.entries(o.items || {})) {
     const quantities = {};
@@ -184,6 +186,19 @@ const L = [
   list(27, { name: "Vietcombank Digibank (Reshoot)", ph: "Ogilvy Films", producer: "Linh Trần", rh: "VTS Rental", gaffer: "Tuấn Lê",
     days: [["2026-10-28", "Vietcombank Tower – Q.1", "Pickups"]], items: kit("bigTVC", 0.3) }),
 ];
+// ---- later versions of some jobs' lists (the project's V2, V3…)
+const again = (n, of, o) => list(n, { ...o, of, name: L[of - 1].name, tag: L[of - 1].tag, ph: L[of - 1].productionHouse, producer: L[of - 1].producer, rh: L[of - 1].rentalHouse, gaffer: L[of - 1].gaffer, days: L[of - 1].days.map((d) => [d.date, d.location, d.projectLabel]) });
+L.push(
+  again(28, 15, { perDayQty: true, vary, items: { ...kit("anamorphic"), [item("CRANE")]: 2, [item("JIB ARM")]: 1 }, font: "inter" }),
+  again(29, 18, { perDayQty: true, vary, items: kit("bigTVC", 0.8), note: "Budget cut: no anamorphic package." }),
+  again(30, 18, { perDayQty: true, vary, items: { ...kit("bigTVC", 0.7), ...kit("anamorphic", 0.3) } }),
+  again(31, 17, { perDayQty: true, vary, items: kit("mv", 1.2), font: "plex" }),
+  again(32, 17, { perDayQty: true, vary, items: kit("mv", 1.8), font: "plex" }),
+  again(33, 17, { perDayQty: true, vary, items: { ...kit("mv", 1.5), [item("SONY FX6")]: 1 }, font: "plex" }),
+  again(34, 17, { perDayQty: true, vary, items: kit("mv", 1.5), font: "plex" }),
+  // A draft: in no project.
+  list(35, { name: "Draft — Spec Rig Ideas", tag: "Short", days: [["", "", ""]], items: kit("doc", 0.5), note: "Not for a job yet: a rig to pitch." }),
+);
 
 const templates = [
   { id: "7e57tpl1", name: "Big TVC — Alexa 35", tag: "TVC", productionHouse: "Ogilvy Films", producer: "Linh Trần", rentalHouse: "VTS Rental", gaffer: "Hùng Nguyễn", itemQuantities: kit("bigTVC") },
@@ -226,14 +241,19 @@ const MEET = "https://meet.google.com/tst-abcd-efg";
 const MAPS = "https://maps.app.goo.gl/test-recce";
 const byN = (n) => L[n - 1];
 
+// Versions: [n, note] for each list of the job (V1, V2…); the first is
+// the job's own list.
 function xFromList(n, status, extra = {}, shootConfirmed = status === "confirmed") {
   const p = byN(n);
+  const versions = extra.versions || [[n, ""]];
   return {
     id: p.id,
     data: {
       name: p.name, tag: p.tag, productionHouse: p.productionHouse, rentalHouse: p.rentalHouse,
       notes: extra.notes || "", people: people(p), status, createdAt: p.createdAt,
       events: [...shootEvents(p, shootConfirmed), ...(extra.events || [])],
+      lists: versions.map(([k, note], i) => ({ id: byN(k).id, v: i + 1, note })),
+      ...(extra.current ? { currentList: byN(extra.current).id } : {}),
       ...(extra.files ? { files: extra.files } : {}),
     },
   };
@@ -241,6 +261,9 @@ function xFromList(n, status, extra = {}, shootConfirmed = status === "confirmed
 const file = (id, kind, name, url) => ({ id, kind, name, url });
 
 const X = [
+  // past jobs (Done)
+  ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => xFromList(n, "confirmed")),
+  xFromList(24, "softlock"),
   xFromList(13, "confirmed", {
     notes: "Client: L'Oréal VN. Agency wants daily selects by 21:00.",
     events: [
@@ -264,7 +287,7 @@ const X = [
     ev("x14b", "scouting", "2026-10-06", { end: "2026-10-07", location: "Q.1 / Thủ Thiêm", note: "Two-day scout, need drone permit" }),
     ev("x14c", "prelight", "2026-10-08", { location: "Vietcombank Tower – Q.1" }),
   ] }),
-  xFromList(15, "confirmed", { events: [
+  xFromList(15, "confirmed", { versions: [[15, "First pass"], [28, "After tech recce: + crane, jib"]], events: [
     ev("x15a", "kickoff", "2026-10-02", { time: "14:30", endTime: "16:00", mode: "online", link: MEET, confirmed: true, note: "Overlaps Vietcombank's kick-off → clash" }),
     ev("x15b", "recce", "2026-10-06", { location: MAPS, confirmed: true }),
     ev("x15c", "prelight", "2026-10-08", { location: "Bùi Viện", confirmed: true }),
@@ -273,6 +296,7 @@ const X = [
   xFromList(16, "softlock", { events: [ev("x16a", "rehearsal", "2026-10-14", { time: "16:00", endTime: "18:00", location: "Sân vận động Thống Nhất" })] }),
   xFromList(17, "confirmed", {
     notes: "Artist team handles wardrobe. We handle all camera + lighting.",
+    versions: [[17, "Treatment budget"], [31, "Leaner, 1 camera"], [32, "Label wants 2 more cams"], [33, "+ FX6 for BTS"], [34, "Final, sent to Cinerent"]],
     events: [
       ev("x17a", "travel", "2026-10-20", { location: "SGN → DLI flight VN1234 07:15", confirmed: true }),
       ev("x17b", "recce", "2026-10-20", { time: "14:00", location: "Langbiang", confirmed: true }),
@@ -282,6 +306,8 @@ const X = [
     files: [file("g1", "treatment", "MV treatment", "https://drive.google.com/file/d/test-mv"), file("g2", "recce", "Langbiang recce video", "https://drive.google.com/file/d/test-recce-video")],
   }),
   xFromList(18, "confirmed", {
+    versions: [[18, "Full wishlist"], [29, "Budget cut"], [30, "Middle ground"]],
+    current: 29,
     events: [
       ev("x18a", "kickoff", "2026-10-13", { time: "09:00", endTime: "12:00", location: "Ogilvy office – Q.1", confirmed: true }),
       ev("x18b", "scouting", "2026-10-19", { end: "2026-10-21", location: "Hội An", note: "Overlaps the Đen Vâu shoot days (not a clash: scouting)" }),

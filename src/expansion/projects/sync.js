@@ -1,9 +1,12 @@
-// Each equipment list (a row in BOXGO's `projects` table) belongs to the
-// Project with the same id. They share the job's name, tag, houses,
-// Producer, Gaffer and shoot days, kept in step both ways:
-//   - editing a Project pushes those into its list (equipmentPatch), and
+// A Project has up to MAX_VERSIONS equipment lists (rows in BOXGO's
+// `projects` table): its versions V1, V2… (`project.lists`, see linksOf).
+// A list belongs to one Project at most; a list in none is a draft ("No
+// project"). Every version shares the job's name, tag, houses, Producer,
+// Gaffer and shoot days, kept in step both ways:
+//   - editing a Project pushes those into its lists (equipmentPatch), and
 //   - editing a list in the equipment list composer (v1.0 screens: Edit
-//     project, + add day…) pulls them into its Project (projectWithList).
+//     project, + add day…) pulls them into its Project (projectWithList),
+//     and from there into its other versions.
 // These functions are the only bridge between the two.
 
 import { relabelDays, uid } from "../../lib/utils.js";
@@ -102,8 +105,8 @@ function placeOf(event, day) {
   return event.mode === "online" ? {} : { location: "" };
 }
 
-// The Project updated with what its equipment list now says, or null when
-// they already agree. Each list day is the Shooting event with the same id:
+// The Project updated with what one of its equipment lists now says, or
+// null when they already agree. Each list day is the Shooting event with the same id:
 // its date, location and type of shooting are copied over. New days become
 // new Shooting events (tentative until confirmed); events whose day was
 // removed go.
@@ -142,8 +145,8 @@ export function projectWithList(project, list, types) {
 
 const EMPTY = () => ({ name: "", tag: "", productionHouse: "", rentalHouse: "", notes: "", people: [], events: [], createdAt: Date.now() });
 
-// A Project made from an equipment list that doesn't have one yet (new
-// lists made in the equipment list composer), or from what the shared
+// A Project made from an equipment list (Create New's "A new project",
+// or a draft added to a new project), or from what the shared
 // Create New window returns (a Calendar project: its days become
 // tentative Shooting events).
 export function projectFromList(list, types) {
@@ -157,4 +160,63 @@ export function projectFromList(list, types) {
 export function listLike(id, project, types) {
   const f = equipmentFields(project, types, null);
   return { id, ...f, days: f.days || [], createdAt: project.createdAt || 0 };
+}
+
+// ---- Versions -----------------------------------------------------------
+
+export const MAX_VERSIONS = 5;
+
+// A Project's equipment lists: [{ id, v, note }] in the order they were
+// made. Projects from before versions (no `lists` field) have one list at
+// most: the one with the Project's own id, as V1. Links to lists that no
+// longer exist (deleted, or not loaded) are kept but not counted.
+export function linksOf(id, project, listIds) {
+  const links = Array.isArray(project.lists) ? project.lists : listIds.has(id) ? [{ id, v: 1, note: "" }] : [];
+  return links.filter((l) => listIds.has(l.id));
+}
+
+// The links as saved, with the legacy V1 written out.
+export function savedLinks(id, project, listIds) {
+  return Array.isArray(project.lists) ? project.lists : listIds.has(id) ? [{ id, v: 1, note: "" }] : [];
+}
+
+// The version shown in the equipment list composer's project list: the
+// one the owner made current, else the newest.
+export function currentLink(links, project) {
+  if (!links.length) return null;
+  return links.find((l) => l.id === project.currentList) || links.reduce((a, b) => (b.v > a.v ? b : a));
+}
+
+// list id -> { projectId, link } for every linked list (first Project wins
+// if a list were ever linked twice).
+export function ownersOf(projects, listIds) {
+  const owners = new Map();
+  for (const [pid, p] of Object.entries(projects)) {
+    for (const l of linksOf(pid, p, listIds)) if (!owners.has(l.id)) owners.set(l.id, { projectId: pid, link: l });
+  }
+  return owners;
+}
+
+// A list made to fit a Project it joins: the Project's name, tag, houses,
+// Producer, Gaffer and shoot days. When its days aren't the Project's
+// (another job's list), quantities move across day by day, in order; a
+// Project with more days gives the extra ones the first day's numbers on an
+// "all days same" list, nothing on a per-day one.
+export function fitList(list, project, types) {
+  const f = equipmentFields(project, types, list);
+  if (!f.days) return { ...list, ...f };
+  const oldDays = list.days || [];
+  const newIds = new Set(f.days.map((d) => d.id));
+  if (oldDays.length && oldDays.every((d) => newIds.has(d.id))) return { ...list, ...f };
+  const itemData = {};
+  for (const [cid, entry] of Object.entries(list.itemData || {})) {
+    const q = entry.quantities || {};
+    const quantities = {};
+    f.days.forEach((d, i) => {
+      const src = oldDays[i] ? q[oldDays[i].id] : !list.perDayQty && oldDays[0] ? q[oldDays[0].id] : undefined;
+      if (src != null) quantities[d.id] = src;
+    });
+    itemData[cid] = { ...entry, quantities };
+  }
+  return { ...list, ...f, itemData };
 }

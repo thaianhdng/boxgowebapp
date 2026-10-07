@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Plus, Trash2, Pencil, Search, Printer, Copy, MoreVertical,
+  Plus, Trash2, Pencil, Search, Printer, Copy, MoreVertical, FolderInput, FolderMinus,
 } from "lucide-react";
 import { formatShootDateRange } from "../lib/utils.js";
 
@@ -10,8 +10,12 @@ import { formatShootDateRange } from "../lib/utils.js";
 // `cancelledIds` (owner only): lists whose job is Cancelled get a faded
 // card and a "Cancelled" mark (only here, never in the preview or PDF).
 // `listOnly` (owner only): Delete removes just the equipment list — the
-// project stays in Calendar — so the wording says so.
-export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost, listOnly, cancelledIds }) {
+// project stays in Projects — so the wording says so.
+// `listMeta` (owner only; null until known): each list's project and
+// version ({ v, note, count }), shown under the name; lists in no project
+// get a "No project" mark. With it, the ⋮ menu offers Add to project… /
+// Remove from project (onAddToProject / onRemoveFromProject).
+export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit, onExport, onDuplicate, onDelete, onFilterAttr, onCreateNew, onCreateFromGhost, listOnly, cancelledIds, listMeta, onAddToProject, onRemoveFromProject }) {
   const [confirmId, setConfirmId] = useState(null);
   const [projSearch, setProjSearch] = useState("");
   const [menuId, setMenuId] = useState(null); // project whose ⋮ menu is open
@@ -140,6 +144,20 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               {cancelledIds?.has(p.id) && (
                 <span className="tag-box" style={{ marginLeft: 6, fontWeight: 800, letterSpacing: 0.5, color: "var(--danger)", verticalAlign: "middle", position: "relative", top: -1 }}>Cancelled</span>
               )}
+              {listMeta && !p.ghost && !listMeta[p.id] && (
+                <span className="tag-box" style={{ fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)", verticalAlign: "middle", position: "relative", top: -1 }} title="This list isn't in any project (a draft)">No project</span>
+              )}
+              {(() => {
+                const m = listMeta?.[p.id];
+                if (!m || (m.count < 2 && !m.note)) return null;
+                return (
+                  <div style={{ fontSize: 10.5, lineHeight: "14px", color: "var(--muted)", marginTop: 1, overflowWrap: "anywhere" }}>
+                    <b style={{ color: "var(--accent)" }}>V{m.v}</b>
+                    {m.note && <span> · {m.note}</span>}
+                    {m.count > 1 && <span style={{ color: "var(--muted2)" }}> · {m.count} lists</span>}
+                  </div>
+                );
+              })()}
             </div>
             {p.ghost ? (
               <span style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, fontWeight: 700, color: "var(--muted)", paddingTop: 2 }}>
@@ -162,6 +180,12 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                   <MenuItem icon={<Pencil size={13} />} label="Edit project" onClick={() => { setMenuId(null); onEdit(p); }} />
                   <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
                   <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
+                  {listMeta && !listMeta[p.id] && onAddToProject && (
+                    <MenuItem icon={<FolderInput size={13} />} label="Add to project…" onClick={() => { setMenuId(null); onAddToProject(p.id); }} />
+                  )}
+                  {listMeta?.[p.id] && onRemoveFromProject && (
+                    <MenuItem icon={<FolderMinus size={13} />} label="Remove from project" onClick={() => { setMenuId(null); onRemoveFromProject(p.id); }} />
+                  )}
                   <MenuItem icon={<Trash2 size={13} />} label={listOnly ? "Delete list" : "Delete"} danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
                 </div>
               )}
@@ -241,8 +265,10 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
           <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 340, padding: 22, border: "1px solid var(--border2)" }}>
             <div className="stencil" style={{ fontSize: 14, marginBottom: 10 }}>{listOnly ? "Delete Equipment List" : "Delete Project"}</div>
             <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
-              {listOnly
-                ? <>Delete the equipment list for "{target.name}"? The project, its schedule and people stay in Calendar.</>
+              {listOnly && listMeta?.[target.id]
+                ? listMeta[target.id].count > 1
+                  ? <>Delete V{listMeta[target.id].v} of "{target.name}"? The project and its other lists stay.</>
+                  : <>Delete the equipment list for "{target.name}"? The project, its schedule and files stay in Projects.</>
                 : <>Delete "{target.name}"? This can't be undone.</>}
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>

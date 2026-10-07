@@ -47,8 +47,9 @@ Start of each conversation, the owner should say which one it is:
    add-ons. The **Job** (project / shoot) is the centre of that app and
    holds everything about it: schedule, budget, script, treatment deck,
    scouting and recce photos/videos, files (Google Drive). The equipment
-   list is only one section of a Job, and a BOXGO project is the same
-   record as the Job (same id), not a separate thing. **The equipment list
+   list is only one section of a Job: a Job has up to 5 equipment lists
+   (its versions V1, V2…), and a list belongs to one Job at most, or to
+   none (a draft). **The equipment list
    composer keeps its v1.0 UI/UX exactly** (owner's call: compact, lots of
    info) — don't reshape it for the expansion; link to it instead. Shared
    Job info (name, tag, houses, Producer, Gaffer, shoot days) has one
@@ -115,8 +116,8 @@ Start of each conversation, the owner should say which one it is:
      The Project page: sticky jump bar (Calendar · Schedule · Equipment ·
      Files), status, info strip, calendar (open by default, folding
      remembered per device; this project's events in colour, other
-     projects' events greyed with their names), schedule, equipment list
-     and **Files** (`files/`:
+     projects' events greyed with their names), schedule, equipment lists
+     (versions) and **Files** (`files/`:
      `project.files = [{ kind: script|treatment|recce|other, name, url }]`,
      pasted links, open in a new tab; real Google Drive picking later).
      Project cards copy the equipment list's card layout and size
@@ -128,7 +129,7 @@ Start of each conversation, the owner should say which one it is:
      (only when it has files; tapping it opens the Project page at its
      Files, route `intent: "files"`), then the equipment list sheet, always in
      the bottom right corner — greyed when the job has no list; tapping a
-     white one opens the list (`app.openEquipmentList`).
+     white one opens its current version (`app.openEquipmentList`).
      The tag floats in the card's top right corner, not before the
      name (owner's call), so only the name's first line makes room for it.
      The top row is flowing text, not flex items; on the equipment
@@ -204,8 +205,34 @@ Start of each conversation, the owner should say which one it is:
      removed for now: a project's Producer / Gaffer (set in Create New /
      Edit) still live in `people` and show in the info strip. Every project keeps at least one
      shoot day; Calendar's Create New requires them; projects without
-     any show "⚠ No shoot dates" and sort first. New lists (Create New,
-     Duplicate) get a Project automatically. **One Create New / Edit
+     any show "⚠ No shoot dates" and sort first. **List versions**
+     (owner's call): a Project has 0–5 equipment lists, `project.lists =
+     [{ id, v, note }]` (V numbers never reused; `MAX_VERSIONS`), and
+     `currentList` (else the newest is current). A list is in one Project
+     at most; one in none is a draft ("No project"). Projects from before
+     versions have no `lists`: their list is the one with the Project's own
+     id, as V1 (`linksOf`, read lazily, written out on the first change).
+     Every version shares the Project's name, tag, houses, Producer,
+     Gaffer and shoot days (same day ids), only equipment, quantities and
+     the note differ; the sync part reads one changed list per Project per
+     pass (current first) and brings the others in line, and a list that
+     just joined is fitted to the Project (`fitList`: days by position),
+     never read into it. Lists don't get a Project automatically any
+     more: Create New and Duplicate (owner) first ask where the list goes
+     (`ListTarget`, `<Expansion part="target">`): Duplicate → this
+     project (next version, same day ids) / another project / no project;
+     Create New → a new project / an existing one (Create New prefilled)
+     / no project. Equipment cards' ⋮ menu (owner): Add to project… /
+     Remove from project. Equipment shows one card per Project, its
+     current version, with "V3 · note · 3 lists" when there are several
+     or a note, and drafts marked "No project"; inside a list the crumb
+     has a "V3 ▾" switch (owner). The Project page's equipment section
+     lists every version (note, Make current, Edit, Preview, Duplicate,
+     Remove, Delete, + New version); deleting a Project with lists asks
+     whether to delete them or keep them as drafts. The version is never
+     on the PDF or share page. Data the expansion reports to BOXGO:
+     `app.reportListMeta` (list id → project, v, note, count, current),
+     links through `app.registerLinks` (link / attach / unlink). **One Create New / Edit
      window for both modules:** BOXGO's `ProjectFormModal` (owner-only
      props: `prefill` = new from given values, `noList` = hide template,
      quantity mode, save as template, and require shoot-day dates), wrapped by `src/expansion/shared/

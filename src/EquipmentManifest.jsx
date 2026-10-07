@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, lazy, Suspense } from "react";
 import {
-  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, CalendarDays, ListFilter, Loader2, Check, Settings,
+  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, ChevronDown, CalendarDays, ListFilter, Loader2, Check, Settings,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient.js";
 import { AttributesManagerModal } from "./components/AttributesManagerModal.jsx";
@@ -93,6 +93,16 @@ export default function EquipmentManifest({ session }) {
   // Backup file also carries Projects / Calendar data.
   const xBackupRef = useRef(null);
   const xCancelledSet = useMemo(() => new Set(xCancelled), [xCancelled]);
+  // Owner: which project and version each equipment list is (from the
+  // expansion; null until known): { [listId]: { projectId, v, note, count,
+  // current, versions } }. Lists missing from it are in no project.
+  const [xListMeta, setXListMeta] = useState(null);
+  // Owner: the expansion's way to put lists in projects ({ link, attach,
+  // unlink }), and its "where does this list go?" window when open.
+  const xLinksRef = useRef(null);
+  const [xTarget, setXTarget] = useState(null);
+  // Owner: where the list being made in Create New goes (null: no project).
+  const [newListTarget, setNewListTarget] = useState(null);
   const [ghostDraft, setGhostDraft] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
@@ -178,6 +188,8 @@ export default function EquipmentManifest({ session }) {
   const noteRef = useRef(null);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || null;
+  // Owner: the open list's project and version (null: none, or not known).
+  const activeMeta = (isCatalogOwner && xListMeta?.[activeProjectId]) || null;
   const days = activeProject ? activeProject.days : [];
   const itemData = activeProject ? (activeProject.itemData || {}) : {};
   const customItems = activeProject ? (activeProject.customItems || []) : [];
@@ -635,12 +647,15 @@ export default function EquipmentManifest({ session }) {
     // A greyed "no list yet" card never doubles a project that has a list
     // (during a restore the expansion's report can lag a moment behind).
     const listIds = new Set(projects.map((p) => p.id));
-    const all = isCatalogOwner ? [...projects, ...xGhosts.filter((g) => !listIds.has(g.id))] : projects;
+    // Owner: one card per project, its current version; older versions
+    // open from the project's page or the version switch in the crumb.
+    const shownLists = isCatalogOwner && xListMeta ? projects.filter((p) => !xListMeta[p.id] || xListMeta[p.id].current) : projects;
+    const all = isCatalogOwner ? [...shownLists, ...xGhosts.filter((g) => !listIds.has(g.id))] : projects;
     const base = projectFilter
       ? all.filter((p) => (p[projectFilter.field] || "") === projectFilter.value)
       : all;
     return [...base].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }, [projects, projectFilter, isCatalogOwner, xGhosts]);
+  }, [projects, projectFilter, isCatalogOwner, xGhosts, xListMeta]);
 
   const recentProjectNames = useMemo(() => {
     const seen = new Set();
@@ -820,7 +835,9 @@ export default function EquipmentManifest({ session }) {
     if (activeDay === id) setActiveDay("all");
   }
 
-  function addProject(data) {
+  // `target` (owner only): the project the new list joins — { projectId },
+  // { newProject: true }, or null for none (see the expansion's link).
+  function addProject(data, target) {
     const collapsedDepts = {};
     const collapsedSubcats = {};
     Object.entries(departments).forEach(([d, subs]) => {
@@ -844,7 +861,7 @@ export default function EquipmentManifest({ session }) {
         if (c.subcategory) collapsedSubcats[`${c.department}::${c.subcategory}`] = false;
       });
     }
-    const newProject = {
+    let newProject = {
       id: data.id || newProjectId(),
       name: data.name,
       tag: (template && template.tag) || data.tag || "",
@@ -862,6 +879,7 @@ export default function EquipmentManifest({ session }) {
       pdfFont: pdfFontId,
       createdAt: Date.now(),
     };
+    if (isCatalogOwner && target && xLinksRef.current) newProject = xLinksRef.current.link(newProject, target) || newProject;
     setProjectsState((prev) => [...prev, newProject]);
     addProductionHouse(newProject.productionHouse);
     addRentalHouse(newProject.rentalHouse);
@@ -899,9 +917,17 @@ export default function EquipmentManifest({ session }) {
     setTemplates((prev) => prev.filter((t) => t.id !== id));
   }
 
-  function duplicateProject(id) {
+  // `target` (owner only): where the copy goes — its own project as the next
+  // version (same shoot days, so the days keep their ids), another project
+  // ({ projectId }), or null for none.
+  function duplicateProject(id, target) {
     const original = projects.find((p) => p.id === id);
-    if (!original) return;
+    if (!original) return null;
+    if (isCatalogOwner && target && xLinksRef.current && xListMeta?.[id]?.projectId === target.projectId) {
+      const copy = xLinksRef.current.link({ ...original, id: newProjectId(), createdAt: Date.now() }, target);
+      if (copy) setProjectsState((prev) => [...prev, copy]);
+      return copy;
+    }
     const dayIdMap = {};
     const newDays = (original.days || []).map((d) => {
       const newId = uid();
@@ -917,14 +943,19 @@ export default function EquipmentManifest({ session }) {
       });
       newItemData[catalogId] = { ...entry, quantities: newQuantities };
     });
-    const newProject = {
+    let newProject = {
       ...original,
       id: newProjectId(),
       days: newDays,
       itemData: newItemData,
       createdAt: Date.now(),
     };
+    if (isCatalogOwner && target && xLinksRef.current) {
+      newProject = xLinksRef.current.link(newProject, target);
+      if (!newProject) return null;
+    }
     setProjectsState((prev) => [...prev, newProject]);
+    return newProject;
   }
 
   function updateProject(id, patch) {
@@ -935,8 +966,8 @@ export default function EquipmentManifest({ session }) {
         if (patch.days) {
           const newDayIds = new Set(patch.days.map((d) => d.id));
           const prunedItemData = {};
-          Object.keys(p.itemData || {}).forEach((cid) => {
-            const entry = p.itemData[cid];
+          Object.keys(next.itemData || {}).forEach((cid) => {
+            const entry = next.itemData[cid];
             const q = {};
             Object.keys(entry.quantities || {}).forEach((dayId) => {
               if (newDayIds.has(dayId)) q[dayId] = entry.quantities[dayId];
@@ -1035,7 +1066,8 @@ export default function EquipmentManifest({ session }) {
       });
     }
     if (removed) {
-      showUndo(isCatalogOwner ? `Deleted the equipment list for "${removed.name}"` : `Deleted "${removed.name}"`, () => {
+      const m = isCatalogOwner && xListMeta?.[id];
+      showUndo(m && m.count > 1 ? `Deleted V${m.v} of "${removed.name}"` : isCatalogOwner ? `Deleted the equipment list for "${removed.name}"` : `Deleted "${removed.name}"`, () => {
         setProjectsState((prev) => {
           const next = [...prev];
           next.splice(Math.min(removedIndex, next.length), 0, removed);
@@ -1571,13 +1603,38 @@ export default function EquipmentManifest({ session }) {
     return () => window.removeEventListener("resize", pin);
   }, [view, activeProjectId, catalogCopyState, isCatalogOwner, uiZoom, loaded]);
 
-  // The owner's Calendar module (src/expansion/). The equipment list
-  // composer works exactly as in v1.0; each list is linked to a Project
-  // (same id) and the expansion keeps their shared details in step both
+  // The owner's Projects / Calendar modules (src/expansion/). The equipment
+  // list composer works exactly as in v1.0; a Project has up to 5 lists
+  // (versions) and the expansion keeps their shared details in step both
   // ways (<Expansion part="sync">). Null for everyone else.
   // Which of the owner's modules is showing: a Project page opened from
   // the Calendar stays under Calendar (its crumb leads back there).
   const xModule = xRoute.screen === "calendar" || xRoute.from === "calendar" ? "calendar" : "projects";
+  // Owner: "where does this list go?" (the expansion's window), then:
+  // "duplicate" copies list `id` there, "create" opens Create New for it
+  // (prefilled from an existing project), "attach" puts draft `id` in it.
+  function askListTarget(mode, id) {
+    setXTarget({
+      mode,
+      listId: id || null,
+      onClose: () => setXTarget(null),
+      onPick: (t) => {
+        setXTarget(null);
+        if (mode === "duplicate") {
+          const copy = duplicateProject(id, t);
+          if (copy) showUndo(t ? `Copied into "${copy.name}" as its newest list` : `Copied as a draft (no project)`, () => deleteProject(copy.id));
+        } else if (mode === "attach") {
+          xLinksRef.current?.attach(id, t);
+        } else if (t?.prefill) {
+          setGhostDraft(t.prefill);
+        } else {
+          setNewListTarget(t);
+          setEditingProjectId(null);
+          setShowProjectForm(true);
+        }
+      },
+    });
+  }
   function goX(route) {
     setXRoute({ ...route, t: Date.now() });
     setActiveProjectId(null);
@@ -1602,13 +1659,17 @@ export default function EquipmentManifest({ session }) {
     openEquipmentList: (id) => { openProject(id); window.scrollTo(0, 0); },
     previewEquipmentList: goToPreview,
     // `data` is what the Create New window returns (it includes the
-    // template choice and quantity mode).
-    createEquipmentList: (id, data) => { addProject({ ...data, id }); window.scrollTo(0, 0); },
+    // template choice and quantity mode): a new list (version) for Project `id`.
+    createEquipmentList: (id, data) => { addProject(data, { projectId: id }); window.scrollTo(0, 0); },
+    // A copy of a list: `target` as in duplicateProject.
+    duplicateEquipmentList: (listId, target) => duplicateProject(listId, target),
     updateEquipmentList: updateProject,
     deleteEquipmentList: deleteProject,
     addHouses: ({ productionHouse, rentalHouse }) => { addProductionHouse(productionHouse); addRentalHouse(rentalHouse); },
     reportGhosts: setXGhosts,
     registerBackup: (api) => { xBackupRef.current = api; },
+    registerLinks: (api) => { xLinksRef.current = api; },
+    reportListMeta: (meta) => setXListMeta(meta),
     reportCancelled: (ids) => setXCancelled((cur) => (cur.join() === ids.join() ? cur : ids)),
     // What the shared Create New / Edit window needs.
     recentProjectNames,
@@ -1881,12 +1942,12 @@ export default function EquipmentManifest({ session }) {
                     <span
                       className="stencil"
                       // The owner can tap the name to open this job's Project page.
-                      onClick={isCatalogOwner ? () => goX({ screen: "project", projectId: activeProjectId }) : undefined}
-                      title={isCatalogOwner ? "Open this project's page (status, schedule, files)" : undefined}
+                      onClick={activeMeta ? () => goX({ screen: "project", projectId: activeMeta.projectId }) : undefined}
+                      title={activeMeta ? "Open this project's page (status, schedule, files)" : undefined}
                       style={{
                         fontSize: 15, display: "flex", alignItems: "center", gap: 6,
                         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200,
-                        cursor: isCatalogOwner ? "pointer" : undefined,
+                        cursor: activeMeta ? "pointer" : undefined,
                       }}
                     >
                       {activeProject?.tag && (
@@ -1896,8 +1957,27 @@ export default function EquipmentManifest({ session }) {
                         {activeProject?.name || "Project"}
                       </span>
                       {isCatalogOwner && xCancelledSet.has(activeProjectId) && <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px" }}>Cancelled</span>}
-                      {isCatalogOwner && <CalendarDays size={13} style={{ flexShrink: 0, color: "var(--muted)" }} />}
+                      {activeMeta && <CalendarDays size={13} style={{ flexShrink: 0, color: "var(--muted)" }} />}
+                      {isCatalogOwner && xListMeta && !activeMeta && <span className="tag-box" style={{ flexShrink: 0, fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)" }} title="This list isn't in any project (a draft)">No project</span>}
                     </span>
+                    {activeMeta && activeMeta.count > 1 && (
+                      // Owner: switch between this project's lists (V1, V2…).
+                      // Shows just "V2 ▾"; tapping opens the full list (the
+                      // select lies invisibly over it).
+                      <span style={{ position: "relative", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 2, border: "1px solid var(--border2)", borderRadius: 3, padding: "2px 4px 2px 6px", fontSize: 12, fontWeight: 800, color: "var(--accent)" }}>
+                        V{activeMeta.v}<ChevronDown size={12} />
+                        <select
+                          value={activeProjectId}
+                          onChange={(e) => openProject(e.target.value)}
+                          title="This project's equipment lists"
+                          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer", padding: 0, fontSize: 16 }}
+                        >
+                          {activeMeta.versions.map((v) => (
+                            <option key={v.id} value={v.id}>V{v.v}{v.note ? ` · ${v.note}` : ""}</option>
+                          ))}
+                        </select>
+                      </span>
+                    )}
                   </>
                 )}
                 {view === "catalog" && (
@@ -2038,13 +2118,16 @@ export default function EquipmentManifest({ session }) {
                     onOpen={openProject}
                     onEdit={(p) => { setEditingProjectId(p.id); setShowProjectForm(true); }}
                     onExport={(p) => goToPreview(p.id)}
-                    onDuplicate={duplicateProject}
+                    onDuplicate={(id) => (isCatalogOwner && xLinksRef.current ? askListTarget("duplicate", id) : duplicateProject(id))}
                     onDelete={deleteProject}
                     onFilterAttr={(field, value) => setProjectFilter({ field, value })}
-                    onCreateNew={() => { setEditingProjectId(null); setShowProjectForm(true); }}
+                    onCreateNew={() => (isCatalogOwner && xLinksRef.current ? askListTarget("create") : (setEditingProjectId(null), setShowProjectForm(true)))}
                     onCreateFromGhost={setGhostDraft}
                     listOnly={isCatalogOwner}
                     cancelledIds={isCatalogOwner ? xCancelledSet : null}
+                    listMeta={isCatalogOwner ? xListMeta : null}
+                    onAddToProject={isCatalogOwner ? (id) => askListTarget("attach", id) : undefined}
+                    onRemoveFromProject={isCatalogOwner ? (id) => xLinksRef.current?.unlink(id) : undefined}
                   />
                 </>
               )}
@@ -2350,9 +2433,17 @@ export default function EquipmentManifest({ session }) {
         />
       )}
 
+      {isCatalogOwner && xTarget && (
+        <Suspense fallback={null}>
+          <Expansion part="target" app={expansionApp} request={xTarget} />
+        </Suspense>
+      )}
+
       {ghostDraft && (
         <ProjectFormModal
           prefill={ghostDraft}
+          heading="New equipment list"
+          saveLabel="Create list"
           productionHouses={productionHouses}
           rentalHouses={rentalHouses}
           recentProjectNames={recentProjectNames}
@@ -2361,13 +2452,15 @@ export default function EquipmentManifest({ session }) {
           templates={templates}
           onManageTags={() => setShowTagManager(true)}
           onClose={() => setGhostDraft(null)}
-          onSave={(data) => { addProject({ ...data, id: ghostDraft.id }); setGhostDraft(null); }}
+          onSave={(data) => { addProject(data, { projectId: ghostDraft.id }); setGhostDraft(null); }}
         />
       )}
 
       {showProjectForm && (
         <ProjectFormModal
           initial={projects.find((p) => p.id === editingProjectId)}
+          heading={!editingProjectId && isCatalogOwner && xLinksRef.current && !newListTarget ? "New draft list" : undefined}
+          saveLabel={!editingProjectId && isCatalogOwner && xLinksRef.current && !newListTarget ? "Create list" : undefined}
           productionHouses={productionHouses}
           rentalHouses={rentalHouses}
           recentProjectNames={recentProjectNames}
@@ -2376,12 +2469,13 @@ export default function EquipmentManifest({ session }) {
           templates={templates}
           onSaveAsTemplate={(name) => saveAsTemplate(projects.find((p) => p.id === editingProjectId), name)}
           onManageTags={() => setShowTagManager(true)}
-          onClose={() => { setShowProjectForm(false); setEditingProjectId(null); }}
+          onClose={() => { setShowProjectForm(false); setEditingProjectId(null); setNewListTarget(null); }}
           onSave={(data) => {
             if (editingProjectId) updateProject(editingProjectId, data);
-            else addProject(data);
+            else addProject(data, newListTarget);
             setShowProjectForm(false);
             setEditingProjectId(null);
+            setNewListTarget(null);
           }}
         />
       )}

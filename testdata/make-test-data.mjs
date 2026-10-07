@@ -1,5 +1,5 @@
 // Writes the test data files in this folder from src/lib/testData.js:
-//   boxgo-test-backup.json    27 test equipment lists + (owner only) their
+//   boxgo-test-backup.json    35 test equipment lists + (owner only) their
 //                             Projects / Calendar details and 4 Calendar-only
 //                             projects. Projects only, so it's safe to
 //                             restore into a real account.

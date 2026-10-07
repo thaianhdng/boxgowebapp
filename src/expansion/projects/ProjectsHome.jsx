@@ -195,7 +195,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
           types={types}
           today={today}
           onOpen={() => app.go({ screen: "project", projectId: id })}
-          onOpenList={() => app.openEquipmentList(id)}
+          onOpenList={() => { const list = actions.currentListOf(id); if (list) app.openEquipmentList(list.id); }}
           onOpenFiles={() => app.go({ screen: "project", projectId: id, intent: "files" })}
         />
       ))}
