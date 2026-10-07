@@ -116,17 +116,16 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             title={p.ghost ? "No equipment list yet — tap to create one" : undefined}
             onClick={() => (p.ghost ? onCreateFromGhost(p) : onOpen(p.id))}
           >
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
-            {/* One line of flowing text (not separate blocks), so a long name
-                carries on after the tag and wraps there, instead of dropping
-                below it; the tag sits centred on the first line. */}
-            <div style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: "18px" }}>
+            {/* Flowing text: the dates follow the name and a long name wraps;
+                the tag floats in the top right corner, so only the first
+                line makes room for it. */}
+            <div style={{ minWidth: 0, fontSize: 13, lineHeight: "18px", marginBottom: 3 }}>
               {p.tag && (
                 <span
                   className="tag-box"
                   onClick={(e) => attr(e, "tag", p.tag)}
                   title="Filter by this tag"
-                  style={{ fontWeight: 700, letterSpacing: 0.4, color: "var(--accent)", cursor: "pointer", marginRight: 7, verticalAlign: "middle", position: "relative", top: -1 }}
+                  style={{ float: "right", marginLeft: 8, marginTop: 2, fontWeight: 700, letterSpacing: 0.4, color: "var(--accent)", cursor: "pointer" }}
                 >
                   {p.tag}
                 </span>
@@ -161,39 +160,6 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                   </div>
                 );
               })()}
-            </div>
-            {p.ghost ? (
-              <span style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, fontWeight: 700, color: "var(--muted)", paddingTop: 2 }}>
-                <Plus size={12} /> List
-              </span>
-            ) : (
-            <div data-card-menu style={{ position: "relative", flexShrink: 0, margin: "-4px -8px 0 0" }} onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
-                title="More"
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6, display: "flex" }}
-              >
-                <MoreVertical size={16} />
-              </button>
-              {menuId === p.id && (
-                <div style={{
-                  position: "absolute", top: "100%", right: 0, zIndex: 30, minWidth: 150, padding: 4,
-                  background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
-                }}>
-                  <MenuItem icon={<Pencil size={13} />} label={listMeta && !listMeta[p.id] ? "Edit list" : "Edit project"} onClick={() => { setMenuId(null); onEdit(p); }} />
-                  <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
-                  <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
-                  {listMeta && !listMeta[p.id] && onAddToProject && (
-                    <MenuItem icon={<FolderInput size={13} />} label="Add to project…" onClick={() => { setMenuId(null); onAddToProject(p.id); }} />
-                  )}
-                  {listMeta?.[p.id] && onRemoveFromProject && (
-                    <MenuItem icon={<FolderMinus size={13} />} label="Remove from project" onClick={() => { setMenuId(null); onRemoveFromProject(p.id); }} />
-                  )}
-                  <MenuItem icon={<Trash2 size={13} />} label={listOnly ? "Delete list" : "Delete"} danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
-                </div>
-              )}
-            </div>
-            )}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 3, fontSize: 11, color: "var(--muted)" }}>
               {(p.productionHouse || p.producer) && (
@@ -248,11 +214,49 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 {p.note.replace(/\s*\n+\s*/g, " · ")}
               </div>
             )}
-            {emptyDays.length > 0 && emptyDays.length < (p.days || []).length && (
-              <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }} title="No items entered yet for these days">
-                ⚠ No items: {emptyDays.map((d) => d.label.replace("Day ", "D")).join(", ")}
+            {/* The card's foot: a warning about empty days at the left, the
+                ⋮ menu in the bottom right corner. */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: "auto", paddingTop: 4, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {emptyDays.length > 0 && emptyDays.length < (p.days || []).length && (
+                  <div style={{ fontSize: 10.5, color: "var(--accent)" }} title="No items entered yet for these days">
+                    ⚠ No items: {emptyDays.map((d) => d.label.replace("Day ", "D")).join(", ")}
+                  </div>
+                )}
               </div>
-            )}
+              {p.ghost ? (
+                <span style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, fontWeight: 700, color: "var(--muted)" }}>
+                  <Plus size={12} /> List
+                </span>
+              ) : (
+              <div data-card-menu style={{ position: "relative", flexShrink: 0, margin: "-6px -8px -8px 0" }} onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
+                  title="More"
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 6, display: "flex" }}
+                >
+                  <MoreVertical size={16} />
+                </button>
+                {menuId === p.id && (
+                  <div style={{
+                    position: "absolute", bottom: "100%", right: 0, zIndex: 30, minWidth: 150, padding: 4,
+                    background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
+                  }}>
+                    <MenuItem icon={<Pencil size={13} />} label={listMeta && !listMeta[p.id] ? "Edit list" : "Edit project"} onClick={() => { setMenuId(null); onEdit(p); }} />
+                    <MenuItem icon={<Printer size={13} />} label="Preview" onClick={() => { setMenuId(null); onExport(p); }} />
+                    <MenuItem icon={<Copy size={13} />} label="Duplicate" onClick={() => { setMenuId(null); onDuplicate(p.id); }} />
+                    {listMeta && !listMeta[p.id] && onAddToProject && (
+                      <MenuItem icon={<FolderInput size={13} />} label="Add to project…" onClick={() => { setMenuId(null); onAddToProject(p.id); }} />
+                    )}
+                    {listMeta?.[p.id] && onRemoveFromProject && (
+                      <MenuItem icon={<FolderMinus size={13} />} label="Remove from project" onClick={() => { setMenuId(null); onRemoveFromProject(p.id); }} />
+                    )}
+                    <MenuItem icon={<Trash2 size={13} />} label={listOnly ? "Delete list" : "Delete"} danger onClick={() => { setMenuId(null); setConfirmId(p.id); }} />
+                  </div>
+                )}
+              </div>
+              )}
+            </div>
           </div>
         );
       })}

@@ -9,7 +9,7 @@ import { MAX_VERSIONS, listLike } from "./sync.js";
 // Where an equipment list goes: this list's own project (as its next
 // version), another project, a new project, or no project (a draft).
 //   mode "duplicate": a copy of `listId` → this project / another / none
-//   mode "create":    a new list (Create New) → new project / existing / none
+//   mode "create":    a new list (Create New) → draft / new project / existing
 //   mode "attach":    a draft list joins → new project / existing
 // onPick gets { projectId } (an existing project; `prefill` too when
 // creating), { newProject: true }, or null for no project.
@@ -25,10 +25,10 @@ export function ListTarget({ mode, listId, projects, types, actions, onPick, onC
   const countOf = (pid) => actions.versionsOf(pid).length;
   const ownFull = ownProjectId && countOf(ownProjectId) >= MAX_VERSIONS;
   const choices = mode === "duplicate"
-    ? [ownProjectId && ["same", ownFull ? "This project" : `This project, as V${nextV(projects[ownProjectId], actions, ownProjectId)}`, ownFull ? `It has ${MAX_VERSIONS} lists, the most a project can have.` : ""], ["other", "Another project"], ["none", "No project (draft)"]]
+    ? [ownProjectId && ["same", ownFull ? "This project" : `This project, as V${nextV(projects[ownProjectId], actions, ownProjectId)}`, ownFull ? `It has ${MAX_VERSIONS} lists, the most a project can have.` : ""], ["other", "Another project"], ["none", "Draft list (no project)"]]
     : mode === "create"
-      ? [["new", "A new project"], ["other", "An existing project"], ["none", "No project (draft)"]]
-      : [["new", "A new project"], ["other", "An existing project"]];
+      ? [["none", "Draft list (no project)"], ["new", "Create new project"], ["other", "Add to existing project"]]
+      : [["new", "Create new project"], ["other", "Add to existing project"]];
   const usable = choices.filter(Boolean);
   const [choice, setChoice] = useState(usable.find((c) => !(c[0] === "same" && ownFull))[0]);
   const [pick, setPick] = useState(null);

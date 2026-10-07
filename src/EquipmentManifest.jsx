@@ -2184,14 +2184,15 @@ export default function EquipmentManifest({ session }) {
                     {listRow && (
                       // Owner: which of the project's lists this is (switch
                       // between versions; the box shows "V2 ▾", tapping opens
-                      // the full list) and this list's own note.
+                      // the full list; "V1" alone for a single list or a
+                      // draft) and this list's own note.
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                         {activeMeta || isDraft ? (
                           <span
                             title={isDraft ? "A draft list: on its own, in no project" : activeMeta.count > 1 ? "Switch to another of this project's lists" : "This project's only list"}
                             style={{ position: "relative", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 2, border: "1px solid var(--border2)", borderRadius: 3, padding: "6px 6px 6px 8px", fontSize: 12, fontWeight: 800, color: "var(--accent)" }}
                           >
-                            V{activeMeta ? activeMeta.v : 1}<span style={{ color: "var(--muted)", fontWeight: 600 }}>&nbsp;of {activeMeta ? activeMeta.count : 1}</span>{activeMeta?.count > 1 && <ChevronDown size={12} />}
+                            V{activeMeta ? activeMeta.v : 1}{activeMeta?.count > 1 && <ChevronDown size={12} />}
                             {activeMeta?.count > 1 && (
                               <select
                                 value={activeProjectId}

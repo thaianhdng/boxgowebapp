@@ -23,9 +23,14 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
   // Editing shows the project's real tag, even none ("—") or one since
   // removed from the tag list; a new project starts on the first tag.
   const [tag, setTag] = useState(initial ? initial.tag || "" : draft ? "" : (start && start.tag) || projectTags[0] || "");
-  const tagOptions = draft || (initial && !projectTags.includes(initial.tag || ""))
-    ? [...new Set([initial?.tag || "", "", ...projectTags])]
-    : projectTags;
+  // "—" (no tag), when offered, is always first; a tag since removed from
+  // the list follows it.
+  const cur = initial?.tag || "";
+  const tagOptions = [
+    ...(draft || (initial && !cur) ? [""] : []),
+    ...(cur && !projectTags.includes(cur) ? [cur] : []),
+    ...projectTags,
+  ];
   const [productionHouse, setProductionHouse] = useState(start?.productionHouse || "");
   const [producer, setProducer] = useState(start?.producer || "");
   const [rentalHouse, setRentalHouse] = useState(start?.rentalHouse || "");

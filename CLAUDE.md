@@ -132,9 +132,12 @@ Start of each conversation, the owner should say which one it is:
      white one opens its current version (`app.openEquipmentList`).
      The tag floats in the card's top right corner, not before the
      name (owner's call), so only the name's first line makes room for it.
-     The top row is flowing text, not flex items; on the equipment
-     list's cards (v1.0 for everyone) it is tag · name · dates, so a long
-     name continues after the tag and wraps there. The small boxed labels
+     The top row is flowing text, not flex items. The equipment list's
+     cards (everyone, owner's call: synced with the Projects cards) work
+     the same way: name · dates with the tag floating top right, and the
+     ⋮ menu (or a greyed card's "+ List") in a foot row at the bottom
+     right, with the "⚠ No items" warning at its left; the menu opens
+     upwards. The small boxed labels
      (tag, Cancelled) use the `.tag-box` class: `text-box: trim-both cap
      alphabetic` keeps the letters centred in the border in every app
      font. The Edit window shows a project's real tag ("—" when it has
@@ -218,7 +221,7 @@ Start of each conversation, the owner should say which one it is:
      optional ("Untitled list"), its tag starts as none ("—"), and its days
      may have no date (empty date fields read "Select date"). Inside a
      draft the info box is replaced by a hint and an "Add to project"
-     button, and the row under it reads "V1 of 1" with its list note,
+     button, and the row under it reads "V1" with its list note,
      which it keeps when it joins a project. Each
      list has its own **list note** (`list.listNote`, edited under the
      composer's info box and on the Project page; older notes on the link,
@@ -240,13 +243,15 @@ Start of each conversation, the owner should say which one it is:
      more: Create New and Duplicate (owner) first ask where the list goes
      (`ListTarget`, `<Expansion part="target">`): Duplicate → this
      project (next version, same day ids) / another project / no project;
-     Create New → a new project / an existing one (Create New prefilled)
-     / no project. Equipment cards' ⋮ menu (owner): Add to project… /
+     Create New → no project / a new project / an existing one (Create
+     New prefilled), offered in the order Draft list (no project) / Create
+     new project / Add to existing project; a "—" (no tag) option is
+     always first in the tag list. Equipment cards' ⋮ menu (owner): Add to project… /
      Remove from project. Equipment shows one card per Project, its
      current version, with "V3 · note · 3 lists" when there are several
      or a list note, and drafts marked "No project"; inside a list, under
-     the info box, a row with the version switch ("V2 of 3 ▾"; "V1 of
-     1" for a single list or a draft) and the list note (owner). Day
+     the info box, a row with the version switch ("V2 ▾"; just "V1" for a
+     single list or a draft) and the list note (owner). Day
      fields everywhere read "Shoot type…" and "Location and note". The composer's item
      search reads "Search items…" (everyone; every list uses the same
      master catalog). The Project page's equipment section lists every
