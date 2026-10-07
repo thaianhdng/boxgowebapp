@@ -119,13 +119,10 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
             <div style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: "18px" }}>
               {p.tag && (
                 <span
+                  className="tag-box"
                   onClick={(e) => attr(e, "tag", p.tag)}
                   title="Filter by this tag"
-                  style={{
-                    fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase",
-                    color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px",
-                    cursor: "pointer", marginRight: 7, display: "inline-block", verticalAlign: "middle", lineHeight: "11px", position: "relative", top: -1,
-                  }}
+                  style={{ fontWeight: 700, letterSpacing: 0.4, color: "var(--accent)", cursor: "pointer", marginRight: 7, verticalAlign: "middle", position: "relative", top: -1 }}
                 >
                   {p.tag}
                 </span>
@@ -141,7 +138,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", whiteSpace: "nowrap" }}>{formatShootDateRange(p.days)}</span>
               )}
               {cancelledIds?.has(p.id) && (
-                <span style={{ marginLeft: 6, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px", display: "inline-block", verticalAlign: "middle", lineHeight: "11px", position: "relative", top: -1 }}>Cancelled</span>
+                <span className="tag-box" style={{ marginLeft: 6, fontWeight: 800, letterSpacing: 0.5, color: "var(--danger)", verticalAlign: "middle", position: "relative", top: -1 }}>Cancelled</span>
               )}
             </div>
             {p.ghost ? (

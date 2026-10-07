@@ -39,9 +39,9 @@ function roleName(people, exact, loose) {
 const oneLine = { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 
 // Laid out like the equipment list's project cards (same size and lines):
-// tag · name · shoot dates, Production
-// House + Producer · Rental House + Gaffer, shoot locations, then the
-// next event, what the job has, and the notes.
+// name · shoot dates, Production House + Producer · Rental House + Gaffer,
+// shoot locations, then the next event, the notes, and a bottom row with
+// the tag (left) and what the job has (right).
 function ProjectCard({ project, status, hasList, types, today, onOpen }) {
   const next = status !== "cancelled" && nextEvent(project, today, types);
   const nextType = next && typeOf(types, next.typeId);
@@ -68,16 +68,11 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
         opacity: status === "cancelled" ? 0.6 : 1,
       }}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
-        {/* Flowing text, like the equipment list's cards: a long name carries
-            on after the tag and wraps there; the tag sits centred on line 1. */}
-        <div style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: "18px" }}>
-          {project.tag && (
-            <span style={{ fontWeight: 700, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 2, padding: "1px 4px", marginRight: 7, display: "inline-block", verticalAlign: "middle", lineHeight: "11px", position: "relative", top: -1 }}>{project.tag}</span>
-          )}
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", marginRight: 7, overflowWrap: "anywhere", textDecoration: status === "cancelled" ? "line-through" : "none" }}>{project.name || "Untitled"}</span>
-          {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", whiteSpace: "nowrap" }}>{range}</span>}
-        </div>
+      {/* Flowing text, like the equipment list's cards: the dates follow
+          the name and a long name wraps. The tag sits in the bottom row. */}
+      <div style={{ fontSize: 13, lineHeight: "18px", marginBottom: 3, minWidth: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", marginRight: 7, overflowWrap: "anywhere", textDecoration: status === "cancelled" ? "line-through" : "none" }}>{project.name || "Untitled"}</span>
+        {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", whiteSpace: "nowrap" }}>{range}</span>}
       </div>
       {(project.productionHouse || producer || project.rentalHouse || gaffer) && (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 5, rowGap: 3, fontSize: 11, color: "var(--muted)" }}>
@@ -88,18 +83,21 @@ function ProjectCard({ project, status, hasList, types, today, onOpen }) {
       {locs.length > 0 && <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 5 }}>{locs.join(" · ")}</div>}
       {!dates.length && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ No shoot dates</div>}
       {staleSoftLock(project, types, today) && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ Shoot dates have passed: confirm or cancel?</div>}
-      {(next || parts) && (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 5, fontSize: 10.5, minWidth: 0 }}>
-          {next && (
-            <span style={{ minWidth: 0, ...oneLine }}>
-              <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
-            </span>
-          )}
-          {parts && <span style={{ marginLeft: "auto", flexShrink: 0, color: "var(--muted2)" }}>{parts}</span>}
+      {next && (
+        <div style={{ fontSize: 10.5, marginTop: 5, ...oneLine }}>
+          <span style={{ color: "var(--muted)" }}>Next </span><b style={{ color: nextType.color }}>{nextType.name}</b> <span style={{ color: "var(--text)" }}>{wdm(next.start)}</span>
         </div>
       )}
       {project.notes && (
         <div title={project.notes} style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 2, ...oneLine }}>{project.notes.replace(/\s*\n+\s*/g, " · ")}</div>
+      )}
+      {(project.tag || parts) && (
+        // Bottom row, kept at the card's foot: the tag at the left, what the
+        // job has at the right.
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: "auto", paddingTop: 6, fontSize: 10.5, minWidth: 0 }}>
+          {project.tag && <span className="tag-box" style={{ fontWeight: 700, letterSpacing: 0.4, color: "var(--accent)", minWidth: 0, overflowWrap: "anywhere" }}>{project.tag}</span>}
+          {parts && <span style={{ marginLeft: "auto", flexShrink: 0, color: "var(--muted2)" }}>{parts}</span>}
+        </div>
       )}
     </div>
   );

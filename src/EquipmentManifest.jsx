@@ -1738,6 +1738,16 @@ export default function EquipmentManifest({ session }) {
         .stencil {
           text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800;
         }
+        /* The small boxed labels on project cards (tag, Cancelled). Trimmed
+           to the capital letters so they sit centred in the border whatever
+           the font; older browsers keep the plain box. */
+        .tag-box {
+          display: inline-block; font-size: 9px; line-height: 11px; padding: 1px 4px;
+          border: 1px solid currentColor; border-radius: 2px; text-transform: uppercase;
+        }
+        @supports (text-box: trim-both cap alphabetic) {
+          .tag-box { text-box: trim-both cap alphabetic; padding: 3px 4px; }
+        }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .spin { animation: spin 0.9s linear infinite; }
         .row:hover { background: var(--surface2); }
