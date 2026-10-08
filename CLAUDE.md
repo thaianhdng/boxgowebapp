@@ -359,14 +359,20 @@ Start of each conversation, the owner should say which one it is:
   zoom (pop-up menus position through `src/lib/fixedPos.js`).
 - **Motion** (owner only for now, the owner's "level 1": short motion that
   helps follow what changed; `src/lib/motion.js`, `src/components/Motion.jsx`).
-  `EquipmentManifest` puts the class `motion` on `<html>` for the owner;
-  without it nothing moves, and a device set to reduce motion gets none.
+  `EquipmentManifest` puts the class `motion` on `<html>` for the owner
+  (while rendering, so every part agrees from its first render); without
+  it nothing moves (and `<Fold>` / `<Presence>` add no wrapper, so the
+  page is exactly as before), and a device set to reduce motion gets none.
   CSS classes: `m-overlay` (pop-up windows fade / rise in), `m-pop`
   (menus pop in; + `m-up` for menus opening upwards), `m-toast` (undo
   bar) — all three also fade out when closing — and `m-card` (cards
   lift on hover, press in on tap). `<Fold open>` opens / closes a
   folding section smoothly (Projects groups and years, the Project
-  page's calendar, Settings → Preferences); `<Presence>` makes list rows
+  page's calendar, Settings → Preferences, and the composer's categories
+  and subcategories — those without motion when a search opens / closes
+  them, `still`; their sections are keyed per list so switching lists or
+  versions never plays it). Growing / shrinking only moves the part on
+  screen (`onScreen`), so a long category stays light. `<Presence>` makes list rows
   grow in when added and shrink away when removed (schedule, files,
   versions, Settings lists, the composer's custom items); rows already
   there don't move. A page change fades in everything under the header.

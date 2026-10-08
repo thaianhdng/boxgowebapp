@@ -5,7 +5,7 @@ import {
 import { Combobox } from "./Combobox.jsx";
 import { fixedScale } from "../lib/fixedPos.js";
 import { ManifestItemRow } from "./ManifestItemRow.jsx";
-import { Presence } from "./Motion.jsx";
+import { Fold, Presence } from "./Motion.jsx";
 
 
 export function ManifestDeptSection({
@@ -18,6 +18,11 @@ export function ManifestDeptSection({
   const flatItems = Object.keys(data)
     .filter((k) => k === "" || !definedSet.has(k))
     .flatMap((k) => data[k] || []);
+  // A search opens every category at once (and closing it folds them
+  // back): that happens without motion; a tap on a header animates.
+  const lastForce = useRef(forceExpand);
+  const searchChange = lastForce.current !== forceExpand;
+  useEffect(() => { lastForce.current = forceExpand; });
   const headerScrollRef = useRef(null);
   const bodyScrollRef = useRef(null);
   // The header row (Item / D1 / D2 / …) and the body rows below scroll
@@ -152,7 +157,7 @@ export function ManifestDeptSection({
           </div>
         )}
       </div>
-      {!collapsed && (
+      <Fold open={!collapsed} still={searchChange}>
         <div
           ref={bodyScrollRef}
           onScroll={syncScroll(bodyScrollRef, headerScrollRef)}
@@ -192,7 +197,7 @@ export function ManifestDeptSection({
                   {subCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   {sub}
                 </div>
-                {!subCollapsed && data[sub].map((c) => (
+                <Fold open={!subCollapsed} still={searchChange}>{data[sub].map((c) => (
                   <ManifestItemRow
                     key={c.id}
                     item={c}
@@ -203,14 +208,14 @@ export function ManifestDeptSection({
                     onNoteChange={(note) => onNoteChange(c.id, note)}
                     onNoteHiddenChange={(hidden) => onNoteHiddenChange(c.id, hidden)}
                     />
-                ))}
+                ))}</Fold>
               </div>
             );
           })}
 
           {customItems && (
             <div style={{ minWidth: "fit-content" }}>
-              <Presence>{customItems.map((c) => (
+              <Presence still={forceExpand || searchChange}>{customItems.map((c) => (
                 <ManifestItemRow
                   key={c.id}
                   item={c}
@@ -240,7 +245,7 @@ export function ManifestDeptSection({
             </div>
           )}
         </div>
-      )}
+      </Fold>
     </div>
   );
 }

@@ -12,9 +12,21 @@ export function motionOn() {
   return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
+// How much of an element's height is on screen or above it, in its own
+// CSS pixels (the app's size setting zooms the page, so convert).
+// Growing or shrinking only that much looks the same as the whole height,
+// and keeps a very long section (a big equipment category) light to move.
+function onScreen(el, h) {
+  const r = el.getBoundingClientRect();
+  const k = el.offsetHeight > 0 ? r.height / el.offsetHeight : 1;
+  const room = (window.innerHeight - r.top) / (k || 1);
+  return Math.max(0, Math.min(h, room + 40));
+}
+
 // Grow an element from nothing to its own height, fading in.
 export function growIn(el, ms = 220) {
-  const h = el.scrollHeight;
+  const h = onScreen(el, el.scrollHeight);
+  if (!h) return null; // below the screen: nothing to see
   el.style.overflow = "hidden";
   const a = el.animate(
     [{ height: "0px", opacity: 0 }, { height: `${h}px`, opacity: 1 }],
@@ -28,7 +40,8 @@ export function growIn(el, ms = 220) {
 
 // Shrink an element to nothing, fading out, then call `done`.
 export function shrinkOut(el, done, ms = 200) {
-  const h = el.offsetHeight;
+  const h = onScreen(el, el.offsetHeight);
+  if (!h) { done(); return null; }
   el.style.overflow = "hidden";
   const a = el.animate(
     [{ height: `${h}px`, opacity: 1 }, { height: "0px", opacity: 0 }],

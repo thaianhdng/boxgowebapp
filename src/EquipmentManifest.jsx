@@ -137,9 +137,11 @@ export default function EquipmentManifest({ session }) {
     return () => mql.removeEventListener("change", handler);
   }, []);
   const resolvedTheme = theme === "system" ? (systemPrefersDark ? "dark" : "light") : theme;
-  // Motion (src/lib/motion.js) is owner only for now.
+  // Motion (src/lib/motion.js) is owner only for now. The class is set
+  // while rendering, before the parts below render, so they all agree on
+  // whether motion is on from their first render.
+  if (typeof document !== "undefined") document.documentElement.classList.toggle("motion", isCatalogOwner);
   useLayoutEffect(() => {
-    document.documentElement.classList.toggle("motion", isCatalogOwner);
     if (isCatalogOwner) installExitMotion();
   }, [isCatalogOwner]);
   // Keep the page behind the app (seen on over-scroll) the same color as the
@@ -2308,7 +2310,9 @@ export default function EquipmentManifest({ session }) {
                       const isCustomEligible = dept === "Others" || dept === "Subrent";
                       return (
                         <ManifestDeptSection
-                          key={dept}
+                          // Per list, so switching lists (or versions) never
+                          // plays the folding motion of the previous one.
+                          key={`${activeProjectId}:${dept}`}
                           id={`mf-dept-${dept}`}
                           dept={dept}
                           color="#000000"

@@ -2,29 +2,34 @@ import { Children, isValidElement, useLayoutEffect, useReducer, useRef, useState
 import { growIn, motionOn, shrinkOut } from "../lib/motion.js";
 
 // A folding section's body. With motion on it opens and closes smoothly;
-// otherwise it just shows or hides.
-export function Fold({ open, children, style }) {
+// otherwise it just shows or hides, with no wrapper (as before). `still`:
+// this change happens without motion (e.g. a search opening everything).
+export function Fold({ open, still, children }) {
   const ref = useRef(null);
   const anim = useRef(null);
   const was = useRef(open);
   const [shown, setShown] = useState(open);
   if (open && !shown) setShown(true);
+  const on = motionOn();
   useLayoutEffect(() => {
     if (was.current === open) return;
     was.current = open;
     const el = ref.current;
     anim.current?.cancel();
-    if (!el || !motionOn()) { if (!open) setShown(false); return; }
+    anim.current = null;
+    if (!el || still || !motionOn()) { if (!open) setShown(false); return; }
     anim.current = open ? growIn(el) : shrinkOut(el, () => setShown(false));
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!on) return open ? children : null;
   if (!shown) return null;
-  return <div ref={ref} style={style}>{children}</div>;
+  return <div ref={ref}>{children}</div>;
 }
 
 // A list whose rows grow in when added and shrink away when removed (with
 // motion on; otherwise just the rows). Rows already there when the list
-// first shows don't move. `children`: keyed elements.
-export function Presence({ children }) {
+// first shows don't move. `children`: keyed elements. `still`: rows come
+// and go without motion this time (e.g. a search filtering them).
+export function Presence({ still, children }) {
   const items = Children.toArray(children).filter(isValidElement);
   const prev = useRef(null);
   const gone = useRef(new Set());
@@ -32,7 +37,7 @@ export function Presence({ children }) {
   const on = motionOn();
 
   let list;
-  if (!prev.current || !on) {
+  if (!prev.current || !on || still) {
     list = items.map((el) => ({ key: el.key, el }));
   } else {
     const keys = new Set(items.map((el) => el.key));
@@ -69,7 +74,7 @@ function Row({ isNew, leaving, onGone, children }) {
   useLayoutEffect(() => {
     if (!leaving || !ref.current) return;
     const a = shrinkOut(ref.current, onGone);
-    return () => a.cancel();
+    return () => a?.cancel();
   }, [leaving]); // eslint-disable-line react-hooks/exhaustive-deps
   return <div ref={ref}>{children}</div>;
 }
