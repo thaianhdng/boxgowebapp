@@ -13,7 +13,7 @@ import { DbSwitch } from "./components/DbSwitch.jsx";
 import { TestBadge } from "./components/TestBadge.jsx";
 import { TestDataCleaner } from "./components/TestDataCleaner.jsx";
 import { isOwner } from "./owner.js";
-import { MOTION_CSS, fadeIn, motionOn } from "./lib/motion.js";
+import { MOTION_CSS, fadeIn, installExitMotion, motionOn } from "./lib/motion.js";
 import { DepartmentManagerModal } from "./components/DepartmentManagerModal.jsx";
 import { ManifestDeptSection } from "./components/ManifestDeptSection.jsx";
 import { PreviewScreen } from "./components/PreviewScreen.jsx";
@@ -140,6 +140,7 @@ export default function EquipmentManifest({ session }) {
   // Motion (src/lib/motion.js) is owner only for now.
   useLayoutEffect(() => {
     document.documentElement.classList.toggle("motion", isCatalogOwner);
+    if (isCatalogOwner) installExitMotion();
   }, [isCatalogOwner]);
   // Keep the page behind the app (seen on over-scroll) the same color as the
   // app, and tell the browser that color for its own top bar — otherwise iOS

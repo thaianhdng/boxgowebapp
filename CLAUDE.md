@@ -361,7 +361,7 @@ Start of each conversation, the owner should say which one it is:
   helps follow what changed; `src/lib/motion.js`, `src/components/Motion.jsx`).
   `EquipmentManifest` puts the class `motion` on `<html>` for the owner;
   without it nothing moves, and a device set to reduce motion gets none.
-  CSS classes: `m-overlay` (pop-up windows fade / rise in), `m-pop` (+
+  CSS classes: `m-overlay` (pop-up windows fade / rise in, and out), `m-pop` (+
   `m-up` for menus opening upwards), `m-toast` (undo bar), `m-card`
   (cards lift on hover, press in on tap). `<Fold open>` opens / closes a
   folding section smoothly (Projects groups and years, the Project
@@ -369,7 +369,11 @@ Start of each conversation, the owner should say which one it is:
   grow in when added and shrink away when removed (schedule, files,
   versions, Settings lists, the composer's custom items); rows already
   there don't move. A page change fades in everything under the header.
-  Only opening is animated for pop-ups (closing is instant). Level 2
+  Closing pop-up windows and the undo bar fade out too
+  (`installExitMotion`: just before React removes an `m-overlay` /
+  `m-toast`, a copy — same scroll, typed values, inert, not tappable —
+  is faded out in its place; when another window opens at once, the copy
+  drops its dark backdrop). Menus still close at once. Level 2
   ideas (owner's list, not built): cards fading in one by one, an
   animated save tick, drag to reorder.
 
