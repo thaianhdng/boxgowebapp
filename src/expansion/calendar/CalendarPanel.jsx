@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { monthKey, todayStr, wdm } from "../shared/dates.js";
 import { typeOf } from "../schedule/eventTypes.js";
 import { occurrences } from "../schedule/events.js";
 import { EventRow } from "../schedule/EventRow.jsx";
 import { MonthGrid, MonthHeader, MonthKey, clashDates } from "./MonthGrid.jsx";
+import { Fold } from "../../components/Motion.jsx";
+import { fadeIn, motionOn } from "../../lib/motion.js";
 
 // Every event of every project on one calendar, coloured by event type,
 // Soft lock projects' faded, and clashes marked. Tap a day for its events, or
@@ -27,6 +29,19 @@ export function CalendarPanel({ app, projects, types, onAddEvent }) {
     if (last && last.date === o.date) last.items.push(o);
     else byDate.push({ date: o.date, items: [o] });
   }
+
+  const listOpen = !!(selDate || listMonth);
+  const list = <DayList selDate={selDate} byDate={byDate} clashes={clashes} types={types} app={app} />;
+  const lastList = useRef(list);
+  if (listOpen) lastList.current = list;
+  const listRef = useRef(null);
+  const listKey = `${selDate || ""}|${month}`;
+  const was = useRef({ listOpen, listKey });
+  useLayoutEffect(() => {
+    const prev = was.current;
+    was.current = { listOpen, listKey };
+    if (prev.listOpen && listOpen && prev.listKey !== listKey && listRef.current && motionOn()) fadeIn(listRef.current);
+  }, [listOpen, listKey]);
 
   return (
     <div>
@@ -57,7 +72,22 @@ export function CalendarPanel({ app, projects, types, onAddEvent }) {
           </button>
         )}
       </div>
-      {(selDate || listMonth) && byDate.length === 0 && (
+      {/* The list under the month opens / closes smoothly (motion), and
+          fades when it changes to another day or month. While it closes it
+          keeps what it showed (`lastList`). */}
+      <Fold open={listOpen}>
+      <div ref={listRef}>
+      {listOpen ? list : lastList.current}
+      </div>
+      </Fold>
+    </div>
+  );
+}
+
+function DayList({ selDate, byDate, clashes, types, app }) {
+  return (
+    <>
+      {byDate.length === 0 && (
         <div style={{ fontSize: 12.5, color: "var(--muted2)", padding: "4px 0 10px" }}>{selDate ? `Nothing on ${wdm(selDate)}.` : "Nothing scheduled this month."}</div>
       )}
       {byDate.map(({ date, items }) => (
@@ -81,6 +111,6 @@ export function CalendarPanel({ app, projects, types, onAddEvent }) {
           </div>
         </div>
       ))}
-    </div>
+    </>
   );
 }

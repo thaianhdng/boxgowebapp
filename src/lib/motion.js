@@ -138,6 +138,16 @@ export const MOTION_CSS = `
     html.motion .m-card:hover { translate: 0 -2px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22); }
     html.motion .m-card:active { translate: 0 0; }
   }
+  html.motion .m-save-busy > * { animation: m-pulse 1s ease-in-out infinite alternate; }
+  html.motion .m-save-busy > .spin { animation: spin 0.9s linear infinite, m-pulse 1s ease-in-out infinite alternate; }
+  html.motion .m-save-tick { animation: m-flash 1.4s ease-out; }
+  html.motion .m-save-tick path { stroke-dasharray: 24; animation: m-draw 380ms ${EASE}; }
+  html.motion .m-save-word { animation: m-fade 300ms ease-out; }
+  html.motion .m-save-err > svg { animation: m-shake 360ms ease-in-out; }
+  @keyframes m-pulse { from { opacity: 1; } to { opacity: 0.45; } }
+  @keyframes m-draw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+  @keyframes m-flash { from { color: var(--accent); } 60% { color: var(--accent); } }
+  @keyframes m-shake { 20%, 60% { translate: -2px 0; } 40%, 80% { translate: 2px 0; } }
   @keyframes m-fade { from { opacity: 0; } }
   @keyframes m-rise { from { opacity: 0; translate: 0 14px; scale: 0.98; } }
   @keyframes m-pop { from { opacity: 0; scale: 0.96; } }

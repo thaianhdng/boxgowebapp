@@ -3,6 +3,7 @@ import {
   Plus, Trash2, Pencil, ChevronDown, ChevronRight, GripVertical,
 } from "lucide-react";
 import { BreakableName } from "./BreakableName.jsx";
+import { Fold } from "./Motion.jsx";
 
 
 // `previewOff` (camera / lens categories only): the categories and
@@ -83,7 +84,7 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
         </span>
         {previewOff && tick(dept, deptOn, false, true)}
       </div>
-      {!collapsed && (
+      <Fold open={!collapsed}>
         <div style={{ background: "var(--surface)", borderRadius: "0 0 4px 4px", overflow: "hidden" }}>
           <div>
             {flatItems.map((c) => itemRow(c))}
@@ -122,7 +123,7 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
             </div>
           ))}
         </div>
-      )}
+      </Fold>
     </div>
   );
 }

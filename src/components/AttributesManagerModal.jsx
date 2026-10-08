@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   Trash2, FileSpreadsheet, X, ClipboardPaste, Sun, Moon, Monitor, ChevronDown, ChevronUp,
 } from "lucide-react";
@@ -6,6 +6,7 @@ import { EditableAttrSection } from "./EditableAttrSection.jsx";
 import { Logo } from "./Logo.jsx";
 import { ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "../constants.js";
 import { Fold } from "./Motion.jsx";
+import { fadeIn, motionOn } from "../lib/motion.js";
 
 
 // The selected Light/Dark/System button uses the accent, so picking a
@@ -43,6 +44,15 @@ export function AttributesManagerModal({
     ? [{ id: "general", label: "General" }, { id: "lists", label: "Preferences" }, { id: "data", label: "Data" }]
     : SETTINGS_TABS;
   const [tab, setTab] = useState(tabs[0].id);
+  // Motion (owner): the new tab's content fades in.
+  const tabBarRef = useRef(null);
+  const lastTab = useRef(tab);
+  useLayoutEffect(() => {
+    if (lastTab.current === tab) return;
+    lastTab.current = tab;
+    if (!motionOn()) return;
+    for (let n = tabBarRef.current?.nextElementSibling; n; n = n.nextElementSibling) fadeIn(n);
+  }, [tab]);
   const segmentTitle = (text) => <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>{text}</div>;
   const [openSection, setOpenSection] = useState(null);
   const fold = (id, title, body) => {
@@ -82,7 +92,7 @@ export function AttributesManagerModal({
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)" }}>
+        <div ref={tabBarRef} style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)" }}>
           {tabs.map((t) => (
             <button
               key={t.id}

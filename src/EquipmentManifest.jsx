@@ -2013,9 +2013,11 @@ export default function EquipmentManifest({ session }) {
               {/* Always hugs the right edge, even when it wraps onto its own line. */}
               <div ref={hdrActionsRef} className="hdr-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginLeft: "auto" }}>
                 <div style={{ fontSize: 11, color: shownSaveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
-                  {shownSaveState === "saving" && <><Loader2 size={12} className="spin" /><span className="save-label"> saving</span></>}
-                  {shownSaveState === "saved" && <><Check size={12} /><span className="save-label"> saved</span></>}
-                  {shownSaveState === "error" && <><X size={12} /> couldn't save<span className="save-label"> — check your connection</span></>}
+                  {/* m-save-*: motion (owner) — saving pulses, the tick draws
+                      itself in the accent colour, an error gives a small shake. */}
+                  {shownSaveState === "saving" && <span className="m-save-busy" style={{ display: "contents" }}><Loader2 size={12} className="spin" /><span className="save-label"> saving</span></span>}
+                  {shownSaveState === "saved" && <><Check size={12} className="m-save-tick" /><span className="save-label m-save-word"> saved</span></>}
+                  {shownSaveState === "error" && <span className="m-save-err" style={{ display: "contents" }}><X size={12} /> couldn't save<span className="save-label"> — check your connection</span></span>}
                 </div>
                 {view === "x" && xRoute.screen === "project" && (
                   <button className="btn btn-ghost" onClick={() => goX({ ...xRoute, intent: "edit" })} title="Edit project name, tag and houses">

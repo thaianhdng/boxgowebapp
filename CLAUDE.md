@@ -362,23 +362,28 @@ Start of each conversation, the owner should say which one it is:
   bar) — all three also fade out when closing — and `m-card` (cards
   lift on hover, press in on tap). `<Fold open>` opens / closes a
   folding section smoothly (Projects groups and years, the Project
-  page's calendar, Settings → Preferences, and the composer's categories
+  page's calendar, Settings → Preferences, the Master Catalog's
+  categories, the Calendar's list under the month — which keeps what it
+  showed while it closes and fades when it changes day / month — and the composer's categories
   and subcategories — those without motion when a search opens / closes
   them, `still`; their sections are keyed per list so switching lists or
   versions never plays it). Growing / shrinking only moves the part on
   screen (`onScreen`), so a long category stays light. `<Presence>` makes list rows
   grow in when added and shrink away when removed (schedule, files,
   versions, Settings lists, the composer's custom items); rows already
-  there don't move. A page change fades in everything under the header.
+  there don't move. A page change fades in everything under the header,
+  and a Settings tab change fades in the new tab. The save mark
+  (`m-save-busy` / `m-save-tick` / `m-save-err`): saving pulses, the
+  tick draws itself in the accent colour then fades back to grey, an
+  error gives a small shake.
   Closing pop-up windows, menus and the undo bar fade out too
   (`installExitMotion`: just before React removes an `m-overlay` /
   `m-toast` / `m-pop`, a copy — same scroll, typed values, inert, not
   tappable — is faded out in its place: windows and the undo bar at the
   end of `.app-root`, a menu right beside itself in its own parent so it
   stays put; when another window opens at once, the copy drops its dark
-  backdrop). Level 2
-  ideas (owner's list, not built): cards fading in one by one, an
-  animated save tick, drag to reorder.
+  backdrop). Level 2 ideas not built (owner's list): cards fading in
+  one by one (advised against: feels like waiting), drag to reorder.
 
 ## Testing
 
