@@ -6,6 +6,7 @@ import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
 import { sortEvents } from "../schedule/events.js";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { STATUSES, shootDates, staleSoftLock, statusInfo, statusOf } from "./status.js";
+import { Fold } from "../../components/Motion.jsx";
 
 function nextEvent(project, today, types) {
   return sortEvents(project.events, types).find((s) => s.start && (s.end || s.start) >= today);
@@ -91,6 +92,7 @@ function ProjectCard({ project, status, hasList, types, today, onOpen, onOpenLis
   );
   return (
     <div
+      className="m-card"
       onClick={onOpen}
       style={{
         position: "relative", minWidth: 0, border: "1px solid var(--border)", borderLeft: `3px solid ${statusInfo(status).color}`,
@@ -224,7 +226,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
             {closed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
             {y} <span style={{ color: "var(--muted2)", fontWeight: 600 }}>{l.length}</span>
           </button>
-          {!closed && cards(l)}
+          <Fold open={!closed}>{cards(l)}</Fold>
         </div>
       );
     });
@@ -275,7 +277,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
               <span style={{ width: 9, height: 9, borderRadius: 2, background: s.color }} />
               {s.name} <span style={{ color: "var(--muted)", fontWeight: 700 }}>{list.length}</span>
             </button>
-            {!closed && (s.id === "done" ? byYear(list) : cards(list))}
+            <Fold open={!closed}>{s.id === "done" ? byYear(list) : cards(list)}</Fold>
           </div>
         );
       })}

@@ -5,6 +5,7 @@ import {
 import { EditableAttrSection } from "./EditableAttrSection.jsx";
 import { Logo } from "./Logo.jsx";
 import { ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "../constants.js";
+import { Fold } from "./Motion.jsx";
 
 
 // The selected Light/Dark/System button uses the accent, so picking a
@@ -59,7 +60,7 @@ export function AttributesManagerModal({
           <span className="stencil" style={{ fontSize: 12 }}>{title}</span>
           {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
         </button>
-        {open && <div style={{ paddingBottom: 16 }}>{body}</div>}
+        <Fold open={open}><div style={{ paddingBottom: 16 }}>{body}</div></Fold>
       </div>
     );
   };
@@ -69,7 +70,7 @@ export function AttributesManagerModal({
     </div>
   );
   return (
-    <div className="no-print" style={{
+    <div className="no-print m-overlay" style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
       alignItems: "center", justifyContent: "center", zIndex: 60, padding: 16,
     }}>

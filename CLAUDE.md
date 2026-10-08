@@ -357,6 +357,21 @@ Start of each conversation, the owner should say which one it is:
   a 6px top strip so Safari's top bar isn't tinted by sticky headers
   (`index.html`, `.top-tint` / `.sticky-top`); per-device UI size via CSS
   zoom (pop-up menus position through `src/lib/fixedPos.js`).
+- **Motion** (owner only for now, the owner's "level 1": short motion that
+  helps follow what changed; `src/lib/motion.js`, `src/components/Motion.jsx`).
+  `EquipmentManifest` puts the class `motion` on `<html>` for the owner;
+  without it nothing moves, and a device set to reduce motion gets none.
+  CSS classes: `m-overlay` (pop-up windows fade / rise in), `m-pop` (+
+  `m-up` for menus opening upwards), `m-toast` (undo bar), `m-card`
+  (cards lift on hover, press in on tap). `<Fold open>` opens / closes a
+  folding section smoothly (Projects groups and years, the Project
+  page's calendar, Settings → Preferences); `<Presence>` makes list rows
+  grow in when added and shrink away when removed (schedule, files,
+  versions, Settings lists, the composer's custom items); rows already
+  there don't move. A page change fades in everything under the header.
+  Only opening is animated for pop-ups (closing is instant). Level 2
+  ideas (owner's list, not built): cards fading in one by one, an
+  animated save tick, drag to reorder.
 
 ## Testing
 

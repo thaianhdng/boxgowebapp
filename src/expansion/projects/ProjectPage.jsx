@@ -14,6 +14,7 @@ import { FilesSection } from "../files/FilesSection.jsx";
 import { ListTarget, nextV } from "./ListTarget.jsx";
 import { Modal } from "../shared/ui.jsx";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Fold } from "../../components/Motion.jsx";
 
 // Jump bar at the top of the page: each section of the job.
 const JUMPS = [["Calendar", "x-calendar"], ["Schedule", "x-schedule"], ["Equipment", "x-equipment"], ["Files", "x-files"]];
@@ -144,7 +145,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
           </button>
         }
       >
-        {calOpen && (<>
+        <Fold open={calOpen}>
         <MonthHeader month={month} onChange={(m) => { setMonth(m); setSelDate(null); }} />
         <MonthGrid month={month} occ={occ} types={types} focusProjectId={id} compact selected={selDate} onSelect={setSelDate} />
         <div style={{ marginTop: 6 }}>
@@ -176,7 +177,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
             })}
           </div>
         )}
-        </>)}
+        </Fold>
       </Section>
 
       <ScheduleSection

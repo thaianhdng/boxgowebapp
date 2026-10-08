@@ -90,7 +90,7 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
   }
 
   return (
-    <div className="no-print" style={{
+    <div className="no-print m-overlay" style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
       alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
     }}>

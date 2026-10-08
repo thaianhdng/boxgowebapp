@@ -5,6 +5,7 @@ import {
 import { Combobox } from "./Combobox.jsx";
 import { fixedScale } from "../lib/fixedPos.js";
 import { ManifestItemRow } from "./ManifestItemRow.jsx";
+import { Presence } from "./Motion.jsx";
 
 
 export function ManifestDeptSection({
@@ -63,6 +64,7 @@ export function ManifestDeptSection({
       {copyMenu && days[copyMenu.index] && (
         <div
           ref={copyMenuRef}
+          className="m-pop"
           style={{
             position: "fixed", top: copyMenu.top, left: copyMenu.left, transform: "translateX(-50%)", zIndex: 200,
             background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
@@ -208,7 +210,7 @@ export function ManifestDeptSection({
 
           {customItems && (
             <div style={{ minWidth: "fit-content" }}>
-              {customItems.map((c) => (
+              <Presence>{customItems.map((c) => (
                 <ManifestItemRow
                   key={c.id}
                   item={c}
@@ -220,7 +222,7 @@ export function ManifestDeptSection({
                   onNoteHiddenChange={(hidden) => onNoteHiddenChange(c.id, hidden)}
                   onDelete={() => onRemoveCustomItem(c.id)}
                 />
-              ))}
+              ))}</Presence>
               <div style={{ display: "flex", gap: 6, padding: "8px 14px", minWidth: "fit-content" }}>
                 <Combobox
                   value={newCustomName}

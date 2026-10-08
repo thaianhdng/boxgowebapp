@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 export function Modal({ title, onClose, children, footer, maxWidth = 440 }) {
   return (
     <div
-      className="no-print"
+      className="no-print m-overlay"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",

@@ -2,6 +2,7 @@ import { Copy, FileSpreadsheet, FolderMinus, Plus, SquarePen, Trash2 } from "luc
 import { Section, smallBtn } from "../shared/ui.jsx";
 import { formatShootDateRange, inCardPreview } from "../../lib/utils.js";
 import { MAX_VERSIONS } from "./sync.js";
+import { Presence } from "../../components/Motion.jsx";
 
 function usedModels(app, list, catalog, test) {
   const names = Object.entries(list.itemData || {})
@@ -52,7 +53,7 @@ export function EquipmentPanel({ app, versions, currentId, hasShootEvents, onCre
         {versions.length > 1 && <span style={{ color: "var(--muted2)" }}> · every list follows the project's shoot days</span>}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {ordered.map(({ id, v, note, list }) => {
+        <Presence>{ordered.map(({ id, v, note, list }) => {
           const current = id === currentId;
           const itemCount = Object.values(list.itemData || {}).filter((e) => Object.values(e.quantities || {}).some((q) => q > 0)).length;
           const bodies = usedModels(app, list, catalog, (c) => /camera/i.test(c.department));
@@ -93,7 +94,7 @@ export function EquipmentPanel({ app, versions, currentId, hasShootEvents, onCre
               </div>
             </div>
           );
-        })}
+        })}</Presence>
       </div>
     </Section>
   );

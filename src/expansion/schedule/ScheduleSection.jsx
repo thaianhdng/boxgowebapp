@@ -5,6 +5,7 @@ import { typeOf, shootTypeId } from "./eventTypes.js";
 import { sortEvents } from "./events.js";
 import { EventRow } from "./EventRow.jsx";
 import { EventModal, newEvent } from "./EventModal.jsx";
+import { Presence } from "../../components/Motion.jsx";
 
 // Shoot days are listed here but changed in the project's Edit window
 // (onEditShootDays). `tentative`: the project is a Soft lock, so its events
@@ -60,7 +61,7 @@ export function ScheduleSection({ events, types, request, onChange, onEditShootD
       {list.length === 0 ? (
         <div style={{ fontSize: 12, color: "var(--muted2)" }}>No events yet — tap + Add event.</div>
       ) : (
-        <div style={{ borderTop: "1px solid var(--border)" }}>{items}</div>
+        <div style={{ borderTop: "1px solid var(--border)" }}><Presence>{items}</Presence></div>
       )}
       {editing && (
         <EventModal

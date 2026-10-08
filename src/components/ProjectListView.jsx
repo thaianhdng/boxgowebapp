@@ -112,6 +112,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
         return (
           <div
             key={p.id}
+            className="m-card"
             style={{
               position: "relative", minWidth: 0, border: "1px solid var(--border)", borderLeft: "3px solid var(--accent)", borderRadius: 4, background: "var(--surface)", cursor: "pointer", padding: "8px 12px 12px", display: "flex", flexDirection: "column",
               ...(p.ghost ? { opacity: 0.45, borderStyle: "dashed", borderLeftColor: "var(--border2)", background: "transparent" } : {}),
@@ -248,7 +249,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                   <MoreVertical size={16} />
                 </button>
                 {menuId === p.id && (
-                  <div style={{
+                  <div className="m-pop m-up" style={{
                     position: "absolute", bottom: "100%", right: 0, zIndex: 30, minWidth: 150, padding: 4,
                     background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
                   }}>
@@ -275,7 +276,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
       const target = projects.find((p) => p.id === confirmId);
       if (!target) return null;
       return (
-        <div className="no-print" style={{
+        <div className="no-print m-overlay" style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
           alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
         }}>

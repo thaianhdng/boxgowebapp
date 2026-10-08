@@ -13,6 +13,7 @@ import { DbSwitch } from "./components/DbSwitch.jsx";
 import { TestBadge } from "./components/TestBadge.jsx";
 import { TestDataCleaner } from "./components/TestDataCleaner.jsx";
 import { isOwner } from "./owner.js";
+import { MOTION_CSS, fadeIn, motionOn } from "./lib/motion.js";
 import { DepartmentManagerModal } from "./components/DepartmentManagerModal.jsx";
 import { ManifestDeptSection } from "./components/ManifestDeptSection.jsx";
 import { PreviewScreen } from "./components/PreviewScreen.jsx";
@@ -136,6 +137,10 @@ export default function EquipmentManifest({ session }) {
     return () => mql.removeEventListener("change", handler);
   }, []);
   const resolvedTheme = theme === "system" ? (systemPrefersDark ? "dark" : "light") : theme;
+  // Motion (src/lib/motion.js) is owner only for now.
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle("motion", isCatalogOwner);
+  }, [isCatalogOwner]);
   // Keep the page behind the app (seen on over-scroll) the same color as the
   // app, and tell the browser that color for its own top bar — otherwise iOS
   // Safari tints the status bar from whatever is at the top of the screen,
@@ -1631,6 +1636,17 @@ export default function EquipmentManifest({ session }) {
   // Which of the owner's modules is showing: a Project page opened from
   // the Calendar stays under Calendar (its crumb leads back there).
   const xModule = xRoute.screen === "calendar" || xRoute.from === "calendar" ? "calendar" : "projects";
+
+  // Motion: a quick fade when the page changes (everything under the header).
+  const headerRef = useRef(null);
+  const pageKey = view === "x" ? `x:${xRoute.screen}:${xRoute.projectId || ""}` : `${view}:${view === "manifest" ? activeProjectId : ""}`;
+  const lastPage = useRef(pageKey);
+  useLayoutEffect(() => {
+    if (lastPage.current === pageKey) return;
+    lastPage.current = pageKey;
+    if (!motionOn()) return;
+    for (let n = headerRef.current?.nextElementSibling; n; n = n.nextElementSibling) fadeIn(n);
+  }, [pageKey]);
   // Owner: "where does this list go?" (the expansion's window), then:
   // "duplicate" copies list `id` there, "create" opens Create New for it
   // (prefilled from an existing project), "attach" puts draft `id` in it.
@@ -1876,12 +1892,13 @@ export default function EquipmentManifest({ session }) {
           .category-fab { display: flex !important; }
           .category-fab-menu { display: flex !important; }
         }
+        ${MOTION_CSS}
       `}</style>
 
       {view !== "preview" && (
         <>
           {/* Top bar */}
-          <header className="no-print" style={{
+          <header ref={headerRef} className="no-print" style={{
             padding: "12px 20px", borderBottom: "2px solid var(--border)",
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 10 }}>
@@ -2411,7 +2428,7 @@ export default function EquipmentManifest({ session }) {
               at the same height, regardless of what else is showing. */}
           {showCategoryMenu && (view === "catalog" || view === "manifest") && deptNames.length > 0 && (
             <div
-              className="category-fab-menu no-print"
+              className="category-fab-menu no-print m-pop m-up"
               style={{
                 position: "fixed", bottom: 20, right: 66, zIndex: 41,
                 width: 200, maxHeight: "50vh", overflowY: "auto",
@@ -2495,7 +2512,7 @@ export default function EquipmentManifest({ session }) {
       )}
 
       {pdfGenerating && (
-        <div className="no-print" style={{
+        <div className="no-print m-overlay" style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 600,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
@@ -2652,7 +2669,7 @@ export default function EquipmentManifest({ session }) {
       )}
 
       {(shareResult || shareError) && (
-        <div className="no-print" style={{
+        <div className="no-print m-overlay" style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
           alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
         }}>
@@ -2695,7 +2712,7 @@ export default function EquipmentManifest({ session }) {
       )}
 
       {undoState && (
-        <div className="no-print" style={{
+        <div className="no-print m-toast" style={{
           position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 90,
           background: "var(--text)", color: "var(--bg)", borderRadius: 6, padding: "10px 16px",
           display: "flex", alignItems: "center", gap: 14, boxShadow: "0 4px 14px rgba(0,0,0,0.25)",

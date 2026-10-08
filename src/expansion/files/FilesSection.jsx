@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import { FieldRow, Modal, Section, fieldInput, smallBtn } from "../shared/ui.jsx";
 import { uid } from "../../lib/utils.js";
+import { Presence } from "../../components/Motion.jsx";
 
 // A project's files (`project.files`): links to where they live (Google
 // Drive, Dropbox, Frame.io…) — script, treatment deck, scouting / recce
@@ -90,7 +91,7 @@ export function FilesSection({ files, onChange }) {
         <div style={{ fontSize: 12, color: "var(--muted2)" }}>No files yet — tap + Add file and paste a link (Google Drive, Dropbox…).</div>
       ) : (
         <div style={{ borderTop: "1px solid var(--border)" }}>
-          {groups.map(([k, items]) => items.map((f, i) => (
+          <Presence>{groups.map(([k, items]) => items.map((f, i) => (
             <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid var(--border)", minWidth: 0 }}>
               <span style={{ width: 92, flexShrink: 0, fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em", visibility: i === 0 ? "visible" : "hidden" }}>{kindName(k.id)}</span>
               <a href={f.url} target="_blank" rel="noreferrer" style={{ flex: 1, minWidth: 0, color: "var(--text)", textDecoration: "none", display: "flex", alignItems: "baseline", gap: 6 }}>
@@ -100,7 +101,7 @@ export function FilesSection({ files, onChange }) {
               </a>
               <button onClick={() => setEditing({ isNew: false, file: f })} aria-label="Edit file" title="Edit" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 2, display: "flex", flexShrink: 0 }}><Pencil size={13} /></button>
             </div>
-          )))}
+          )))}</Presence>
         </div>
       )}
       {editing && (
