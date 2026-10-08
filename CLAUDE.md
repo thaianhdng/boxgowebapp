@@ -361,9 +361,10 @@ Start of each conversation, the owner should say which one it is:
   helps follow what changed; `src/lib/motion.js`, `src/components/Motion.jsx`).
   `EquipmentManifest` puts the class `motion` on `<html>` for the owner;
   without it nothing moves, and a device set to reduce motion gets none.
-  CSS classes: `m-overlay` (pop-up windows fade / rise in, and out), `m-pop` (+
-  `m-up` for menus opening upwards), `m-toast` (undo bar); all three also fade out when closing, `m-card`
-  (cards lift on hover, press in on tap). `<Fold open>` opens / closes a
+  CSS classes: `m-overlay` (pop-up windows fade / rise in), `m-pop`
+  (menus pop in; + `m-up` for menus opening upwards), `m-toast` (undo
+  bar) — all three also fade out when closing — and `m-card` (cards
+  lift on hover, press in on tap). `<Fold open>` opens / closes a
   folding section smoothly (Projects groups and years, the Project
   page's calendar, Settings → Preferences); `<Presence>` makes list rows
   grow in when added and shrink away when removed (schedule, files,
