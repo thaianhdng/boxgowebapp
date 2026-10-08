@@ -43,10 +43,10 @@ export function fadeIn(el, ms = 180) {
   return el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease-out" });
 }
 
-// Closing pop-up windows (and the undo bar) fade out too. React removes
-// them at once, so just before one leaves the page a copy of it (same
-// scroll positions and typed values, not tappable) is put in its place
-// and faded out. Installed once, for the owner.
+// Closing pop-up windows, menus and the undo bar fade out too. React
+// removes them at once, so just before one leaves the page a copy of it
+// (same scroll positions and typed values, not tappable) is put in its
+// place and faded out. Installed once, for the owner.
 const EXITS = ".m-overlay, .m-toast";
 let exitsInstalled = false;
 export function installExitMotion() {
@@ -55,21 +55,23 @@ export function installExitMotion() {
   const removeChild = Node.prototype.removeChild;
   Node.prototype.removeChild = function (child) {
     if (child?.nodeType === 1 && motionOn()) {
-      try { leaveGhosts(child); } catch { /* never stand in the way of a removal */ }
+      try { leaveGhosts(child, this); } catch { /* never stand in the way of a removal */ }
     }
     return removeChild.call(this, child);
   };
 }
 
-function leaveGhosts(node) {
+function leaveGhosts(node, parent) {
   const host = document.querySelector(".app-root");
   if (!host || node.contains(host)) return;
+  // A menu that closes (not one going away with its whole page) fades
+  // right where it was, in its own parent, so it stays in place.
+  if (node.matches(".m-pop")) return ghost(node, parent, "menu");
   const els = node.matches(EXITS) ? [node] : [...node.querySelectorAll(EXITS)];
-  for (const el of els) ghost(el, host);
+  for (const el of els) ghost(el, host, el.classList.contains("m-toast") ? "toast" : "window");
 }
 
-function ghost(el, host) {
-  const toast = el.classList.contains("m-toast");
+function ghost(el, host, kind) {
   const g = el.cloneNode(true);
   const from = [el, ...el.querySelectorAll("*")];
   const to = [g, ...g.querySelectorAll("*")];
@@ -85,23 +87,27 @@ function ghost(el, host) {
     m.removeAttribute("id");
     m.removeAttribute("autofocus");
   });
-  g.classList.remove("m-overlay", "m-toast"); // no opening animation on the copy
+  if (kind === "menu") g.style.transformOrigin = getComputedStyle(el).transformOrigin;
+  g.classList.remove("m-overlay", "m-toast", "m-pop"); // no opening animation on the copy
   g.setAttribute("aria-hidden", "true");
   g.inert = true;
   g.style.pointerEvents = "none";
-  host.appendChild(g);
+  if (kind === "menu") host.insertBefore(g, el.nextSibling);
+  else host.appendChild(g);
   scrolls.forEach(([m, top, left]) => { m.scrollTop = top; m.scrollLeft = left; });
-  const opts = { duration: 170, easing: "ease-in", fill: "forwards" };
-  const a = toast
-    ? g.animate([{ opacity: 1 }, { opacity: 0, translate: "0 10px" }], opts)
-    : g.animate([{ opacity: 1 }, { opacity: 0 }], opts);
-  if (!toast && g.firstElementChild) {
+  const opts = { duration: kind === "menu" ? 130 : 170, easing: "ease-in", fill: "forwards" };
+  const a = kind === "menu"
+    ? g.animate([{ opacity: 1 }, { opacity: 0, scale: "0.96" }], opts)
+    : kind === "toast"
+      ? g.animate([{ opacity: 1 }, { opacity: 0, translate: "0 10px" }], opts)
+      : g.animate([{ opacity: 1 }, { opacity: 0 }], opts);
+  if (kind === "window" && g.firstElementChild) {
     g.firstElementChild.animate([{ opacity: 1 }, { opacity: 0, translate: "0 10px", scale: "0.98" }], opts);
   }
   a.onfinish = () => g.remove();
   // Another window opening straight away (e.g. one window leading to the
   // next): only the closing window fades, not a second dark backdrop.
-  if (!toast) requestAnimationFrame(() => { if (document.querySelector(".m-overlay")) g.style.background = "transparent"; });
+  if (kind === "window") requestAnimationFrame(() => { if (document.querySelector(".m-overlay")) g.style.background = "transparent"; });
 }
 
 // The CSS side (pop-up windows, menus, cards, the undo bar). Everything is

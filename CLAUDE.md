@@ -362,18 +362,20 @@ Start of each conversation, the owner should say which one it is:
   `EquipmentManifest` puts the class `motion` on `<html>` for the owner;
   without it nothing moves, and a device set to reduce motion gets none.
   CSS classes: `m-overlay` (pop-up windows fade / rise in, and out), `m-pop` (+
-  `m-up` for menus opening upwards), `m-toast` (undo bar), `m-card`
+  `m-up` for menus opening upwards), `m-toast` (undo bar); all three also fade out when closing, `m-card`
   (cards lift on hover, press in on tap). `<Fold open>` opens / closes a
   folding section smoothly (Projects groups and years, the Project
   page's calendar, Settings → Preferences); `<Presence>` makes list rows
   grow in when added and shrink away when removed (schedule, files,
   versions, Settings lists, the composer's custom items); rows already
   there don't move. A page change fades in everything under the header.
-  Closing pop-up windows and the undo bar fade out too
+  Closing pop-up windows, menus and the undo bar fade out too
   (`installExitMotion`: just before React removes an `m-overlay` /
-  `m-toast`, a copy — same scroll, typed values, inert, not tappable —
-  is faded out in its place; when another window opens at once, the copy
-  drops its dark backdrop). Menus still close at once. Level 2
+  `m-toast` / `m-pop`, a copy — same scroll, typed values, inert, not
+  tappable — is faded out in its place: windows and the undo bar at the
+  end of `.app-root`, a menu right beside itself in its own parent so it
+  stays put; when another window opens at once, the copy drops its dark
+  backdrop). Level 2
   ideas (owner's list, not built): cards fading in one by one, an
   animated save tick, drag to reorder.
 
