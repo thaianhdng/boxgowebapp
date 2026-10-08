@@ -172,8 +172,7 @@ Start of each conversation, the owner should say which one it is:
      (`<Expansion part="settings">`; also recolour and reorder — edited
      only here, not from the calendars). **Data** = Backup & Restore
      (owner's own backup note), Master Equipment Catalog, Equipment
-     Templates, Test Database (`testDatabase` prop: Live / Test switch +
-     Test data box). A clash (red dot) = two projects' shoots / prelights on one
+     Templates, Test data box (`testData` prop). A clash (red dot) = two projects' shoots / prelights on one
      day, or overlapping set times (`clashDates`); a full day box shows
      as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
      owner: its crumb root reads "Equipment Lists Manager" (others:
@@ -323,17 +322,12 @@ Start of each conversation, the owner should say which one it is:
   - SQL the owner has already run lives in `supabase/`. New SQL: add a
     numbered file there and give the owner the steps to run it in the
     Supabase SQL Editor.
-  - **Test database (owner only):** a second Supabase project with the same
-    tables (`supabase/test-project/000_test_setup.sql` = base tables
-    rebuilt from the code + 002, 005, 004; README there has the setup
-    steps). `src/lib/dbMode.js` holds its URL / anon key; the owner
-    switches Live / Test in Settings → Data (`DbSwitch`, saved
-    per device in localStorage `boxgo-db`, app reloads). The client picks
-    the database at load (`supabaseClient.js`); share pages always use
-    live. A teal TEST badge (`TestBadge`) shows in the header and on the
-    sign-in screen, which also gets "Back to live BOXGO" (so does the
-    load-error screen: free projects pause when unused). Any new SQL for
-    live must also be added to the test project's setup file.
+  - **No separate test database any more** (owner's call: the free plan's
+    second project slot is needed for their portfolio website). The
+    Live / Test switch (`dbMode.js`, `DbSwitch`, `TestBadge`) was removed
+    after commit `4ac5a63`; testing on the owner's account uses the Test data
+    box (Load / Remove test data) instead. `supabase/test-project/` is kept
+    only as a record of how it was set up, in case it comes back.
 - Each user has their **own** master catalog, cloned from
   `DEFAULT_CATALOG` / `DEFAULT_DEPARTMENTS` / `DEFAULT_BRANDS`
   (`src/constants.js`) on first sign-in. The owner updates those defaults

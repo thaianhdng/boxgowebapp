@@ -1,4 +1,11 @@
-# BOXGO test database (owner only)
+# BOXGO test database (owner only) — not in use
+
+> **Retired.** The owner needed the free plan's second Supabase project for
+> their portfolio website, so the app's Live / Test switch was removed and
+> the `boxgo-test` project deleted in Supabase (the code is in git history up to
+> commit `4ac5a63`). This folder is kept only as a record of the setup, in case
+> a test database comes back. Testing now uses Settings → Data → Test data.
+
 
 A second, separate Supabase project. In BOXGO, Settings → Data →
 Test Database switches the owner's device between **Live BOXGO** and **Test

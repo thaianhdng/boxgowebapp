@@ -28,7 +28,7 @@ export function AttributesManagerModal({
   includeUsernameInPdf, onSetIncludeUsernameInPdf, includeEmailInPdf, onSetIncludeEmailInPdf, includePhoneInPdf, onSetIncludePhoneInPdf,
   theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId, uiSize, onSetUiSize,
   onOpenCatalog, onExportBackup, onRestoreFileSelect, backupError, onClose, onSignOut,
-  librarySections, testDatabase, backupNote,
+  librarySections, testData, backupNote,
 }) {
   const restoreInputRef = useRef(null);
   // Owner layout (`librarySections` given), three tabs:
@@ -36,7 +36,7 @@ export function AttributesManagerModal({
   //   Preferences — tags, houses and the extra sections (e.g. Event
   //                 Types), each a fold-out, one open at a time
   //   Data        — Backup & Restore, Master Equipment Catalog, Equipment
-  //                 Templates, Test Database (`testDatabase`)
+  //                 Templates, Test data (`testData`)
   // Everyone else keeps the v1.0 tabs.
   const owner = !!librarySections;
   const tabs = owner
@@ -337,7 +337,7 @@ export function AttributesManagerModal({
             </div>
           </div>
 
-          {testDatabase}
+          {testData}
           </>
         )}
 

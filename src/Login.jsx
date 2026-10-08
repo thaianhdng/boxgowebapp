@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./lib/supabaseClient.js";
 import { Logo } from "./components/Logo.jsx";
-import { TestBadge } from "./components/TestBadge.jsx";
-import { dbMode, setDbMode } from "./lib/dbMode.js";
 
 const CONTACT_EMAIL = "thaianh.dng@gmail.com";
 const CONTACT_PHONE = "(+84)969609379";
@@ -57,7 +55,6 @@ export default function Login() {
           <Logo size={26} style={{ color: "#eee" }} />
           <span style={{ color: "#eee", fontSize: 18, fontWeight: 600 }}>BOXGO</span>
           <span style={{ color: "#888", fontSize: 10.5, letterSpacing: 0.3, textTransform: "uppercase" }}>Equipment List Composer</span>
-          {dbMode() === "test" && <TestBadge />}
         </div>
         <div style={{ color: "#aaa", fontSize: 12, lineHeight: 1.6, marginBottom: 8 }}>
           Build camera, lens, grip and lighting lists from your own gear catalog,
@@ -86,12 +83,6 @@ export default function Login() {
         <button type="submit" disabled={loading} style={buttonStyle}>
           {loading ? "Signing in…" : "Sign in"}
         </button>
-        {/* Only on the owner's device after switching to the test database. */}
-        {dbMode() === "test" && (
-          <button type="button" onClick={() => setDbMode("live")} style={{ ...buttonStyle, background: "transparent", color: "#eee", border: "1px solid #444" }}>
-            Back to live BOXGO
-          </button>
-        )}
         <div style={{ borderTop: "1px solid #333", marginTop: 6, paddingTop: 12, fontSize: 11.5, color: "#888", lineHeight: 1.6 }}>
           A personal project, available by invitation only. Need access? Contact{" "}
           <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "#FFB020" }}>{CONTACT_EMAIL}</a>

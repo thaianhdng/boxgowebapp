@@ -8,9 +8,6 @@ import { CatalogDeptSection } from "./components/CatalogDeptSection.jsx";
 import { CatalogItemFormModal } from "./components/CatalogItemFormModal.jsx";
 import { RestoreModal } from "./components/RestoreModal.jsx";
 import { Logo } from "./components/Logo.jsx";
-import { dbMode, setDbMode } from "./lib/dbMode.js";
-import { DbSwitch } from "./components/DbSwitch.jsx";
-import { TestBadge } from "./components/TestBadge.jsx";
 import { TestDataCleaner } from "./components/TestDataCleaner.jsx";
 import { isOwner } from "./owner.js";
 import { MOTION_CSS, fadeIn, installExitMotion, motionOn } from "./lib/motion.js";
@@ -1733,19 +1730,6 @@ export default function EquipmentManifest({ session }) {
         {loadError ? (
           <>
             <div>Couldn't load your data. Check your connection and try again.</div>
-            {dbMode() === "test" && (
-              // The owner's TEST database: a free project pauses after a
-              // week unused — restore it in Supabase, or go back to live.
-              <>
-                <div style={{ maxWidth: 340, color: "#2DD4BF" }}>This is the TEST database. If it hasn't been used for a while it may be paused: open supabase.com, pick the test project and press Restore.</div>
-                <button
-                  onClick={() => setDbMode("live")}
-                  style={{ padding: "8px 16px", background: "transparent", color: "#eee", border: "1px solid #444", borderRadius: 4, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }}
-                >
-                  Back to live BOXGO
-                </button>
-              </>
-            )}
             <button
               onClick={() => { setLoadError(false); setLoadAttempt((n) => n + 1); }}
               style={{ padding: "8px 16px", background: "#FFB020", color: "#111", border: "none", borderRadius: 4, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }}
@@ -1923,7 +1907,6 @@ export default function EquipmentManifest({ session }) {
                     BOXGO
                   </span>
                 )}
-                {dbMode() === "test" && <TestBadge />}
                 {isCatalogOwner ? (
                   // The owner's three modules, sharing one projects database: Projects and Calendar
                   // (src/expansion/), and the equipment list composer, which works exactly as v1.0.
@@ -2638,12 +2621,8 @@ export default function EquipmentManifest({ session }) {
           onOpenCatalog={() => { setShowTagManager(false); setView("catalog"); }}
           onExportBackup={exportFullBackup}
           onRestoreFileSelect={handleBackupFileSelect}
-          testDatabase={isCatalogOwner || dbMode() === "test" ? (
-            <div style={{ marginBottom: 22 }}>
-              <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Test Database</div>
-              <DbSwitch bare />
-              <TestDataCleaner count={testIds.length} onLoad={loadTestData} onRemove={removeTestData} />
-            </div>
+          testData={isCatalogOwner ? (
+            <TestDataCleaner count={testIds.length} onLoad={loadTestData} onRemove={removeTestData} />
           ) : null}
           librarySections={isCatalogOwner ? [{
             id: "eventTypes",
