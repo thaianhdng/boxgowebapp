@@ -2361,6 +2361,7 @@ export default function EquipmentManifest({ session }) {
                       onEdit={(c) => { setEditingCatalogId(c.id); setShowCatalogForm(true); }}
                       onDelete={deleteCatalogItem}
                       onReorderItem={reorderCatalogItem}
+                      sortable={isCatalogOwner}
                       onAddItem={(d, s) => { setLastCatalogDraft({ department: d, subcategory: s }); setEditingCatalogId(null); setShowCatalogForm(true); }}
                       previewOff={/camera|lens/i.test(dept) ? cardPreviewOffSet : null}
                       onTogglePreview={toggleCardPreview}
@@ -2725,6 +2726,7 @@ export default function EquipmentManifest({ session }) {
           onRenameSubcategory={renameSubcategory}
           onRemoveSubcategory={removeSubcategory}
           onReorderSubcategory={reorderSubcategory}
+          sortable={isCatalogOwner}
           onClose={() => setShowDeptManager(false)}
         />
       )}

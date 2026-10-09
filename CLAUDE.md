@@ -382,8 +382,21 @@ Start of each conversation, the owner should say which one it is:
   tappable — is faded out in its place: windows and the undo bar at the
   end of `.app-root`, a menu right beside itself in its own parent so it
   stays put; when another window opens at once, the copy drops its dark
-  backdrop). Level 2 ideas not built (owner's list): cards fading in
-  one by one (advised against: feels like waiting), drag to reorder.
+  backdrop). Level 2 idea not built (owner's list): cards fading in
+  one by one (advised against: feels like waiting).
+- **Drag to reorder** (owner only for now; `src/lib/sortable.js`,
+  `useSortable`, `sortable` prop): press a row's ⋮⋮ grip and move, with a
+  finger or a mouse (pointer events: the browser's own drag and drop
+  barely works on phones). The row lifts, the others slide aside, the page
+  or the window it's in scrolls by itself near the edge, and the row
+  settles into place on release (`onMove(from, to, ids)`, saved at once).
+  Only the grip starts a drag (`touch-action: none`), so swiping elsewhere
+  still scrolls. Used for Master Catalog items (inside their own
+  subcategory: `CatalogDeptSection`), and in Manage Categories for
+  categories (grip on the card; ▲ / ▼ kept, owner's call) and
+  subcategories (`DepartmentManagerModal`). Event types keep their
+  arrows (owner's call). Everyone else keeps the browser's drag and drop
+  and ▲ / ▼, exactly as before.
 
 ## Testing
 

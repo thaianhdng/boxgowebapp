@@ -4,12 +4,18 @@ import {
 } from "lucide-react";
 import { BreakableName } from "./BreakableName.jsx";
 import { Fold } from "./Motion.jsx";
+import { useSortable } from "../lib/sortable.js";
 
 
 // `previewOff` (camera / lens categories only): the categories and
 // subcategories left out of the project cards' camera and lens lines, with
 // an "In card preview" tick on the category bar and on each subcategory.
-export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onToggle, onEdit, onDelete, onReorderItem, onAddItem, previewOff, onTogglePreview }) {
+// `sortable` (owner only for now): items are reordered by pressing their
+// grip and moving, with a finger or a mouse (src/lib/sortable.js), inside
+// their own subcategory; everyone else keeps the browser's drag and drop.
+export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onToggle, onEdit, onDelete, onReorderItem, onAddItem, previewOff, onTogglePreview, sortable }) {
+  // An item moves before / after the one whose place it takes.
+  const sort = useSortable((from, to, ids) => onReorderItem(ids[from], ids[to]));
   const deptOn = previewOff ? !previewOff.has(dept) : false;
   const tick = (key, on, disabled, onAccent) => (
     <label
@@ -29,28 +35,34 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
   const [dragId, setDragId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
 
-  function itemRow(c) {
+  function itemRow(c, group) {
+    const dnd = sortable ? { ref: sort.row(c.id) } : {
+      draggable: true,
+      onDragStart: () => setDragId(c.id),
+      onDragOver: (e) => { e.preventDefault(); if (dragId && dragId !== c.id) setDragOverId(c.id); },
+      onDragLeave: () => setDragOverId((id) => (id === c.id ? null : id)),
+      onDrop: (e) => {
+        e.preventDefault();
+        if (dragId && dragId !== c.id) onReorderItem(dragId, c.id);
+        setDragId(null);
+        setDragOverId(null);
+      },
+      onDragEnd: () => { setDragId(null); setDragOverId(null); },
+    };
+    const grip = sortable
+      ? sort.grip(c.id, group.map((x) => x.id))
+      : { title: "Drag to reorder", style: { cursor: "grab" } };
     return (
       <div
         key={c.id}
-        draggable
-        onDragStart={() => setDragId(c.id)}
-        onDragOver={(e) => { e.preventDefault(); if (dragId && dragId !== c.id) setDragOverId(c.id); }}
-        onDragLeave={() => setDragOverId((id) => (id === c.id ? null : id))}
-        onDrop={(e) => {
-          e.preventDefault();
-          if (dragId && dragId !== c.id) onReorderItem(dragId, c.id);
-          setDragId(null);
-          setDragOverId(null);
-        }}
-        onDragEnd={() => { setDragId(null); setDragOverId(null); }}
+        {...dnd}
         className="row"
         style={{
           display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
           borderTop: dragOverId === c.id ? "2px solid var(--accent)" : "1px solid var(--border)", fontSize: 13.5,
         }}
       >
-        <span style={{ color: "var(--faint)", cursor: "grab", display: "flex", flexShrink: 0 }} title="Drag to reorder">
+        <span {...grip} style={{ ...grip.style, color: "var(--faint)", display: "flex", flexShrink: 0, ...(sortable ? { padding: "6px 8px", margin: "-6px -8px" } : {}) }}>
           <GripVertical size={13} />
         </span>
         <div style={{ flex: 1 }}>
@@ -87,7 +99,7 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
       <Fold open={!collapsed}>
         <div style={{ background: "var(--surface)", borderRadius: "0 0 4px 4px", overflow: "hidden" }}>
           <div>
-            {flatItems.map((c) => itemRow(c))}
+            {flatItems.map((c) => itemRow(c, flatItems))}
             <div style={{ padding: "8px 14px" }}>
               <button
                 onClick={() => onAddItem(dept, "")}
@@ -119,7 +131,7 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
                 </button>
                 </span>
               </div>
-              {(data[sub] || []).map((c) => itemRow(c))}
+              {(data[sub] || []).map((c) => itemRow(c, data[sub]))}
             </div>
           ))}
         </div>
