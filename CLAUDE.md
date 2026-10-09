@@ -27,6 +27,11 @@ owned by a Director of Photography with **no coding knowledge**.
   desktop when the layout differs). Send both with `SendUserFile`
   (`display: "render"`), captioned "Before" / "After". Say when a change
   has nothing to show (e.g. a data fix).
+  Keep the comparison work minimal (owner's call: it slows replies):
+  still screenshots only, the fewest that show the change (usually one
+  device; add desktop only when the layout differs there). No videos /
+  animated GIFs unless the owner asks; for motion changes, describe them
+  and send at most one frame-by-frame strip.
 - **Keep wording accurate** (owner's standing request): after a change,
   re-read the text it touches and anything that refers to it (hints,
   labels, confirm messages, tooltips, READMEs, these notes). Renamed
