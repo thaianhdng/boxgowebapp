@@ -4,7 +4,9 @@ import {
 } from "lucide-react";
 
 
-export function EditableAttrRow({ value, onRename, onRemove, uppercase, extraActions }) {
+// `noPencil`: no pencil button; tapping the name is the way to rename
+// (Manage Categories).
+export function EditableAttrRow({ value, onRename, onRemove, uppercase, extraActions, noPencil }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -42,9 +44,11 @@ export function EditableAttrRow({ value, onRename, onRemove, uppercase, extraAct
         </span>
       )}
       {extraActions}
-      <button onClick={() => setEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted2)" }} title="Rename">
-        <Pencil size={12} />
-      </button>
+      {!noPencil && (
+        <button onClick={() => setEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted2)" }} title="Rename">
+          <Pencil size={12} />
+        </button>
+      )}
       <button onClick={onRemove} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted2)" }} title="Remove">
         <Trash2 size={13} />
       </button>

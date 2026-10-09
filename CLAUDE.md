@@ -397,6 +397,9 @@ Start of each conversation, the owner should say which one it is:
   subcategories (`DepartmentManagerModal`). Event types keep their
   arrows (owner's call). Everyone else keeps the browser's drag and drop
   and ▲ / ▼, exactly as before.
+- **Manage Categories** (everyone): a category or subcategory is renamed by
+  tapping its name; there's no pencil there (`EditableAttrRow` `noPencil`,
+  owner's call — tags / houses lists in Settings keep theirs).
 
 ## Testing
 

@@ -62,6 +62,7 @@ export function DepartmentManagerModal({
             <EditableAttrRow
               value={dept}
               uppercase
+              noPencil
               onRename={(v) => onRenameDepartment(dept, v)}
               onRemove={() => onRemoveDepartment(dept)}
               extraActions={
@@ -131,6 +132,7 @@ export function DepartmentManagerModal({
                   <div style={{ flex: 1 }}>
                     <EditableAttrRow
                       value={sub}
+                      noPencil
                       onRename={(v) => onRenameSubcategory(dept, sub, v)}
                       onRemove={() => onRemoveSubcategory(dept, sub)}
                     />
@@ -162,7 +164,7 @@ export function DepartmentManagerModal({
           <button className="btn btn-primary" onClick={submitNewDept} disabled={!newDept.trim()}>Add</button>
         </div>
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 10 }}>
-          Renaming a department or subcategory updates every catalog item using it. Removing one just takes it off the list — existing items keep their saved value.
+          Tap a name to rename it: every catalog item using it updates. Removing a category or subcategory just takes it off the list — existing items keep their saved value.
         </div>
       </div>
     </div>
