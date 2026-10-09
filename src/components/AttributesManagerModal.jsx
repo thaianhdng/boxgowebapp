@@ -286,7 +286,7 @@ export function AttributesManagerModal({
           />
 
           <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 20 }}>
-            Click a name to rename it — this updates every project using it. Removing one just takes it off the list; projects already using it keep their saved value.
+            Tap a name to rename it — this updates every project using it. Removing one just takes it off the list; projects already using it keep their saved value.
           </div>
 
           <div style={{ marginBottom: 20 }}>

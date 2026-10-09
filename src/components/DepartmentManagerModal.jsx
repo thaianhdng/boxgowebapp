@@ -62,7 +62,6 @@ export function DepartmentManagerModal({
             <EditableAttrRow
               value={dept}
               uppercase
-              noPencil
               onRename={(v) => onRenameDepartment(dept, v)}
               onRemove={() => onRemoveDepartment(dept)}
               extraActions={
@@ -132,7 +131,6 @@ export function DepartmentManagerModal({
                   <div style={{ flex: 1 }}>
                     <EditableAttrRow
                       value={sub}
-                      noPencil
                       onRename={(v) => onRenameSubcategory(dept, sub, v)}
                       onRemove={() => onRemoveSubcategory(dept, sub)}
                     />

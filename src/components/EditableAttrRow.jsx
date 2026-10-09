@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  Trash2, Pencil,
+  Trash2,
 } from "lucide-react";
 
 
-// `noPencil`: no pencil button; tapping the name is the way to rename
-// (Manage Categories).
-export function EditableAttrRow({ value, onRename, onRemove, uppercase, extraActions, noPencil }) {
+// A name in a list (categories, subcategories, tags, houses): tap it to
+// rename it (no pencil button, owner's call), or remove it with the bin.
+export function EditableAttrRow({ value, onRename, onRemove, uppercase, extraActions }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -44,11 +44,6 @@ export function EditableAttrRow({ value, onRename, onRemove, uppercase, extraAct
         </span>
       )}
       {extraActions}
-      {!noPencil && (
-        <button onClick={() => setEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted2)" }} title="Rename">
-          <Pencil size={12} />
-        </button>
-      )}
       <button onClick={onRemove} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted2)" }} title="Remove">
         <Trash2 size={13} />
       </button>
