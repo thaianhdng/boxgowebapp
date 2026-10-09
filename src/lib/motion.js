@@ -1,8 +1,8 @@
 // Motion: short animations that help follow what changed (pop-ups,
-// folding sections, rows added / removed, page changes). Owner only for
-// now: EquipmentManifest puts the "motion" class on <html> for the owner,
-// and the CSS and helpers here do nothing without it. Off on a device set
-// to reduce motion (iPhone: Settings → Accessibility → Motion).
+// folding sections, rows added / removed, page changes), for everyone:
+// EquipmentManifest puts the "motion" class on <html>, and the CSS and
+// helpers here do nothing without it. Off on a device set to reduce motion
+// (iPhone: Settings → Accessibility → Motion).
 
 export const EASE = "cubic-bezier(0.2, 0, 0, 1)";
 

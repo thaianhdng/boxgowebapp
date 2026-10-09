@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { flushSync } from "react-dom";
 import { EASE, motionOn } from "./motion.js";
 
-// Drag to reorder (owner only for now): press the ⋮⋮ grip of a row and
+// Drag to reorder (everyone): press the ⋮⋮ grip of a row and
 // move. Works with a finger as well as a mouse (pointer events, not the
 // browser's own drag and drop, which phones barely support). The row lifts
 // and follows, the others slide aside, the page (or the window it sits in)

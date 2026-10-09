@@ -351,12 +351,13 @@ Start of each conversation, the owner should say which one it is:
   a 6px top strip so Safari's top bar isn't tinted by sticky headers
   (`index.html`, `.top-tint` / `.sticky-top`); per-device UI size via CSS
   zoom (pop-up menus position through `src/lib/fixedPos.js`).
-- **Motion** (owner only for now, the owner's "level 1": short motion that
-  helps follow what changed; `src/lib/motion.js`, `src/components/Motion.jsx`).
-  `EquipmentManifest` puts the class `motion` on `<html>` for the owner
-  (while rendering, so every part agrees from its first render); without
-  it nothing moves (and `<Fold>` / `<Presence>` add no wrapper, so the
-  page is exactly as before), and a device set to reduce motion gets none.
+- **Motion** (everyone since the owner's call; the owner's "level 1":
+  short motion that helps follow what changed; `src/lib/motion.js`,
+  `src/components/Motion.jsx`). `EquipmentManifest` puts the class
+  `motion` on `<html>` (while rendering, so every part agrees from its
+  first render); without it nothing moves (and `<Fold>` / `<Presence>`
+  add no wrapper), so removing that one line switches it all off. A
+  device set to reduce motion gets none. The share page has none.
   CSS classes: `m-overlay` (pop-up windows fade / rise in), `m-pop`
   (menus pop in; + `m-up` for menus opening upwards), `m-toast` (undo
   bar) — all three also fade out when closing — and `m-card` (cards
@@ -384,8 +385,8 @@ Start of each conversation, the owner should say which one it is:
   stays put; when another window opens at once, the copy drops its dark
   backdrop). Level 2 idea not built (owner's list): cards fading in
   one by one (advised against: feels like waiting).
-- **Drag to reorder** (owner only for now; `src/lib/sortable.js`,
-  `useSortable`, `sortable` prop): press a row's ⋮⋮ grip and move, with a
+- **Drag to reorder** (everyone since the owner's call; `src/lib/sortable.js`,
+  `useSortable`): press a row's ⋮⋮ grip and move, with a
   finger or a mouse (pointer events: the browser's own drag and drop
   barely works on phones). The row lifts, the others slide aside, the page
   or the window it's in scrolls by itself near the edge, and the row
@@ -395,8 +396,7 @@ Start of each conversation, the owner should say which one it is:
   subcategory: `CatalogDeptSection`), and in Manage Categories for
   categories (grip on the card; ▲ / ▼ kept, owner's call) and
   subcategories (`DepartmentManagerModal`). Event types keep their
-  arrows (owner's call). Everyone else keeps the browser's drag and drop
-  and ▲ / ▼, exactly as before.
+  arrows (owner's call). The browser's own drag and drop was removed.
 - **Renaming by tapping** (everyone, owner's call): categories and
   subcategories (Manage Categories), tags and houses (Settings) are renamed
   by tapping the name; `EditableAttrRow` has no pencil button, and each

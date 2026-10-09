@@ -134,13 +134,12 @@ export default function EquipmentManifest({ session }) {
     return () => mql.removeEventListener("change", handler);
   }, []);
   const resolvedTheme = theme === "system" ? (systemPrefersDark ? "dark" : "light") : theme;
-  // Motion (src/lib/motion.js) is owner only for now. The class is set
-  // while rendering, before the parts below render, so they all agree on
-  // whether motion is on from their first render.
-  if (typeof document !== "undefined") document.documentElement.classList.toggle("motion", isCatalogOwner);
-  useLayoutEffect(() => {
-    if (isCatalogOwner) installExitMotion();
-  }, [isCatalogOwner]);
+  // Motion (src/lib/motion.js), for everyone. The class is set while
+  // rendering, before the parts below render, so they all agree on whether
+  // motion is on from their first render. (Taking it off switches every
+  // animation off at once.)
+  if (typeof document !== "undefined") document.documentElement.classList.add("motion");
+  useLayoutEffect(() => { installExitMotion(); }, []);
   // Keep the page behind the app (seen on over-scroll) the same color as the
   // app, and tell the browser that color for its own top bar — otherwise iOS
   // Safari tints the status bar from whatever is at the top of the screen,
@@ -2013,7 +2012,7 @@ export default function EquipmentManifest({ session }) {
               {/* Always hugs the right edge, even when it wraps onto its own line. */}
               <div ref={hdrActionsRef} className="hdr-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginLeft: "auto" }}>
                 <div style={{ fontSize: 11, color: shownSaveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
-                  {/* m-save-*: motion (owner) — saving pulses, the tick draws
+                  {/* m-save-*: motion — saving pulses, the tick draws
                       itself in the accent colour, an error gives a small shake. */}
                   {shownSaveState === "saving" && <span className="m-save-busy" style={{ display: "contents" }}><Loader2 size={12} className="spin" /><span className="save-label"> saving</span></span>}
                   {shownSaveState === "saved" && <><Check size={12} className="m-save-tick" /><span className="save-label m-save-word"> saved</span></>}
@@ -2361,7 +2360,6 @@ export default function EquipmentManifest({ session }) {
                       onEdit={(c) => { setEditingCatalogId(c.id); setShowCatalogForm(true); }}
                       onDelete={deleteCatalogItem}
                       onReorderItem={reorderCatalogItem}
-                      sortable={isCatalogOwner}
                       onAddItem={(d, s) => { setLastCatalogDraft({ department: d, subcategory: s }); setEditingCatalogId(null); setShowCatalogForm(true); }}
                       previewOff={/camera|lens/i.test(dept) ? cardPreviewOffSet : null}
                       onTogglePreview={toggleCardPreview}
@@ -2726,7 +2724,6 @@ export default function EquipmentManifest({ session }) {
           onRenameSubcategory={renameSubcategory}
           onRemoveSubcategory={removeSubcategory}
           onReorderSubcategory={reorderSubcategory}
-          sortable={isCatalogOwner}
           onClose={() => setShowDeptManager(false)}
         />
       )}

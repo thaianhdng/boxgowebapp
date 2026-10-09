@@ -6,13 +6,12 @@ import { EditableAttrRow } from "./EditableAttrRow.jsx";
 import { useSortable } from "../lib/sortable.js";
 
 
-// `sortable` (owner only for now): categories (by the grip on their
-// card, as well as ▲ / ▼) and subcategories are reordered by pressing the
-// grip and moving, with a finger or a mouse (src/lib/sortable.js);
-// everyone else keeps ▲ / ▼ and the browser's drag and drop.
+// Categories (by the grip on their card, as well as ▲ / ▼) and
+// subcategories are reordered by pressing the grip and moving, with a
+// finger or a mouse (src/lib/sortable.js).
 export function DepartmentManagerModal({
   departments, onAddDepartment, onRenameDepartment, onRemoveDepartment, onReorderDepartment,
-  onAddSubcategory, onRenameSubcategory, onRemoveSubcategory, onReorderSubcategory, onClose, sortable,
+  onAddSubcategory, onRenameSubcategory, onRemoveSubcategory, onReorderSubcategory, onClose,
 }) {
   const sortDepts = useSortable((from, to) => onReorderDepartment(from, to));
   // Subcategory ids are "<category>\u0000<subcategory>", so a move knows
@@ -23,8 +22,6 @@ export function DepartmentManagerModal({
   const deptNames = Object.keys(departments);
   const [newDept, setNewDept] = useState("");
   const [newSubFor, setNewSubFor] = useState({});
-  const [dragInfo, setDragInfo] = useState(null); // { dept, index }
-  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   function submitNewDept() {
     if (!newDept.trim()) return;
@@ -55,10 +52,10 @@ export function DepartmentManagerModal({
         )}
 
         {deptNames.map((dept, deptIdx) => (
-          <div key={dept} ref={sortable ? sortDepts.row(dept) : undefined} style={{ border: "1px solid var(--border)", borderRadius: 4, padding: 10, marginBottom: 10, ...(sortable ? { background: "var(--surface)" } : {}) }}>
-            <div style={sortable ? { display: "flex", alignItems: "center", gap: 4 } : { display: "contents" }}>
-            {sortable && (() => { const g = sortDepts.grip(dept, deptNames); return <span {...g} style={gripStyle(g)}><GripVertical size={14} /></span>; })()}
-            <div style={sortable ? { flex: 1, minWidth: 0 } : { display: "contents" }}>
+          <div key={dept} ref={sortDepts.row(dept)} style={{ border: "1px solid var(--border)", borderRadius: 4, padding: 10, marginBottom: 10, background: "var(--surface)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {(() => { const g = sortDepts.grip(dept, deptNames); return <span {...g} style={gripStyle(g)}><GripVertical size={14} /></span>; })()}
+            <div style={{ flex: 1, minWidth: 0 }}>
             <EditableAttrRow
               value={dept}
               uppercase
@@ -94,40 +91,19 @@ export function DepartmentManagerModal({
             </div>
             </div>
             <div style={{ marginTop: 6, paddingLeft: 4 }}>
-              {(departments[dept] || []).map((sub, idx) => (
+              {(departments[dept] || []).map((sub) => (
                 <div
                   key={sub}
-                  {...(sortable ? { ref: sortSubs.row(subId(dept, sub)) } : {
-                    draggable: true,
-                    onDragStart: () => setDragInfo({ dept, index: idx }),
-                    onDragOver: (e) => {
-                      e.preventDefault();
-                      if (dragInfo && dragInfo.dept === dept) setDragOverIndex(idx);
-                    },
-                    onDragLeave: () => setDragOverIndex((i) => (i === idx ? null : i)),
-                    onDrop: (e) => {
-                      e.preventDefault();
-                      if (dragInfo && dragInfo.dept === dept && dragInfo.index !== idx) {
-                        onReorderSubcategory(dept, dragInfo.index, idx);
-                      }
-                      setDragInfo(null);
-                      setDragOverIndex(null);
-                    },
-                    onDragEnd: () => { setDragInfo(null); setDragOverIndex(null); },
-                  })}
+                  ref={sortSubs.row(subId(dept, sub))}
                   style={{
                     display: "flex", alignItems: "center", gap: 4,
-                    borderTop: dragOverIndex === idx && dragInfo?.dept === dept ? "2px solid #000000" : "2px solid transparent",
+                    borderTop: "2px solid transparent",
                   }}
                 >
-                  {sortable ? (() => {
+                  {(() => {
                     const g = sortSubs.grip(subId(dept, sub), (departments[dept] || []).map((x) => subId(dept, x)));
                     return <span {...g} style={gripStyle(g)}><GripVertical size={13} /></span>;
-                  })() : (
-                    <span style={{ color: "var(--faint)", cursor: "grab", display: "flex", flexShrink: 0 }} title="Drag to reorder">
-                      <GripVertical size={13} />
-                    </span>
-                  )}
+                  })()}
                   <div style={{ flex: 1 }}>
                     <EditableAttrRow
                       value={sub}

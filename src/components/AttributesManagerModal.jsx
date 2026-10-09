@@ -44,7 +44,7 @@ export function AttributesManagerModal({
     ? [{ id: "general", label: "General" }, { id: "lists", label: "Preferences" }, { id: "data", label: "Data" }]
     : SETTINGS_TABS;
   const [tab, setTab] = useState(tabs[0].id);
-  // Motion (owner): the new tab's content fades in.
+  // Motion: the new tab's content fades in.
   const tabBarRef = useRef(null);
   const lastTab = useRef(tab);
   useLayoutEffect(() => {

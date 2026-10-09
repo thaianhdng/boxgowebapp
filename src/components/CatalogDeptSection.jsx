@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Plus, Trash2, Pencil, ChevronDown, ChevronRight, GripVertical,
 } from "lucide-react";
@@ -10,10 +9,9 @@ import { useSortable } from "../lib/sortable.js";
 // `previewOff` (camera / lens categories only): the categories and
 // subcategories left out of the project cards' camera and lens lines, with
 // an "In card preview" tick on the category bar and on each subcategory.
-// `sortable` (owner only for now): items are reordered by pressing their
-// grip and moving, with a finger or a mouse (src/lib/sortable.js), inside
-// their own subcategory; everyone else keeps the browser's drag and drop.
-export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onToggle, onEdit, onDelete, onReorderItem, onAddItem, previewOff, onTogglePreview, sortable }) {
+// Items are reordered by pressing their grip and moving, with a finger or a
+// mouse (src/lib/sortable.js), inside their own subcategory.
+export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onToggle, onEdit, onDelete, onReorderItem, onAddItem, previewOff, onTogglePreview }) {
   // An item moves before / after the one whose place it takes.
   const sort = useSortable((from, to, ids) => onReorderItem(ids[from], ids[to]));
   const deptOn = previewOff ? !previewOff.has(dept) : false;
@@ -32,37 +30,20 @@ export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onTo
   const flatItems = Object.keys(data)
     .filter((k) => k === "" || !definedSet.has(k))
     .flatMap((k) => data[k] || []);
-  const [dragId, setDragId] = useState(null);
-  const [dragOverId, setDragOverId] = useState(null);
 
   function itemRow(c, group) {
-    const dnd = sortable ? { ref: sort.row(c.id) } : {
-      draggable: true,
-      onDragStart: () => setDragId(c.id),
-      onDragOver: (e) => { e.preventDefault(); if (dragId && dragId !== c.id) setDragOverId(c.id); },
-      onDragLeave: () => setDragOverId((id) => (id === c.id ? null : id)),
-      onDrop: (e) => {
-        e.preventDefault();
-        if (dragId && dragId !== c.id) onReorderItem(dragId, c.id);
-        setDragId(null);
-        setDragOverId(null);
-      },
-      onDragEnd: () => { setDragId(null); setDragOverId(null); },
-    };
-    const grip = sortable
-      ? sort.grip(c.id, group.map((x) => x.id))
-      : { title: "Drag to reorder", style: { cursor: "grab" } };
+    const grip = sort.grip(c.id, group.map((x) => x.id));
     return (
       <div
         key={c.id}
-        {...dnd}
+        ref={sort.row(c.id)}
         className="row"
         style={{
           display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
-          borderTop: dragOverId === c.id ? "2px solid var(--accent)" : "1px solid var(--border)", fontSize: 13.5,
+          borderTop: "1px solid var(--border)", fontSize: 13.5,
         }}
       >
-        <span {...grip} style={{ ...grip.style, color: "var(--faint)", display: "flex", flexShrink: 0, ...(sortable ? { padding: "6px 8px", margin: "-6px -8px" } : {}) }}>
+        <span {...grip} style={{ ...grip.style, color: "var(--faint)", display: "flex", flexShrink: 0, padding: "6px 8px", margin: "-6px -8px" }}>
           <GripVertical size={13} />
         </span>
         <div style={{ flex: 1 }}>
