@@ -84,10 +84,9 @@ export function fmtDate(d) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export function tomorrowStr() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return fmtDate(d);
+// The default for any empty date field.
+export function todayStr() {
+  return fmtDate(new Date());
 }
 
 export function addOneDay(dateStr) {
@@ -282,4 +281,12 @@ function download(blob, filename, asGeneric) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// Whether a catalog item shows in the project cards' camera / lens lines:
+// `off` holds the categories ("dept") and subcategories ("dept::sub") the
+// user unticked in the Master Catalog.
+export function inCardPreview(c, off) {
+  if (!off || !off.size) return true;
+  return !off.has(c.department) && !off.has(`${c.department}::${c.subcategory || ""}`);
 }

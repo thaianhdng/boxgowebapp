@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, lazy, Suspense } from "react";
 import {
-  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, CalendarDays, ListFilter, Loader2, Check, Settings,
+  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, ChevronDown, ArrowRight, CalendarDays, ListFilter, Loader2, Check, Settings,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient.js";
 import { AttributesManagerModal } from "./components/AttributesManagerModal.jsx";
@@ -8,7 +8,9 @@ import { CatalogDeptSection } from "./components/CatalogDeptSection.jsx";
 import { CatalogItemFormModal } from "./components/CatalogItemFormModal.jsx";
 import { RestoreModal } from "./components/RestoreModal.jsx";
 import { Logo } from "./components/Logo.jsx";
+import { TestDataCleaner } from "./components/TestDataCleaner.jsx";
 import { isOwner } from "./owner.js";
+import { MOTION_CSS, fadeIn, installExitMotion, motionOn } from "./lib/motion.js";
 import { DepartmentManagerModal } from "./components/DepartmentManagerModal.jsx";
 import { ManifestDeptSection } from "./components/ManifestDeptSection.jsx";
 import { PreviewScreen } from "./components/PreviewScreen.jsx";
@@ -17,8 +19,9 @@ import { ProjectListView } from "./components/ProjectListView.jsx";
 import { SideItem } from "./components/SideItem.jsx";
 import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
+import { DEFAULT_PDF_FONT, pdfFontFor } from "./lib/font.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
-import { uid, newProjectId, relabelDays, tomorrowStr, addOneDay, cascadeDates, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
+import { uid, newProjectId, relabelDays, todayStr, addOneDay, cascadeDates, formatDM, formatDMY, fmtDate, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
 
 
 // Gives every day an explicit number for every item that has any. A day
@@ -52,7 +55,8 @@ function buildAppStatePayload(v) {
     settings: {
       userName: v.userName, userEmail: v.userEmail, userPhone: v.userPhone,
       includeUsernameInPdf: v.includeUsernameInPdf, includeEmailInPdf: v.includeEmailInPdf, includePhoneInPdf: v.includePhoneInPdf,
-      theme: v.theme, accentId: v.accentId, fontId: v.fontId,
+      theme: v.theme, accentId: v.accentId, fontId: v.fontId, pdfFontId: v.pdfFontId,
+      cardPreviewOff: v.cardPreviewOff || [],
       departmentOrder: Object.keys(v.departments),
     },
   };
@@ -73,7 +77,32 @@ export default function EquipmentManifest({ session }) {
   const [projects, setProjectsState] = useState([]);
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG);
-  const [view, setView] = useState("projects"); // "projects" | "manifest" | "catalog" | "preview"
+  // "x" is the owner's Calendar module (src/expansion/), their front door;
+  // everyone else starts on the project list.
+  const [view, setView] = useState(() => (isCatalogOwner ? "x" : "projects")); // "projects" | "manifest" | "catalog" | "preview" | "x"
+  const [xRoute, setXRoute] = useState({ screen: "projects" });
+  const [xSaveState, setXSaveState] = useState("idle");
+  // Owner only: Calendar projects with no equipment list yet, shown greyed
+  // in the project list; tapping one opens Create New prefilled from it.
+  const [xGhosts, setXGhosts] = useState([]);
+  // Owner: ids of equipment lists whose job is Cancelled (from the
+  // expansion). Only marks the project card and the crumb.
+  const [xCancelled, setXCancelled] = useState([]);
+  // Owner: the expansion's backup hooks ({ export, restore }), so the
+  // Backup file also carries Projects / Calendar data.
+  const xBackupRef = useRef(null);
+  const xCancelledSet = useMemo(() => new Set(xCancelled), [xCancelled]);
+  // Owner: which project and version each equipment list is (from the
+  // expansion; null until known): { [listId]: { projectId, v, note, count,
+  // current, versions } }. Lists missing from it are in no project.
+  const [xListMeta, setXListMeta] = useState(null);
+  // Owner: the expansion's way to put lists in projects ({ link, attach,
+  // unlink }), and its "where does this list go?" window when open.
+  const xLinksRef = useRef(null);
+  const [xTarget, setXTarget] = useState(null);
+  // Owner: where the list being made in Create New goes (null: no project).
+  const [newListTarget, setNewListTarget] = useState(null);
+  const [ghostDraft, setGhostDraft] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [cameFromUrl, setCameFromUrl] = useState(false);
@@ -105,6 +134,12 @@ export default function EquipmentManifest({ session }) {
     return () => mql.removeEventListener("change", handler);
   }, []);
   const resolvedTheme = theme === "system" ? (systemPrefersDark ? "dark" : "light") : theme;
+  // Motion (src/lib/motion.js), for everyone. The class is set while
+  // rendering, before the parts below render, so they all agree on whether
+  // motion is on from their first render. (Taking it off switches every
+  // animation off at once.)
+  if (typeof document !== "undefined") document.documentElement.classList.add("motion");
+  useLayoutEffect(() => { installExitMotion(); }, []);
   // Keep the page behind the app (seen on over-scroll) the same color as the
   // app, and tell the browser that color for its own top bar — otherwise iOS
   // Safari tints the status bar from whatever is at the top of the screen,
@@ -123,6 +158,15 @@ export default function EquipmentManifest({ session }) {
   }, [resolvedTheme]);
   const [accentId, setAccentId] = useState("amber");
   const [fontId, setFontId] = useState("jetbrains");
+  // PDF font is per project (project.pdfFont); this is the last one picked,
+  // which new projects start with.
+  const [pdfFontId, setPdfFontId] = useState(DEFAULT_PDF_FONT);
+  // Camera / lens categories and subcategories left out of the cards'
+  // camera and lens lines ("dept" or "dept::subcategory"), ticked off in the
+  // Master Catalog.
+  const [cardPreviewOff, setCardPreviewOff] = useState([]);
+  const cardPreviewOffSet = useMemo(() => new Set(cardPreviewOff), [cardPreviewOff]);
+  const toggleCardPreview = (key) => setCardPreviewOff((cur) => (cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key]));
   // Per device, so it lives in this browser's storage rather than app_state.
   const [uiSize, setUiSize] = useState(() => {
     try { return localStorage.getItem(UI_SIZE_KEY) || "normal"; } catch { return "normal"; }
@@ -155,6 +199,9 @@ export default function EquipmentManifest({ session }) {
   const noteRef = useRef(null);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || null;
+  // Owner: the open list's project and version (null: none, or not known).
+  const activeMeta = (isCatalogOwner && xListMeta?.[activeProjectId]) || null;
+  const activeIsDraft = isCatalogOwner && !!xListMeta && !activeMeta;
   const days = activeProject ? activeProject.days : [];
   const itemData = activeProject ? (activeProject.itemData || {}) : {};
   const customItems = activeProject ? (activeProject.customItems || []) : [];
@@ -186,6 +233,10 @@ export default function EquipmentManifest({ session }) {
   const savedProjectsRef = useRef(new Map()); // project id -> object as last loaded/saved
   const savedStateJsonRef = useRef(null);     // app_state payload as last saved
   const pendingSavesRef = useRef(0);
+  const writeCountRef = useRef(0);            // bumped by every write to Supabase
+  // Each row's updated_at as the server last reported it, so coming back to
+  // the app only downloads what another device has changed since.
+  const serverStampsRef = useRef({ state: undefined, projects: new Map() });
 
   async function fetchServerData() {
     const userId = session.user.id;
@@ -199,6 +250,87 @@ export default function EquipmentManifest({ session }) {
   }
 
   function applyServerData({ stateRow, projectRows }) {
+    applyStateRow(stateRow);
+    const loadedProjects = projectRows.map((r) => ({ ...r.data, id: r.id }));
+    savedProjectsRef.current = new Map(loadedProjects.map((p) => [p.id, p]));
+    serverStampsRef.current.projects = new Map(projectRows.map((r) => [r.id, r.updated_at]));
+    setProjectsState(loadedProjects);
+    setLiveShareTokens(shareTokensOf(projectRows));
+    leaveIfActiveProjectGone(loadedProjects);
+  }
+
+  function shareTokensOf(rows) {
+    return Object.fromEntries(rows.filter((r) => r.share_token).map((r) => [r.id, r.share_token]));
+  }
+
+  // A project deleted on another device: leave its screens.
+  function leaveIfActiveProjectGone(currentProjects) {
+    if (activeProjectId && !currentProjects.some((p) => p.id === activeProjectId)) {
+      setActiveProjectId(null);
+      setView("projects");
+    }
+  }
+
+  // Cheap check first (just each row's updated_at and share link), then
+  // download in full only the rows another device changed since this one
+  // last loaded or saved them.
+  async function fetchServerChanges() {
+    const userId = session.user.id;
+    const [{ data: stateStamp, error: stateErr }, { data: projectStamps, error: projectsErr }] = await Promise.all([
+      supabase.from("app_state").select("updated_at").eq("user_id", userId).maybeSingle(),
+      supabase.from("projects").select("id, updated_at, share_token").eq("user_id", userId),
+    ]);
+    if (stateErr) throw stateErr;
+    if (projectsErr) throw projectsErr;
+    const known = serverStampsRef.current;
+    const stamps = projectStamps || [];
+    const changedIds = stamps
+      .filter((r) => !known.projects.has(r.id) || known.projects.get(r.id) !== r.updated_at)
+      .map((r) => r.id);
+    // Lots changed (e.g. a backup restored elsewhere): just reload everything.
+    if (changedIds.length > 40) return { full: await fetchServerData() };
+    const stateChanged = (stateStamp?.updated_at ?? null) !== known.state;
+    const [stateRes, rowsRes] = await Promise.all([
+      stateChanged ? supabase.from("app_state").select("*").eq("user_id", userId).maybeSingle() : { data: null },
+      changedIds.length ? supabase.from("projects").select("*").in("id", changedIds) : { data: [] },
+    ]);
+    if (stateRes.error) throw stateRes.error;
+    if (rowsRes.error) throw rowsRes.error;
+    return {
+      stateRow: stateRes.data,
+      changedRows: rowsRes.data || [],
+      serverIds: new Set(stamps.map((r) => r.id)),
+      shareTokens: shareTokensOf(stamps),
+    };
+  }
+
+  function applyServerChanges(changes) {
+    if (changes.full) return applyServerData(changes.full);
+    const { stateRow, changedRows, serverIds, shareTokens } = changes;
+    if (stateRow) applyStateRow(stateRow);
+    const fresh = new Map(changedRows.map((r) => [r.id, { ...r.data, id: r.id }]));
+    const stamps = serverStampsRef.current.projects;
+    changedRows.forEach((r) => stamps.set(r.id, r.updated_at));
+    // Untouched projects stay the very same objects, so nothing re-renders
+    // or re-saves when nothing changed.
+    const kept = projects.filter((p) => serverIds.has(p.id));
+    const next = [
+      ...kept.map((p) => fresh.get(p.id) || p),
+      ...[...fresh.values()].filter((p) => !kept.some((k) => k.id === p.id)),
+    ];
+    if (fresh.size > 0 || kept.length !== projects.length) {
+      projects.forEach((p) => { if (!serverIds.has(p.id)) { savedProjectsRef.current.delete(p.id); stamps.delete(p.id); } });
+      fresh.forEach((p) => savedProjectsRef.current.set(p.id, p));
+      setProjectsState(next);
+      leaveIfActiveProjectGone(next);
+    }
+    const tokenIds = Object.keys(shareTokens);
+    if (tokenIds.length !== Object.keys(liveShareTokens).length || tokenIds.some((id) => shareTokens[id] !== liveShareTokens[id])) {
+      setLiveShareTokens(shareTokens);
+    }
+  }
+
+  function applyStateRow(stateRow) {
     if (stateRow) {
       const st = stateRow.settings || {};
       const depts = orderDepartments(stateRow.departments || departments, st.departmentOrder);
@@ -220,6 +352,8 @@ export default function EquipmentManifest({ session }) {
         theme: st.theme || "dark",
         accentId: st.accentId || "amber",
         fontId: st.fontId || "jetbrains",
+        pdfFontId: pdfFontFor(st.pdfFontId).id,
+        cardPreviewOff: Array.isArray(st.cardPreviewOff) ? st.cardPreviewOff : [],
       };
       setCatalog(v.catalog);
       setDepartments(v.departments);
@@ -237,19 +371,13 @@ export default function EquipmentManifest({ session }) {
       setTheme(v.theme);
       setAccentId(v.accentId);
       setFontId(v.fontId);
+      setPdfFontId(v.pdfFontId);
+      setCardPreviewOff(v.cardPreviewOff);
       // What we just loaded is by definition saved — so applying it never
       // triggers a write-back that could race another device's save.
       savedStateJsonRef.current = JSON.stringify(buildAppStatePayload(v));
     }
-    const loadedProjects = projectRows.map((r) => ({ ...r.data, id: r.id }));
-    savedProjectsRef.current = new Map(loadedProjects.map((p) => [p.id, p]));
-    setProjectsState(loadedProjects);
-    setLiveShareTokens(Object.fromEntries(projectRows.filter((r) => r.share_token).map((r) => [r.id, r.share_token])));
-    // A project deleted on another device: leave its screens.
-    if (activeProjectId && !loadedProjects.some((p) => p.id === activeProjectId)) {
-      setActiveProjectId(null);
-      setView("projects");
-    }
+    serverStampsRef.current.state = stateRow?.updated_at ?? null;
   }
 
   // load — reads everything from Supabase once we have an authenticated
@@ -303,6 +431,40 @@ export default function EquipmentManifest({ session }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Owner: the made-up test data (testdata/, every id starts with 7e57) —
+  // its equipment lists and Calendar-only projects.
+  // (Counted from the lists and every Project, cancelled ones included; the
+  // expansion re-reports its ghosts whenever its Projects change, which
+  // re-renders this.)
+  const testIds = isCatalogOwner
+    ? [...new Set([...projects.map((p) => p.id), ...(xBackupRef.current?.ids() || [])])].filter((id) => String(id).startsWith("7e57"))
+    : [];
+  // Builds the test data now (dates around today) and restores it like a
+  // backup: the lists, plus the owner's Projects / Calendar details. Its
+  // code is only downloaded when this runs.
+  async function loadTestData() {
+    const { buildTestData } = await import("./lib/testData.js");
+    const { safe } = buildTestData(todayStr());
+    await applyRestore(safe, { projects: new Set(safe.projects.map((_, i) => i)), expansion: true });
+  }
+
+  async function removeTestData() {
+    const listIds = projects.map((p) => p.id).filter((id) => String(id).startsWith("7e57"));
+    if (listIds.length) {
+      const { error } = await supabase.from("projects").delete().in("id", listIds);
+      if (error) { console.error("Failed to remove test lists:", error); setBackupError("Couldn't remove the test data. Check your connection and try again."); return; }
+      const gone = new Set(listIds);
+      listIds.forEach((id) => { savedProjectsRef.current.delete(id); serverStampsRef.current.projects.delete(id); });
+      writeCountRef.current += 1;
+      setProjectsState((prev) => prev.filter((p) => !gone.has(p.id)));
+      if (gone.has(activeProjectId)) { setActiveProjectId(null); setView("projects"); }
+    }
+    const x = xBackupRef.current;
+    if (x && !(await x.remove(x.ids().filter((id) => id.startsWith("7e57"))))) {
+      setBackupError("The test equipment lists were removed, but not all of their Calendar details. Try again.");
+    }
+  }
+
   function goToPreview(id) {
     // Remember which page we were on so the Back button can return there
     // (the project's own manifest page, if that's where Export was
@@ -325,7 +487,7 @@ export default function EquipmentManifest({ session }) {
 
   const appStatePayload = () => buildAppStatePayload({
     catalog, departments, projectTags, productionHouses, rentalHouses, brands, templates,
-    userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId,
+    userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, theme, accentId, fontId, pdfFontId, cardPreviewOff,
   });
   const changedProjects = () => projects.filter((p) => savedProjectsRef.current.get(p.id) !== p);
   const hasUnsavedChanges = () =>
@@ -335,6 +497,7 @@ export default function EquipmentManifest({ session }) {
 
   async function runSave(write) {
     pendingSavesRef.current += 1;
+    writeCountRef.current += 1;
     setSaveState("saving");
     try {
       await write();
@@ -355,18 +518,19 @@ export default function EquipmentManifest({ session }) {
       const json = JSON.stringify(payload);
       if (json === savedStateJsonRef.current) return;
       runSave(async () => {
-        const { error } = await supabase.from("app_state").upsert({
+        const { data, error } = await supabase.from("app_state").upsert({
           user_id: session.user.id,
           ...payload,
           updated_at: new Date().toISOString(),
-        });
+        }).select("updated_at");
         if (error) throw error;
         savedStateJsonRef.current = json;
+        serverStampsRef.current.state = data?.[0]?.updated_at;
       });
     }, 500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [departments, catalog, projectTags, productionHouses, rentalHouses, brands, userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, templates, theme, accentId, fontId, loaded, session]);
+  }, [departments, catalog, projectTags, productionHouses, rentalHouses, brands, userName, userEmail, userPhone, includeUsernameInPdf, includeEmailInPdf, includePhoneInPdf, templates, theme, accentId, fontId, pdfFontId, cardPreviewOff, loaded, session]);
 
   // save projects (debounced) — only the ones that changed. Deleting a
   // project writes immediately in deleteProject() rather than here.
@@ -377,16 +541,25 @@ export default function EquipmentManifest({ session }) {
       if (changed.length === 0) return;
       runSave(async () => {
         const now = new Date().toISOString();
-        const { error } = await supabase.from("projects").upsert(
+        const { data, error } = await supabase.from("projects").upsert(
           changed.map((p) => ({ id: p.id, user_id: session.user.id, data: p, updated_at: now }))
-        );
+        ).select("id, updated_at");
         if (error) throw error;
         changed.forEach((p) => savedProjectsRef.current.set(p.id, p));
+        // Our own write, so the next return to the app doesn't re-download it.
+        const stamps = serverStampsRef.current.projects;
+        changed.forEach((p) => stamps.delete(p.id));
+        (data || []).forEach((r) => stamps.set(r.id, r.updated_at));
       });
     }, 500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, loaded, session]);
+
+  // The functions as of the latest render: refresh() resumes after a network
+  // wait, by which time the user may have edited something.
+  const latestRef = useRef(null);
+  latestRef.current = { hasUnsavedChanges, applyServerChanges };
 
   // Coming back to the app (switching tabs/apps, unlocking the phone):
   // pull the latest from Supabase so this device can't overwrite newer
@@ -396,11 +569,16 @@ export default function EquipmentManifest({ session }) {
     if (!loaded || !session) return;
     let refreshing = false;
     async function refresh() {
-      if (document.visibilityState !== "visible" || refreshing || hasUnsavedChanges()) return;
+      if (document.visibilityState !== "visible" || refreshing || latestRef.current.hasUnsavedChanges()) return;
       refreshing = true;
+      const writesBefore = writeCountRef.current;
       try {
-        const data = await fetchServerData();
-        if (!hasUnsavedChanges()) applyServerData(data);
+        const changes = await fetchServerChanges();
+        // Skip if this device saved anything meanwhile: what we fetched may
+        // predate that save.
+        if (writeCountRef.current === writesBefore && !latestRef.current.hasUnsavedChanges()) {
+          latestRef.current.applyServerChanges(changes);
+        }
       } catch (e) {
         console.error("Couldn't refresh from Supabase:", e);
       } finally {
@@ -413,7 +591,8 @@ export default function EquipmentManifest({ session }) {
       document.removeEventListener("visibilitychange", refresh);
       window.removeEventListener("focus", refresh);
     };
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, session]);
 
   const deptNames = Object.keys(departments);
 
@@ -479,11 +658,18 @@ export default function EquipmentManifest({ session }) {
   const visibleDays = activeDay === "all" ? days : days.filter((d) => d.id === activeDay);
 
   const filteredProjects = useMemo(() => {
+    // A greyed "no list yet" card never doubles a project that has a list
+    // (during a restore the expansion's report can lag a moment behind).
+    const listIds = new Set(projects.map((p) => p.id));
+    // Owner: one card per project, its current version; older versions
+    // open from the project's page or the version switch in the crumb.
+    const shownLists = isCatalogOwner && xListMeta ? projects.filter((p) => !xListMeta[p.id] || xListMeta[p.id].current) : projects;
+    const all = isCatalogOwner ? [...shownLists, ...xGhosts.filter((g) => !listIds.has(g.id))] : projects;
     const base = projectFilter
-      ? projects.filter((p) => (p[projectFilter.field] || "") === projectFilter.value)
-      : projects;
+      ? all.filter((p) => (p[projectFilter.field] || "") === projectFilter.value)
+      : all;
     return [...base].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }, [projects, projectFilter]);
+  }, [projects, projectFilter, isCatalogOwner, xGhosts, xListMeta]);
 
   const recentProjectNames = useMemo(() => {
     const seen = new Set();
@@ -627,7 +813,7 @@ export default function EquipmentManifest({ session }) {
         if (p.id !== activeProjectId) return p;
         const days = p.days || [];
         const prevDate = days.length > 0 ? days[days.length - 1].date : "";
-        const date = prevDate ? addOneDay(prevDate) : tomorrowStr();
+        const date = prevDate ? addOneDay(prevDate) : todayStr();
         const newDay = { id: `day${Date.now()}`, date, location: "", projectLabel: "" };
         const nextDays = relabelDays([...days, newDay]);
         if (p.perDayQty) return { ...p, days: nextDays };
@@ -663,14 +849,16 @@ export default function EquipmentManifest({ session }) {
     if (activeDay === id) setActiveDay("all");
   }
 
-  function addProject(data) {
+  // `target` (owner only): the project the new list joins — { projectId },
+  // { newProject: true }, or null for none (see the expansion's link).
+  function addProject(data, target) {
     const collapsedDepts = {};
     const collapsedSubcats = {};
     Object.entries(departments).forEach(([d, subs]) => {
       collapsedDepts[d] = true;
       (subs || []).forEach((s) => { collapsedSubcats[`${d}::${s}`] = true; });
     });
-    const newDays = data.days && data.days.length ? data.days : [{ id: "day1", label: "Day 1", date: tomorrowStr(), location: "", projectLabel: "" }];
+    const newDays = data.days && data.days.length ? data.days : [{ id: "day1", label: "Day 1", date: todayStr(), location: "", projectLabel: "" }];
     const template = data.templateId ? templates.find((t) => t.id === data.templateId) : null;
     const itemData = {};
     if (template) {
@@ -687,8 +875,8 @@ export default function EquipmentManifest({ session }) {
         if (c.subcategory) collapsedSubcats[`${c.department}::${c.subcategory}`] = false;
       });
     }
-    const newProject = {
-      id: newProjectId(),
+    let newProject = {
+      id: data.id || newProjectId(),
       name: data.name,
       tag: (template && template.tag) || data.tag || "",
       productionHouse: (template && template.productionHouse) || data.productionHouse || "",
@@ -702,8 +890,13 @@ export default function EquipmentManifest({ session }) {
       note: "",
       collapsedDepts,
       collapsedSubcats,
+      pdfFont: pdfFontId,
       createdAt: Date.now(),
     };
+    if (isCatalogOwner && target && xLinksRef.current) newProject = xLinksRef.current.link(newProject, target) || newProject;
+    // Owner's draft (no project): houses, Producer and Gaffer belong to a
+    // project, even when a template has them.
+    if (isCatalogOwner && !target && xLinksRef.current) newProject = { ...newProject, productionHouse: "", producer: "", rentalHouse: "", gaffer: "" };
     setProjectsState((prev) => [...prev, newProject]);
     addProductionHouse(newProject.productionHouse);
     addRentalHouse(newProject.rentalHouse);
@@ -741,9 +934,19 @@ export default function EquipmentManifest({ session }) {
     setTemplates((prev) => prev.filter((t) => t.id !== id));
   }
 
-  function duplicateProject(id) {
+  // `target` (owner only): where the copy goes — its own project as the next
+  // version (same shoot days, so the days keep their ids), another project
+  // ({ projectId }), or null for none.
+  function duplicateProject(id, target) {
     const original = projects.find((p) => p.id === id);
-    if (!original) return;
+    if (!original) return null;
+    // Owner: a copy starts without the original's own list note.
+    const fresh = isCatalogOwner ? { listNote: "" } : {};
+    if (isCatalogOwner && target && xLinksRef.current && xListMeta?.[id]?.projectId === target.projectId) {
+      const copy = xLinksRef.current.link({ ...original, ...fresh, id: newProjectId(), createdAt: Date.now() }, target);
+      if (copy) setProjectsState((prev) => [...prev, copy]);
+      return copy;
+    }
     const dayIdMap = {};
     const newDays = (original.days || []).map((d) => {
       const newId = uid();
@@ -759,14 +962,23 @@ export default function EquipmentManifest({ session }) {
       });
       newItemData[catalogId] = { ...entry, quantities: newQuantities };
     });
-    const newProject = {
+    let newProject = {
       ...original,
+      ...fresh,
       id: newProjectId(),
       days: newDays,
       itemData: newItemData,
       createdAt: Date.now(),
     };
+    if (isCatalogOwner && target && xLinksRef.current) {
+      newProject = xLinksRef.current.link(newProject, target);
+      if (!newProject) return null;
+    } else if (isCatalogOwner && xLinksRef.current) {
+      // A draft copy: no project, so no houses, Producer or Gaffer.
+      newProject = { ...newProject, productionHouse: "", producer: "", rentalHouse: "", gaffer: "" };
+    }
     setProjectsState((prev) => [...prev, newProject]);
+    return newProject;
   }
 
   function updateProject(id, patch) {
@@ -777,8 +989,8 @@ export default function EquipmentManifest({ session }) {
         if (patch.days) {
           const newDayIds = new Set(patch.days.map((d) => d.id));
           const prunedItemData = {};
-          Object.keys(p.itemData || {}).forEach((cid) => {
-            const entry = p.itemData[cid];
+          Object.keys(next.itemData || {}).forEach((cid) => {
+            const entry = next.itemData[cid];
             const q = {};
             Object.keys(entry.quantities || {}).forEach((dayId) => {
               if (newDayIds.has(dayId)) q[dayId] = entry.quantities[dayId];
@@ -859,6 +1071,10 @@ export default function EquipmentManifest({ session }) {
     const removed = projects.find((p) => p.id === id);
     const removedIndex = projects.findIndex((p) => p.id === id);
     setProjectsState((prev) => prev.filter((p) => p.id !== id));
+    // Forget it was saved, so Undo puts it back on the server too.
+    savedProjectsRef.current.delete(id);
+    serverStampsRef.current.projects.delete(id);
+    writeCountRef.current += 1;
     if (activeProjectId === id) {
       setActiveProjectId(null);
       setView("projects");
@@ -873,7 +1089,8 @@ export default function EquipmentManifest({ session }) {
       });
     }
     if (removed) {
-      showUndo(`Deleted "${removed.name}"`, () => {
+      const m = isCatalogOwner && xListMeta?.[id];
+      showUndo(m && m.count > 1 ? `Deleted V${m.v} of "${removed.name}"` : isCatalogOwner ? `Deleted the equipment list for "${removed.name}"` : `Deleted "${removed.name}"`, () => {
         setProjectsState((prev) => {
           const next = [...prev];
           next.splice(Math.min(removedIndex, next.length), 0, removed);
@@ -1047,6 +1264,7 @@ export default function EquipmentManifest({ session }) {
       return { ...rest, [n]: subs || [] };
     });
     setCatalog((prev) => prev.map((c) => (c.department === oldName ? { ...c, department: n } : c)));
+    setCardPreviewOff((cur) => cur.map((k) => (k === oldName ? n : k.startsWith(`${oldName}::`) ? `${n}::${k.slice(oldName.length + 2)}` : k)));
     if (activeDept === oldName) setActiveDept(n);
   }
 
@@ -1066,6 +1284,7 @@ export default function EquipmentManifest({ session }) {
       [dept]: (prev[dept] || []).map((s) => (s === oldSub ? n : s)),
     }));
     setCatalog((prev) => prev.map((c) => (c.department === dept && c.subcategory === oldSub ? { ...c, subcategory: n } : c)));
+    setCardPreviewOff((cur) => cur.map((k) => (k === `${dept}::${oldSub}` ? `${dept}::${n}` : k)));
   }
 
   function removeSubcategory(dept, sub) {
@@ -1176,12 +1395,17 @@ export default function EquipmentManifest({ session }) {
         accentId,
         fontId,
       };
+      // The owner's Projects / Calendar data (status, events,
+      // files, Calendar-only projects, event types).
+      const expansion = isCatalogOwner ? xBackupRef.current?.export() : null;
+      if (expansion) backup.expansion = expansion;
       const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
       const mmdd = exportDateStr();
       const nameSlug = userName.trim() ? `_${slug(userName)}` : "";
       const finalName = withTimeStamp(`${mmdd}_boxgo-backup${nameSlug}.json`);
 
       saveFile(blob, finalName);
+      if (isCatalogOwner && !expansion) setBackupError("Saved, but without your Projects / Calendar details: they hadn't loaded yet. Wait a moment and make the backup again.");
     } catch (err) {
       console.error("Backup export failed:", err);
       setBackupError(`Backup couldn't be saved: ${err?.message || err}`);
@@ -1214,8 +1438,37 @@ export default function EquipmentManifest({ session }) {
   // sections replace what's in the app; ticked projects are added (or
   // overwrite the current project with the same id) and every other current
   // project is kept — nothing is deleted.
-  function applyRestore(data, sel) {
+  async function applyRestore(data, sel) {
     const picked = (data.projects || []).filter((_, i) => sel.projects.has(i));
+    // Owner: "Start fresh" deletes every current project first (and the
+    // owner's Projects / Calendar details), waiting for the server so
+    // nothing restored afterwards gets deleted.
+    if (sel.wipe) {
+      setPendingRestore(null);
+      if (isCatalogOwner && xBackupRef.current && !(await xBackupRef.current.wipe())) {
+        setBackupError("Couldn't clear your current data, so nothing was changed. Check your connection and try again.");
+        return;
+      }
+      const { error } = await supabase.from("projects").delete().eq("user_id", session.user.id);
+      if (error) {
+        console.error("Failed to delete projects:", error);
+        setBackupError("Some current projects couldn't be deleted (check your connection); the backup was still restored.");
+      } else {
+        savedProjectsRef.current = new Map();
+        serverStampsRef.current.projects = new Map();
+        setLiveShareTokens({});
+        setProjectsState([]);
+      }
+      writeCountRef.current += 1;
+    }
+    // Owner: Projects / Calendar details first, so the restored lists find
+    // their Projects already there. Lists left unticked keep theirs out too.
+    if (sel.expansion && xBackupRef.current) {
+      const skipIds = new Set((data.projects || []).filter((_, i) => !sel.projects.has(i)).map((p) => p.id));
+      if (xBackupRef.current.restore(data.expansion, { skipIds }) === null) {
+        setBackupError("Projects / Calendar details weren't restored: they hadn't loaded yet. Wait a moment and restore again.");
+      }
+    }
     if (picked.length > 0) {
       // A backup made before project ids were switched to real UUIDs (or one
       // hand-edited outside the app) can carry an id Supabase's projects.id
@@ -1229,7 +1482,7 @@ export default function EquipmentManifest({ session }) {
       const byId = new Map(restoredProjects.map((p) => [p.id, p]));
       setProjectsState((prev) => [
         ...restoredProjects,
-        ...prev.filter((p) => !byId.has(p.id)),
+        ...(sel.wipe ? [] : prev.filter((p) => !byId.has(p.id))),
       ]);
     }
     if (sel.catalog) {
@@ -1304,7 +1557,7 @@ export default function EquipmentManifest({ session }) {
   // what they priced must stay what they see.
   function shareSnapshot(project) {
     return runShare(async () => {
-      const token = await createSnapshot({
+      const { token, reusedFrom } = await createSnapshot({
         userId: session.user.id,
         project,
         catalog,
@@ -1312,7 +1565,7 @@ export default function EquipmentManifest({ session }) {
         accentId,
         preparedBy: pdfInputs(project).preparedBy,
       });
-      return { kind: "snapshot", url: shareUrlFor(token), projectId: project.id };
+      return { kind: "snapshot", url: shareUrlFor(token), projectId: project.id, reusedFrom };
     });
   }
 
@@ -1375,6 +1628,97 @@ export default function EquipmentManifest({ session }) {
     return () => window.removeEventListener("resize", pin);
   }, [view, activeProjectId, catalogCopyState, isCatalogOwner, uiZoom, loaded]);
 
+  // The owner's Projects / Calendar modules (src/expansion/). The equipment
+  // list composer works exactly as in v1.0; a Project has up to 5 lists
+  // (versions) and the expansion keeps their shared details in step both
+  // ways (<Expansion part="sync">). Null for everyone else.
+  // Which of the owner's modules is showing: a Project page opened from
+  // the Calendar stays under Calendar (its crumb leads back there).
+  const xModule = xRoute.screen === "calendar" || xRoute.from === "calendar" ? "calendar" : "projects";
+
+  // Motion: a quick fade when the page changes (everything under the header).
+  const headerRef = useRef(null);
+  const pageKey = view === "x" ? `x:${xRoute.screen}:${xRoute.projectId || ""}` : `${view}:${view === "manifest" ? activeProjectId : ""}`;
+  const lastPage = useRef(pageKey);
+  useLayoutEffect(() => {
+    if (lastPage.current === pageKey) return;
+    lastPage.current = pageKey;
+    if (!motionOn()) return;
+    for (let n = headerRef.current?.nextElementSibling; n; n = n.nextElementSibling) fadeIn(n);
+  }, [pageKey]);
+  // Owner: "where does this list go?" (the expansion's window), then:
+  // "duplicate" copies list `id` there, "create" opens Create New for it
+  // (prefilled from an existing project), "attach" puts draft `id` in it.
+  function askListTarget(mode, id) {
+    setXTarget({
+      mode,
+      listId: id || null,
+      onClose: () => setXTarget(null),
+      onPick: (t) => {
+        setXTarget(null);
+        if (mode === "duplicate") {
+          const copy = duplicateProject(id, t);
+          if (copy) showUndo(t ? `Copied into "${copy.name}" as its newest list` : `Copied as a draft (no project)`, () => deleteProject(copy.id));
+        } else if (mode === "attach") {
+          xLinksRef.current?.attach(id, t);
+        } else if (t?.prefill) {
+          setGhostDraft(t.prefill);
+        } else {
+          setNewListTarget(t);
+          setEditingProjectId(null);
+          setShowProjectForm(true);
+        }
+      },
+    });
+  }
+  function goX(route) {
+    setXRoute({ ...route, t: Date.now() });
+    setActiveProjectId(null);
+    setView("x");
+    window.scrollTo(0, 0);
+  }
+  const expansionApp = isCatalogOwner ? {
+    session,
+    projects,
+    catalog,
+    departments,
+    templates,
+    cardPreviewOff: cardPreviewOffSet,
+    projectTags,
+    productionHouses,
+    rentalHouses,
+    route: xRoute,
+    go: goX,
+    // A screen calls this once it has acted on route.intent (e.g. opened
+    // the Edit window), so coming back to it later doesn't repeat it.
+    clearIntent: () => setXRoute((r) => (r.intent ? { ...r, intent: undefined } : r)),
+    reportSaveState: setXSaveState,
+    openEquipmentList: (id) => { openProject(id); window.scrollTo(0, 0); },
+    previewEquipmentList: goToPreview,
+    // `data` is what the Create New window returns (it includes the
+    // template choice and quantity mode): a new list (version) for Project `id`.
+    createEquipmentList: (id, data) => { addProject(data, { projectId: id }); window.scrollTo(0, 0); },
+    // A copy of a list: `target` as in duplicateProject.
+    duplicateEquipmentList: (listId, target) => duplicateProject(listId, target),
+    updateEquipmentList: updateProject,
+    deleteEquipmentList: deleteProject,
+    addHouses: ({ productionHouse, rentalHouse }) => { addProductionHouse(productionHouse); addRentalHouse(rentalHouse); },
+    reportGhosts: setXGhosts,
+    registerBackup: (api) => { xBackupRef.current = api; },
+    registerLinks: (api) => { xLinksRef.current = api; },
+    reportListMeta: (meta) => setXListMeta(meta),
+    reportCancelled: (ids) => setXCancelled((cur) => (cur.join() === ids.join() ? cur : ids)),
+    // What the shared Create New / Edit window needs.
+    recentProjectNames,
+    recentProjectLabels,
+    saveAsTemplate: (id, name) => saveAsTemplate(projects.find((p) => p.id === id), name),
+    openSettings: () => setShowTagManager(true),
+  } : null;
+
+  const shownSaveState = [saveState, xSaveState].includes("error") ? "error"
+    : [saveState, xSaveState].includes("saving") ? "saving"
+    : [saveState, xSaveState].includes("saved") ? "saved" : "idle";
+
   // Until this user's own data has loaded, show nothing editable: the state
   // still holds the built-in defaults, which are only meant for a brand-new
   // account with no saved data.
@@ -1411,6 +1755,11 @@ export default function EquipmentManifest({ session }) {
       flexDirection: "column",
     }}>
       <div className="top-tint" aria-hidden="true" />
+      {isCatalogOwner && (
+        <Suspense fallback={null}>
+          <Expansion part="sync" app={expansionApp} />
+        </Suspense>
+      )}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=${selectedFont.googleFamily}&display=swap');
         [data-theme="dark"] {
@@ -1466,8 +1815,23 @@ export default function EquipmentManifest({ session }) {
           -webkit-appearance: none;
           appearance: none;
         }
+        /* The browser draws the calendar / clock icons in date and time
+           fields black whatever the theme; lighten them in dark mode. */
+        [data-theme="dark"] input::-webkit-calendar-picker-indicator {
+          filter: invert(1); opacity: 0.65; cursor: pointer;
+        }
         .stencil {
           text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800;
+        }
+        /* The small boxed labels on project cards (tag, Cancelled). Trimmed
+           to the capital letters so they sit centred in the border whatever
+           the font; older browsers keep the plain box. */
+        .tag-box {
+          display: inline-block; font-size: 9px; line-height: 11px; padding: 1px 4px;
+          border: 1px solid currentColor; border-radius: 2px; text-transform: uppercase;
+        }
+        @supports (text-box: trim-both cap alphabetic) {
+          .tag-box { text-box: trim-both cap alphabetic; padding: 3px 4px; }
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .spin { animation: spin 0.9s linear infinite; }
@@ -1476,6 +1840,7 @@ export default function EquipmentManifest({ session }) {
         .pop-item { background: transparent; }
         .pop-item:hover { background: var(--surface2); }
         .new-project-row-btn { display: none; }
+        @media (max-width: 600px) { .hdr-name-x { font-size: 12px !important; } }
         .back-to-top-btn { display: none !important; }
         .category-fab { display: none !important; }
         .category-fab-menu { display: none !important; }
@@ -1493,9 +1858,10 @@ export default function EquipmentManifest({ session }) {
           .mf-item-col { min-width: 80px; }
           .mf-pad { padding-left: 8px; padding-right: 8px; }
           /* Phones: breadcrumb and buttons always on their own rows, buttons on
-             one line, so the header is the same height on every page. The
-             "saved" word goes (the tick stays) to make room. */
-          .hdr-crumb { width: 100%; height: 24px; }
+             one line. A name too long to sit beside the section name takes a
+             second breadcrumb line. The "saved" word goes (the tick stays) to
+             make room. */
+          .hdr-crumb { width: 100%; min-height: 24px; }
           /* Right-aligned via margin-left: auto rather than flex-end, so on the
              narrowest phones the row scrolls instead of cutting off its left end. */
           .hdr-actions { width: 100%; flex-wrap: nowrap !important; overflow-x: auto; justify-content: flex-start !important; }
@@ -1512,26 +1878,63 @@ export default function EquipmentManifest({ session }) {
           .category-fab { display: flex !important; }
           .category-fab-menu { display: flex !important; }
         }
+        ${MOTION_CSS}
       `}</style>
 
       {view !== "preview" && (
         <>
           {/* Top bar */}
-          <header className="no-print" style={{
+          <header ref={headerRef} className="no-print" style={{
             padding: "12px 20px", borderBottom: "2px solid var(--border)",
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, ...(isCatalogOwner ? { flexShrink: 0 } : {}) }}>
                 <Logo size={20} />
-                <span className="stencil" style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
-                  BOXGO
-                </span>
-                <span className="stencil" style={{ fontSize: 10, letterSpacing: "0.01em", color: "var(--muted)" }}>
-                  Equipment List Composer
-                </span>
+                {isCatalogOwner ? (
+                  // The owner: the BOXGO wordmark is the home tab (Projects),
+                  // accent while Projects is showing.
+                  <button
+                    className="stencil"
+                    onClick={() => goX({ screen: "projects" })}
+                    title="Projects"
+                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 17, letterSpacing: "0.08em", color: view === "x" && xModule === "projects" ? "var(--accent)" : "var(--text)" }}
+                  >
+                    BOXGO
+                  </button>
+                ) : (
+                  <span className="stencil" style={{ fontSize: 17, letterSpacing: "0.08em", color: "var(--text)" }}>
+                    BOXGO
+                  </span>
+                )}
+                {isCatalogOwner ? (
+                  // The owner's three modules, sharing one projects database: Projects and Calendar
+                  // (src/expansion/), and the equipment list composer, which works exactly as v1.0.
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 2 }}>
+                    {[
+                      ["Calendar", view === "x" && xModule === "calendar", () => goX({ screen: "calendar" })],
+                      ["Equipment", view !== "x", () => { setActiveProjectId(null); setView("projects"); }],
+                    ].map(([label, on, go]) => (
+                      <span key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ color: "var(--border2)", fontSize: 10 }}>|</span>
+                        <button
+                          className="stencil"
+                          onClick={go}
+                          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 10, letterSpacing: "0.04em", color: on ? "var(--accent)" : "var(--muted)" }}
+                        >
+                          {label}
+                        </button>
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="stencil" style={{ fontSize: 10, letterSpacing: "0.01em", color: "var(--muted)" }}>
+                    Equipment List Composer
+                  </span>
+                )}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, ...(isCatalogOwner ? { minWidth: 0 } : {}) }}>
                 <input
+                  className={isCatalogOwner ? "hdr-name-x" : undefined}
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="+ Add your name"
@@ -1549,34 +1952,54 @@ export default function EquipmentManifest({ session }) {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-              <div className="hdr-crumb" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              {/* The crumb wraps: a name that doesn't fit beside the section
+                  name takes the next line, so it's cut with "…" only when it
+                  is longer than the whole row. */}
+              <div className="hdr-crumb" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", columnGap: 10, rowGap: 2, minWidth: 0 }}>
                 <button
                   className="stencil"
-                  onClick={() => { setActiveProjectId(null); setView("projects"); }}
+                  onClick={() => (view === "x" ? goX({ screen: xModule }) : (setActiveProjectId(null), setView("projects")))}
                   style={{
                     background: "none", border: "none", cursor: "pointer", padding: 0, whiteSpace: "nowrap", flexShrink: 0,
-                    fontSize: 15, letterSpacing: "0.08em", color: view === "projects" ? "var(--accent)" : "var(--text)",
+                    fontSize: 15, letterSpacing: "0.08em",
+                    color: view === "projects" || (view === "x" && xRoute.screen !== "project") ? "var(--accent)" : "var(--text)",
                   }}
                 >
-                  Project Manager
+                  {view === "x" ? (xModule === "calendar" ? "Calendar" : "Projects Manager") : isCatalogOwner ? "Equipment Lists Manager" : "Project Manager"}
                 </button>
+                {view === "x" && xRoute.screen === "project" && (
+                  <>
+                    <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
+                    <Suspense fallback={null}>
+                      <Expansion part="crumb" app={expansionApp} />
+                    </Suspense>
+                  </>
+                )}
                 {view === "manifest" && (
                   <>
                     <span style={{ color: "var(--border2)", fontSize: 15 }}>/</span>
                     <span
                       className="stencil"
+                      // The owner can tap the name to open this job's Project page.
+                      onClick={activeMeta ? () => goX({ screen: "project", projectId: activeMeta.projectId }) : undefined}
+                      title={activeMeta ? "Open this project's page (status, schedule, files)" : undefined}
                       style={{
-                        fontSize: 15, display: "flex", alignItems: "center", gap: 6,
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200,
+                        // As wide as the row allows: the name is cut with "…"
+                        // only when it doesn't fit.
+                        fontSize: 15, display: "flex", alignItems: "center", gap: 6, minWidth: 0,
+                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                        cursor: activeMeta ? "pointer" : undefined,
                       }}
                     >
                       {activeProject?.tag && (
                         <span style={{ fontSize: 11, flexShrink: 0, color: "var(--muted)" }}>{activeProject.tag}</span>
                       )}
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--accent)" }}>
-                        {activeProject?.name || "Project"}
+                        {activeProject?.name || (activeIsDraft ? "Untitled list" : "Project")}
                       </span>
+                      {isCatalogOwner && xCancelledSet.has(activeProjectId) && <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--danger)", border: "1px solid var(--danger)", borderRadius: 2, padding: "1px 4px" }}>Cancelled</span>}
                     </span>
+
                   </>
                 )}
                 {view === "catalog" && (
@@ -1588,23 +2011,32 @@ export default function EquipmentManifest({ session }) {
               </div>
               {/* Always hugs the right edge, even when it wraps onto its own line. */}
               <div ref={hdrActionsRef} className="hdr-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginLeft: "auto" }}>
-                <div style={{ fontSize: 11, color: saveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
-                  {saveState === "saving" && <><Loader2 size={12} className="spin" /><span className="save-label"> saving</span></>}
-                  {saveState === "saved" && <><Check size={12} /><span className="save-label"> saved</span></>}
-                  {saveState === "error" && <><X size={12} /> couldn't save<span className="save-label"> — check your connection</span></>}
+                <div style={{ fontSize: 11, color: shownSaveState === "error" ? "#AA0000" : "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginRight: 4 }}>
+                  {/* m-save-*: motion — saving pulses, the tick draws
+                      itself in the accent colour, an error gives a small shake. */}
+                  {shownSaveState === "saving" && <span className="m-save-busy" style={{ display: "contents" }}><Loader2 size={12} className="spin" /><span className="save-label"> saving</span></span>}
+                  {shownSaveState === "saved" && <><Check size={12} className="m-save-tick" /><span className="save-label m-save-word"> saved</span></>}
+                  {shownSaveState === "error" && <span className="m-save-err" style={{ display: "contents" }}><X size={12} /> couldn't save<span className="save-label"> — check your connection</span></span>}
                 </div>
+                {view === "x" && xRoute.screen === "project" && (
+                  <button className="btn btn-ghost" onClick={() => goX({ ...xRoute, intent: "edit" })} title="Edit project name, tag and houses">
+                    <Pencil size={14} /> Edit project
+                  </button>
+                )}
                 {view === "projects" && (
                   <button className="btn btn-ghost" onClick={() => setView("catalog")}>
                     <Logo size={14} /> Master Catalog
                   </button>
                 )}
-                {view === "manifest" && (
+                {/* The owner's lists have Edit (and Go to project) at the foot
+                    of the info box instead. */}
+                {view === "manifest" && !(activeMeta || activeIsDraft) && (
                   <button
                     className="btn btn-ghost"
                     onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }}
-                    title="Edit project details, days and quantity mode"
+                    title={activeIsDraft ? "Edit this draft list's name, tag, days and quantity mode" : "Edit project details, days and quantity mode"}
                   >
-                    <Pencil size={14} /> Edit project
+                    <Pencil size={14} /> {activeIsDraft ? "Edit list" : "Edit project"}
                   </button>
                 )}
                 {view === "manifest" && (
@@ -1634,7 +2066,13 @@ export default function EquipmentManifest({ session }) {
             </div>
           </header>
 
+          {view === "x" && (
+            <Suspense fallback={null}>
+              <Expansion part="screen" app={expansionApp} />
+            </Suspense>
+          )}
 
+          {view !== "x" && (<>
           <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
             {/* Sidebar */}
             {view !== "projects" && (
@@ -1706,23 +2144,51 @@ export default function EquipmentManifest({ session }) {
                     onOpen={openProject}
                     onEdit={(p) => { setEditingProjectId(p.id); setShowProjectForm(true); }}
                     onExport={(p) => goToPreview(p.id)}
-                    onDuplicate={duplicateProject}
+                    onDuplicate={(id) => (isCatalogOwner && xLinksRef.current ? askListTarget("duplicate", id) : duplicateProject(id))}
                     onDelete={deleteProject}
                     onFilterAttr={(field, value) => setProjectFilter({ field, value })}
-                    onCreateNew={() => { setEditingProjectId(null); setShowProjectForm(true); }}
+                    onCreateNew={() => (isCatalogOwner && xLinksRef.current ? askListTarget("create") : (setEditingProjectId(null), setShowProjectForm(true)))}
+                    onCreateFromGhost={setGhostDraft}
+                    listOnly={isCatalogOwner}
+                    cancelledIds={isCatalogOwner ? xCancelledSet : null}
+                    previewOff={cardPreviewOffSet}
+                    listMeta={isCatalogOwner ? xListMeta : null}
+                    onAddToProject={isCatalogOwner ? (id) => askListTarget("attach", id) : undefined}
+                    onRemoveFromProject={isCatalogOwner ? (id) => xLinksRef.current?.unlink(id) : undefined}
                   />
                 </>
               )}
               {view === "manifest" && (() => {
                 const deptsToShow = Object.keys(departments).filter((d) => manifestGroupedFiltered[d] || d === "Others" || d === "Subrent");
                 const searching = !!manifestSearch.trim();
-                const infoPairs = [
+                // Owner: a list in no project (a draft) has no production details.
+                const isDraft = isCatalogOwner && !!xListMeta && !activeMeta;
+                const listRow = isCatalogOwner && !!xListMeta;
+                const infoPairs = isDraft ? [] : [
                   { label: "Production House", values: [activeProject?.productionHouse, activeProject?.producer].filter(Boolean) },
                   { label: "Rental House", values: [activeProject?.rentalHouse, activeProject?.gaffer].filter(Boolean) },
                 ].filter((pair) => pair.values.length > 0);
                 return (
                   <>
-                    <div style={{ marginBottom: 20, border: "1px solid var(--border)", borderRadius: 4, padding: "12px 14px" }}>
+                    {isDraft ? (
+                      // Owner: a draft list (in no project) is the bare-bone
+                      // list — no production details or project note. Adding
+                      // it to a project brings those.
+                      <div style={{ marginBottom: 8, border: "1px dashed var(--border2)", borderRadius: 4, padding: "10px 14px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                        <div style={{ flex: "1 1 220px", fontSize: 12, color: "var(--muted)" }}>
+                          <b style={{ color: "var(--text)" }}>Draft list</b>, in no project. Add it to a project for production details, a project note, shoot schedule, calendar, files and up to 5 list versions.
+                        </div>
+                        <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexShrink: 0 }}>
+                          <button className="btn btn-ghost" onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }} title="Edit this draft list's name, tag, days and quantity mode">
+                            <Pencil size={14} /> Edit list
+                          </button>
+                          <button className="btn btn-primary" onClick={() => askListTarget("attach", activeProjectId)}>
+                            <Plus size={14} /> Add to project
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                    <div style={{ marginBottom: listRow ? 8 : 20, border: "1px solid var(--border)", borderRadius: 4, padding: "12px 14px" }}>
                       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                         {infoPairs.length > 0 ? (
                           <div style={{ display: "flex", gap: 28 }}>
@@ -1752,14 +2218,63 @@ export default function EquipmentManifest({ session }) {
                           marginTop: 10, border: "none", borderRadius: 0, background: "none",
                         }}
                       />
+                      {activeMeta && (
+                        // Owner: edit the project's details, or go to its
+                        // page (status, schedule, calendar, files).
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                          <button className="btn btn-ghost" onClick={() => { setEditingProjectId(activeProjectId); setShowProjectForm(true); }} title="Edit project details, days and quantity mode">
+                            <Pencil size={14} /> Edit project
+                          </button>
+                          <button className="btn btn-primary" onClick={() => goX({ screen: "project", projectId: activeMeta.projectId })} title="This project's page: status, schedule, calendar, files and all its lists">
+                            Go to project <ArrowRight size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
+                    )}
+
+                    {listRow && (
+                      // Owner: which of the project's lists this is (switch
+                      // between versions; the box shows "V2 ▾", tapping opens
+                      // the full list; "V1" alone for a single list or a
+                      // draft) and this list's own note.
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                        {activeMeta || isDraft ? (
+                          <span
+                            title={isDraft ? "A draft list: on its own, in no project" : activeMeta.count > 1 ? "Switch to another of this project's lists" : "This project's only list"}
+                            style={{ position: "relative", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 2, border: "1px solid var(--border2)", borderRadius: 3, padding: "6px 6px 6px 8px", fontSize: 12, fontWeight: 800, color: "var(--accent)" }}
+                          >
+                            V{activeMeta ? activeMeta.v : 1}{activeMeta?.count > 1 && <ChevronDown size={12} />}
+                            {activeMeta?.count > 1 && (
+                              <select
+                                value={activeProjectId}
+                                onChange={(e) => openProject(e.target.value)}
+                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer", padding: 0, fontSize: 16 }}
+                              >
+                                {activeMeta.versions.map((v) => (
+                                  <option key={v.id} value={v.id}>V{v.v}{v.note ? ` · ${v.note}` : ""}</option>
+                                ))}
+                              </select>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="tag-box" style={{ flexShrink: 0, fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)" }} title="This list isn't in any project (a draft)">No project</span>
+                        )}
+                        <input
+                          value={activeProject?.listNote !== undefined ? activeProject.listNote : (activeMeta?.note || "")}
+                          onChange={(e) => updateProject(activeProjectId, { listNote: e.target.value })}
+                          placeholder="List note (this list only)…"
+                          style={{ flex: 1, minWidth: 0, fontSize: 13, padding: "6px 10px" }}
+                        />
+                      </div>
+                    )}
 
                     <div style={{ position: "relative", marginBottom: 14 }}>
                       <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
                       <input
                         value={manifestSearch}
                         onChange={(e) => setManifestSearch(e.target.value)}
-                        placeholder="Search this project's items…"
+                        placeholder="Search items…"
                         style={{ width: "100%", paddingLeft: 30, fontSize: 13 }}
                       />
                     </div>
@@ -1779,7 +2294,9 @@ export default function EquipmentManifest({ session }) {
                       const isCustomEligible = dept === "Others" || dept === "Subrent";
                       return (
                         <ManifestDeptSection
-                          key={dept}
+                          // Per list, so switching lists (or versions) never
+                          // plays the folding motion of the previous one.
+                          key={`${activeProjectId}:${dept}`}
                           id={`mf-dept-${dept}`}
                           dept={dept}
                           color="#000000"
@@ -1844,6 +2361,8 @@ export default function EquipmentManifest({ session }) {
                       onDelete={deleteCatalogItem}
                       onReorderItem={reorderCatalogItem}
                       onAddItem={(d, s) => { setLastCatalogDraft({ department: d, subcategory: s }); setEditingCatalogId(null); setShowCatalogForm(true); }}
+                      previewOff={/camera|lens/i.test(dept) ? cardPreviewOffSet : null}
+                      onTogglePreview={toggleCardPreview}
                     />
                   ))}
                 </>
@@ -1877,7 +2396,7 @@ export default function EquipmentManifest({ session }) {
               )}
               {showBackToTop && (
                 <button
-                  className="back-to-top-btn no-print"
+                  className={isCatalogOwner ? "no-print" : "back-to-top-btn no-print"}
                   onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                   title="Back to top"
                   style={{
@@ -1898,7 +2417,7 @@ export default function EquipmentManifest({ session }) {
               at the same height, regardless of what else is showing. */}
           {showCategoryMenu && (view === "catalog" || view === "manifest") && deptNames.length > 0 && (
             <div
-              className="category-fab-menu no-print"
+              className="category-fab-menu no-print m-pop m-up"
               style={{
                 position: "fixed", bottom: 20, right: 66, zIndex: 41,
                 width: 200, maxHeight: "50vh", overflowY: "auto",
@@ -1936,6 +2455,24 @@ export default function EquipmentManifest({ session }) {
               ))}
             </div>
           )}
+          </>)}
+          {view === "x" && showBackToTop && (
+            // The owner's Projects / Calendar pages: same floating button.
+            <button
+              className="no-print"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              title="Back to top"
+              style={{
+                position: "fixed", bottom: 20, right: 16, zIndex: 40,
+                width: 42, height: 42, borderRadius: "50%", border: "none",
+                background: "var(--accent)", color: "var(--accent-text)",
+                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+              }}
+            >
+              <ChevronUp size={20} />
+            </button>
+          )}
         </>
       )}
 
@@ -1949,6 +2486,7 @@ export default function EquipmentManifest({ session }) {
             onBack={exitPreview}
             onDownload={exportToPdf}
             pdfGenerating={pdfGenerating}
+            onSetPdfFont={(id) => { updateProject(activeProject.id, { pdfFont: id }); setPdfFontId(id); }}
             onShareSnapshot={shareSnapshot}
             onShareLive={shareLive}
             hasLiveLink={Boolean(liveShareTokens[activeProject.id])}
@@ -1963,7 +2501,7 @@ export default function EquipmentManifest({ session }) {
       )}
 
       {pdfGenerating && (
-        <div className="no-print" style={{
+        <div className="no-print m-overlay" style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 600,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
@@ -1996,9 +2534,35 @@ export default function EquipmentManifest({ session }) {
         />
       )}
 
+      {isCatalogOwner && xTarget && (
+        <Suspense fallback={null}>
+          <Expansion part="target" app={expansionApp} request={xTarget} />
+        </Suspense>
+      )}
+
+      {ghostDraft && (
+        <ProjectFormModal
+          prefill={ghostDraft}
+          heading="New equipment list"
+          saveLabel="Create list"
+          productionHouses={productionHouses}
+          rentalHouses={rentalHouses}
+          recentProjectNames={recentProjectNames}
+          recentProjectLabels={recentProjectLabels}
+          projectTags={projectTags}
+          templates={templates}
+          onManageTags={() => setShowTagManager(true)}
+          onClose={() => setGhostDraft(null)}
+          onSave={(data) => { addProject(data, { projectId: ghostDraft.id }); setGhostDraft(null); }}
+        />
+      )}
+
       {showProjectForm && (
         <ProjectFormModal
           initial={projects.find((p) => p.id === editingProjectId)}
+          heading={isCatalogOwner && xLinksRef.current ? (editingProjectId ? (xListMeta && !xListMeta[editingProjectId] ? "Edit draft list" : undefined) : (!newListTarget ? "New draft list" : undefined)) : undefined}
+          draft={isCatalogOwner && xLinksRef.current ? (editingProjectId ? !!xListMeta && !xListMeta[editingProjectId] : !newListTarget) : false}
+          saveLabel={!editingProjectId && isCatalogOwner && xLinksRef.current && !newListTarget ? "Create list" : undefined}
           productionHouses={productionHouses}
           rentalHouses={rentalHouses}
           recentProjectNames={recentProjectNames}
@@ -2007,12 +2571,13 @@ export default function EquipmentManifest({ session }) {
           templates={templates}
           onSaveAsTemplate={(name) => saveAsTemplate(projects.find((p) => p.id === editingProjectId), name)}
           onManageTags={() => setShowTagManager(true)}
-          onClose={() => { setShowProjectForm(false); setEditingProjectId(null); }}
+          onClose={() => { setShowProjectForm(false); setEditingProjectId(null); setNewListTarget(null); }}
           onSave={(data) => {
             if (editingProjectId) updateProject(editingProjectId, data);
-            else addProject(data);
+            else addProject(data, newListTarget);
             setShowProjectForm(false);
             setEditingProjectId(null);
+            setNewListTarget(null);
           }}
         />
       )}
@@ -2057,6 +2622,15 @@ export default function EquipmentManifest({ session }) {
           onOpenCatalog={() => { setShowTagManager(false); setView("catalog"); }}
           onExportBackup={exportFullBackup}
           onRestoreFileSelect={handleBackupFileSelect}
+          testData={isCatalogOwner ? (
+            <TestDataCleaner count={testIds.length} onLoad={loadTestData} onRemove={removeTestData} />
+          ) : null}
+          librarySections={isCatalogOwner ? [{
+            id: "eventTypes",
+            title: "Event Types",
+            content: <Suspense fallback={null}><Expansion part="settings" app={expansionApp} /></Suspense>,
+          }] : null}
+          backupNote={isCatalogOwner ? "Backup saves everything to one file: your projects with their Projects & Calendar details and event types, the master catalog and brands, tags, houses, templates, your profile and appearance. Restore lets you pick which parts to bring back." : null}
           backupError={backupError}
           onClose={() => setShowTagManager(false)}
           onSignOut={() => supabase.auth.signOut()}
@@ -2069,11 +2643,18 @@ export default function EquipmentManifest({ session }) {
           currentProjectIds={new Set(projects.map((p) => p.id))}
           onCancel={() => setPendingRestore(null)}
           onRestore={(sel) => applyRestore(pendingRestore, sel)}
+          wipeNote={isCatalogOwner ? "Their Projects & Calendar details go too; your event types, catalog and settings stay unless ticked above." : null}
+          extraSections={isCatalogOwner ? [{
+            key: "expansion",
+            label: "Projects & Calendar details",
+            detail: (d) => `${Object.keys(d.expansion?.projects || {}).length} projects' status, events and files (added; your others are kept), plus any missing event types`,
+            has: (d) => !!d.expansion?.projects,
+          }] : null}
         />
       )}
 
       {(shareResult || shareError) && (
-        <div className="no-print" style={{
+        <div className="no-print m-overlay" style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
           alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
         }}>
@@ -2088,7 +2669,9 @@ export default function EquipmentManifest({ session }) {
                 <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
                   {shareResult.kind === "live"
                     ? "Anyone with this link can view this list as it is right now, and it keeps updating as you edit. No account needed. Copied to your clipboard."
-                    : "Anyone with this link can view this list exactly as it is right now. It won't change when you edit the project later, and sending another snapshot makes a new link. No account needed. Copied to your clipboard."}
+                    : shareResult.reusedFrom
+                      ? `Nothing has changed since your last snapshot (${formatDMY(fmtDate(new Date(shareResult.reusedFrom)))}), so this is that same link. Anyone with it can view the list, no account needed. Copied to your clipboard.`
+                      : "Anyone with this link can view this list exactly as it is right now. It won't change when you edit the project later; after you make changes, sending another snapshot makes a new link. No account needed. Copied to your clipboard."}
                 </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                   <input readOnly value={shareResult.url} onFocus={(e) => e.target.select()} style={{ flex: 1, fontSize: 12.5 }} />
@@ -2114,7 +2697,7 @@ export default function EquipmentManifest({ session }) {
       )}
 
       {undoState && (
-        <div className="no-print" style={{
+        <div className="no-print m-toast" style={{
           position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 90,
           background: "var(--text)", color: "var(--bg)", borderRadius: 6, padding: "10px 16px",
           display: "flex", alignItems: "center", gap: 14, boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
@@ -2145,11 +2728,6 @@ export default function EquipmentManifest({ session }) {
         />
       )}
 
-      {isCatalogOwner && (
-        <Suspense fallback={null}>
-          <Expansion app={{ session, projects, catalog, departments, activeProjectId, view }} />
-        </Suspense>
-      )}
     </div>
   );
 }

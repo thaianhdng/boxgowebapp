@@ -1,0 +1,116 @@
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Plus } from "lucide-react";
+import { monthKey, todayStr, wdm } from "../shared/dates.js";
+import { typeOf } from "../schedule/eventTypes.js";
+import { occurrences } from "../schedule/events.js";
+import { EventRow } from "../schedule/EventRow.jsx";
+import { MonthGrid, MonthHeader, MonthKey, clashDates } from "./MonthGrid.jsx";
+import { Fold } from "../../components/Motion.jsx";
+import { fadeIn, motionOn } from "../../lib/motion.js";
+
+// Every event of every project on one calendar, coloured by event type,
+// Soft lock projects' faded, and clashes marked. Tap a day for its events, or
+// list the whole month.
+export function CalendarPanel({ app, projects, types, onAddEvent }) {
+  const [month, setMonth] = useState(() => monthKey(todayStr()));
+  const [selDate, setSelDate] = useState(null);
+  const [listMonth, setListMonth] = useState(true); // the month's list starts open
+  const allOcc = useMemo(() => occurrences(projects, types), [projects, types]);
+  // Tapping event types in the key shows only those (empty = all).
+  const [typeFilter, setTypeFilter] = useState(() => new Set());
+  const toggleType = (id) => setTypeFilter((f) => { const n = new Set(f); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const occ = useMemo(() => (typeFilter.size ? allOcc.filter((o) => typeFilter.has(o.event.typeId)) : allOcc), [allOcc, typeFilter]);
+  const clashes = useMemo(() => clashDates(occ, types), [occ, types]);
+
+  const shown = selDate ? occ.filter((o) => o.date === selDate) : listMonth ? occ.filter((o) => o.date.startsWith(month)) : [];
+  const byDate = [];
+  for (const o of shown) {
+    const last = byDate[byDate.length - 1];
+    if (last && last.date === o.date) last.items.push(o);
+    else byDate.push({ date: o.date, items: [o] });
+  }
+
+  const listOpen = !!(selDate || listMonth);
+  const list = <DayList selDate={selDate} byDate={byDate} clashes={clashes} types={types} app={app} />;
+  const lastList = useRef(list);
+  if (listOpen) lastList.current = list;
+  const listRef = useRef(null);
+  const listKey = `${selDate || ""}|${month}`;
+  const was = useRef({ listOpen, listKey });
+  useLayoutEffect(() => {
+    const prev = was.current;
+    was.current = { listOpen, listKey };
+    if (prev.listOpen && listOpen && prev.listKey !== listKey && listRef.current && motionOn()) fadeIn(listRef.current);
+  }, [listOpen, listKey]);
+
+  return (
+    <div>
+      <MonthHeader
+        month={month}
+        onChange={(m) => { setMonth(m); setSelDate(null); }}
+        right={
+          <>
+            <button className="btn btn-ghost" style={{ padding: "4px 8px", fontSize: 11 }} onClick={() => { setMonth(monthKey(todayStr())); setSelDate(null); }}>Today</button>
+          </>
+        }
+      />
+      <MonthGrid month={month} occ={occ} types={types} selected={selDate} onSelect={setSelDate} />
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 6, marginBottom: 12 }}>
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 3 }}>
+          <MonthKey month={month} occ={allOcc} types={types} filter={typeFilter} onToggle={toggleType} />
+        </div>
+        {selDate ? (
+          <span style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            {onAddEvent && (
+              <button className="btn btn-primary" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => onAddEvent(selDate)} title="Add an event on this day to one of your projects"><Plus size={12} /> Add event</button>
+            )}
+            <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11 }} onClick={() => setSelDate(null)}>Close day</button>
+          </span>
+        ) : (
+          <button className="btn btn-ghost" style={{ padding: "3px 8px", fontSize: 11, flexShrink: 0 }} onClick={() => setListMonth((v) => !v)}>
+            {listMonth ? "Hide month list" : "List this month"}
+          </button>
+        )}
+      </div>
+      {/* The list under the month opens / closes smoothly (motion), and
+          fades when it changes to another day or month. While it closes it
+          keeps what it showed (`lastList`). */}
+      <Fold open={listOpen}>
+      <div ref={listRef}>
+      {listOpen ? list : lastList.current}
+      </div>
+      </Fold>
+    </div>
+  );
+}
+
+function DayList({ selDate, byDate, clashes, types, app }) {
+  return (
+    <>
+      {byDate.length === 0 && (
+        <div style={{ fontSize: 12.5, color: "var(--muted2)", padding: "4px 0 10px" }}>{selDate ? `Nothing on ${wdm(selDate)}.` : "Nothing scheduled this month."}</div>
+      )}
+      {byDate.map(({ date, items }) => (
+        <div key={date} style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+            <span className="stencil" style={{ fontSize: 11, color: date === todayStr() ? "var(--accent)" : "var(--muted)" }}>{wdm(date)}</span>
+            {clashes.has(date) && <span style={{ fontSize: 9.5, fontWeight: 800, color: "var(--danger)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Clash</span>}
+          </div>
+          <div style={{ borderTop: "1px solid var(--border)" }}>
+            {items.map((o, i) => (
+              <EventRow
+                key={`${o.projectId}-${o.event.id}-${i}`}
+                event={o.event}
+                type={typeOf(types, o.event.typeId)}
+                projectName={o.project.name}
+                tentative={o.tentative}
+                dayLabel={o.dayCount > 1 ? `Day ${o.dayIndex + 1}/${o.dayCount}` : ""}
+                onClick={() => app.go({ screen: "project", projectId: o.projectId, from: "calendar" })}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
