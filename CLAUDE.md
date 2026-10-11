@@ -229,7 +229,8 @@ Start of each conversation, the owner should say which one it is:
      type; tapping a shoot day opens Edit project). A project's own
      calendar names each day's event (shoot days as "Shooting D1"…;
      a project with a single shoot day: "Shoot day"). The
-     schedule lists every shoot day on its own line (D1, D2…). Events are
+     schedule lists every shoot day on its own line (D1, D2…; a
+     single shoot day reads "Shoot day", as on the calendar). Events are
      always ordered date → time (all-day first) → the Event types list
      order → order added (`compareEvents` in `schedule/events.js`). Times
      are picked as hour : minute in 5-minute steps. The People feature is

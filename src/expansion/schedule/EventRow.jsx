@@ -27,8 +27,9 @@ const isMapsLink = (url) => /(maps\.google\.|google\.[a-z.]+\/maps|goo\.gl\/maps
 // One schedule event. `projectName` is shown on the all-projects calendar.
 // A MAP button shows when the location / link field holds a Google Maps
 // link, LINK for any other link; plain text gets no button. `hideLinks`
-// drops it. `tentative`: its project is a Soft lock (drawn faded).
-export function EventRow({ event, type, projectName, dayLabel, hideLinks, onClick, tentative }) {
+// drops it. `tentative`: its project is a Soft lock (drawn faded). `name`
+// replaces the event type's name (a project's only shoot day: "Shoot day").
+export function EventRow({ event, type, name, projectName, dayLabel, hideLinks, onClick, tentative }) {
   const faded = !!tentative;
   const where = event.mode === "online" ? event.link : event.location;
   const href = linkIn(where);
@@ -48,7 +49,7 @@ export function EventRow({ event, type, projectName, dayLabel, hideLinks, onClic
       }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: type.color }}>{type.name}</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: type.color }}>{name || type.name}</span>
           {dayLabel && <span style={{ fontSize: 11, color: "var(--muted)" }}>{dayLabel}</span>}
           {event.label && <span style={{ fontSize: 11.5, color: "var(--text)", fontWeight: 600 }}>{event.label}</span>}
           {projectName && <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{projectName}</span>}

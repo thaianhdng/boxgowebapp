@@ -34,11 +34,12 @@ export function ScheduleSection({ events, types, request, onChange, onEditShootD
   }
   const openEvent = (s) => (s.typeId === shootId ? onEditShootDays() : setEditing({ isNew: false, event: s }));
 
-  const row = (s, dayLabel) => (
+  const row = (s, dayLabel, name) => (
     <div key={s.id} style={{ background: lit(s) ? "var(--surface2)" : "transparent" }}>
       <EventRow
         event={s}
         type={typeOf(types, s.typeId)}
+        name={name}
         dayLabel={dayLabel}
         onClick={() => openEvent(s)}
         tentative={tentative}
@@ -46,7 +47,9 @@ export function ScheduleSection({ events, types, request, onChange, onEditShootD
     </div>
   );
 
-  const items = sorted.map((s) => row(s, dayNo.has(s.id) ? `D${dayNo.get(s.id)}` : ""));
+  // A project's only shoot day reads "Shoot day" (as on its calendar).
+  const items = sorted.map((s) => (!dayNo.has(s.id) ? row(s, "")
+    : dayNo.size === 1 ? row(s, "", "Shoot day") : row(s, `D${dayNo.get(s.id)}`)));
 
   return (
     <Section
