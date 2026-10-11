@@ -11,7 +11,7 @@ import { PDF_FONTS, pdfFontFor } from "../lib/font.js";
 // bytes page by page with pdf.js (see lib/pdfPreview.js) — no separate
 // layout to keep in sync, so the preview and the downloaded file always
 // match, and pdf.js's text layer keeps the text selectable and copyable.
-export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDownload, pdfGenerating, onSetPdfFont, onShareSnapshot, onShareLive, hasLiveLink, shareGenerating }) {
+export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownload, pdfGenerating, onSetPdfFont, onShareSnapshot, onShareLive, hasLiveLink, shareGenerating }) {
   const [filename, setFilename] = useState(() => defaultExportFilename(project, userName));
   const [status, setStatus] = useState("loading"); // "loading" | "ready" | "error"
   const pagesRef = useRef(null);
@@ -46,11 +46,9 @@ export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBac
         background: "var(--surface)", borderBottom: "2px solid var(--border)",
         padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
       }}>
-        {showBack && (
-          <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px" }}>
-            <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Back
-          </button>
-        )}
+        <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px" }}>
+          <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Back
+        </button>
         <div style={{ flex: 1, minWidth: 80 }}>
           <div className="stencil" style={{ fontSize: 13, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {project.name || "Equipment List"}

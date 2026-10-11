@@ -108,7 +108,6 @@ export default function EquipmentManifest({ session }) {
   const [ghostDraft, setGhostDraft] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
-  const [cameFromUrl, setCameFromUrl] = useState(false);
   const [previewReturnView, setPreviewReturnView] = useState("projects");
   const [departments, setDepartments] = useState(DEFAULT_DEPARTMENTS);
   const [projectTags, setProjectTags] = useState(DEFAULT_PROJECT_TAGS);
@@ -407,18 +406,18 @@ export default function EquipmentManifest({ session }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, loadAttempt]);
 
-  // Support shareable preview links: ?project=<id> in the URL jumps straight
-  // to that project's read-only preview once data has loaded, so someone
-  // opening a shared link — signed in or not — lands on the clean preview
-  // rather than the editable project list.
+  // The preview's address carries ?project=<id>, so reloading it (or
+  // opening it again) comes back to that list's preview once data has
+  // loaded. Only the list's own account can load it (sharing uses
+  // /share/<token> links), so Back is always there: it opens the list.
   useEffect(() => {
     if (!loaded) return;
     const params = new URLSearchParams(window.location.search);
     const pid = params.get("project");
     if (pid && projects.some((p) => p.id === pid)) {
       setActiveProjectId(pid);
+      setPreviewReturnView("manifest");
       setView("preview");
-      setCameFromUrl(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
@@ -2505,7 +2504,6 @@ export default function EquipmentManifest({ session }) {
             project={activeProject}
             userName={userName}
             buildPdfBlob={buildPdfBlob}
-            showBack={!cameFromUrl}
             onBack={exitPreview}
             onDownload={exportToPdf}
             pdfGenerating={pdfGenerating}
