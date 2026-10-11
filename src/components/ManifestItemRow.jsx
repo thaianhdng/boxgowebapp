@@ -34,7 +34,7 @@ export function ManifestItemRow({ item, days, perDayQty, entry, onQtyChange, onN
         borderTop: "1px solid var(--border)", fontSize: 13,
       }}>
         <div className="mf-item-col" style={{ flex: 1, maxWidth: 220, whiteSpace: "normal", wordBreak: "break-word", overflowWrap: "anywhere" }}>
-          <div style={{ fontWeight: 600 }}>
+          <div style={{ fontWeight: 500 }}>
             <BreakableName name={item.name} />
           </div>
           {item.note && (

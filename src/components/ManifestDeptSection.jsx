@@ -189,9 +189,11 @@ export function ManifestDeptSection({
                 <div
                   onClick={() => onToggleSubcat(sub)}
                   style={{
+                    // A small, spaced-out label in the accent colour, so it reads
+                    // differently from the item names under it.
                     display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
-                    fontSize: 12, fontWeight: 800, color: "var(--text)", padding: "8px 14px",
-                    textTransform: "uppercase", letterSpacing: "0.06em", background: "var(--surface2)",
+                    fontSize: 10.5, fontWeight: 700, color: "var(--accent)", padding: "9px 14px 7px",
+                    textTransform: "uppercase", letterSpacing: "0.16em", background: "var(--surface2)",
                   }}
                 >
                   {subCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
