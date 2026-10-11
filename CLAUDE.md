@@ -94,8 +94,8 @@ Start of each conversation, the owner should say which one it is:
      owner's phone the name shrinks so it fits). EQUIPMENT tapped on a Project page
      opens that project's current list (a project with no list: the
      list manager); from anywhere else, the list manager. The crumb's
-     section names: "Projects Manager", "Calendar", "Equipment Lists
-     Manager" (others keep "Project Manager"); the crumb wraps, so a list /
+     section names: "Projects Manager", "Calendar", "List Manager"
+     (others keep "Project Manager"); the crumb wraps, so a list /
      project name too long to sit beside it takes the next line and is cut
      with "…" only when longer than the row (everyone; no fixed width).
      `EquipmentManifest` starts on view `"x"`,
@@ -147,8 +147,8 @@ Start of each conversation, the owner should say which one it is:
      name (owner's call), so only the name's first line makes room for it.
      The top row is flowing text, not flex items. The equipment list's
      cards (everyone, owner's call: synced with the Projects cards) work
-     the same way: name · dates with the tag floating in the top right
-     corner (a draft's "No project" mark on its own line under the name);
+     the same way: name (accent colour) · dates with the tag floating in
+     the top right corner (a draft's "No project" mark on its own line under the name);
      then the houses, the project note, the version row (owner: "V3 ·
      list note · 3 lists", or a draft's list note; one line, the note cut
      with "…"), locations, gear; and a foot row
@@ -182,7 +182,7 @@ Start of each conversation, the owner should say which one it is:
      Templates, Test data box (`testData` prop). A clash (red dot) = two projects' shoots / prelights on one
      day, or overlapping set times (`clashDates`); a full day box shows
      as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
-     owner: its crumb root reads "Equipment Lists Manager" (others:
+     owner: its crumb root reads "List Manager" (others:
      "Project Manager"); inside a list in a project, "Edit project" and an
      accent "Go to project" button (the Project page) sit at the bottom
      right of the info box instead of the header (a draft's box has "Edit

@@ -138,7 +138,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               <span
                 onClick={(e) => attr(e, "name", p.name)}
                 title="Filter by this project name"
-                style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", cursor: "pointer", marginRight: 7, overflowWrap: "anywhere" }}
+                style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--accent)", textTransform: "uppercase", cursor: "pointer", marginRight: 7, overflowWrap: "anywhere" }}
               >
                 {p.name || (listMeta && !listMeta[p.id] ? <span style={{ color: "var(--muted)" }}>Untitled list</span> : null)}
               </span>

@@ -1987,7 +1987,7 @@ export default function EquipmentManifest({ session }) {
                     color: view === "projects" || (view === "x" && xRoute.screen !== "project") ? "var(--accent)" : "var(--text)",
                   }}
                 >
-                  {view === "x" ? (xModule === "calendar" ? "Calendar" : "Projects Manager") : isCatalogOwner ? "Equipment Lists Manager" : "Project Manager"}
+                  {view === "x" ? (xModule === "calendar" ? "Calendar" : "Projects Manager") : isCatalogOwner ? "List Manager" : "Project Manager"}
                 </button>
                 {view === "x" && xRoute.screen === "project" && (
                   <>
