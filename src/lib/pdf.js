@@ -268,10 +268,12 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         ensureSpace(BAR_H + 14 + 16);
         doc.setFillColor(242, 242, 242);
         doc.rect(marginX, y, usableWidth, BAR_H, "F");
+        // Like the composer: a small, spaced-out label in the accent colour,
+        // so it reads differently from the item names under it.
         doc.setFont(FONT, "bold");
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-        doc.text(sub.toUpperCase(), marginX + 12, y + barBaseline(9));
+        doc.setFontSize(8);
+        doc.setTextColor(...accentRgb);
+        doc.text(sub.toUpperCase(), marginX + 12, y + barBaseline(8), { charSpace: 1 });
         y += BAR_H;
 
         // Row geometry: the same gap above the first line's capitals and
@@ -303,7 +305,8 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           ensureSpace(rowHeight);
           const rowTop = y;
 
-          doc.setFont(FONT, "bold");
+          // Item names in regular weight (quantities stay bold).
+          doc.setFont(FONT, "normal");
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           let ty = rowTop + topPad;

@@ -358,7 +358,10 @@ Start of each conversation, the owner should say which one it is:
   don't fit); then Production House and Rental House (house, with the
   Producer / Gaffer on the line below, same bold font; cut with "…"
   when too wide) and Created On (date, time below) at the right; a thin
-  (1.5pt) accent line; the project note has no label. Font is per project (`project.pdfFont`,
+  (1.5pt) accent line; the project note has no label. In the list (as in the
+  composer, owner's call): category bars in the accent colour, subcategory
+  labels small, spaced-out and in the accent colour on a light grey bar,
+  item names in regular weight (quantities bold). Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
   default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and share page draw
   the real PDF with pdf.js (`src/lib/pdfPreview.js`). Downloads go through
