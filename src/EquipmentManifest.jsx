@@ -66,6 +66,9 @@ function buildAppStatePayload(v) {
 // when <Expansion> is rendered, which only happens for the owner.
 const Expansion = lazy(() => import("./expansion/Expansion.jsx"));
 const UI_SIZE_KEY = "boxgo-ui-size";
+// Widest the site gets on a big screen (the Projects page uses the same), so
+// item names and their quantity boxes don't drift far apart.
+const PAGE_MAX = 1280;
 
 export default function EquipmentManifest({ session }) {
   // Copy Catalog only matters to whoever maintains the default catalog new
@@ -1885,7 +1888,8 @@ export default function EquipmentManifest({ session }) {
         <>
           {/* Top bar */}
           <header ref={headerRef} className="no-print" style={{
-            padding: "12px 20px", borderBottom: "2px solid var(--border)",
+            // The line runs edge to edge; what's on it stays within the page width.
+            padding: "12px 20px", paddingInline: `max(20px, calc((100% - ${PAGE_MAX}px) / 2 + 20px))`, borderBottom: "2px solid var(--border)",
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, ...(isCatalogOwner ? { flexShrink: 0 } : {}) }}>
@@ -2073,7 +2077,7 @@ export default function EquipmentManifest({ session }) {
           )}
 
           {view !== "x" && (<>
-          <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+          <div style={{ display: "flex", flex: 1, minHeight: 0, width: "100%", maxWidth: PAGE_MAX, margin: "0 auto" }}>
             {/* Sidebar */}
             {view !== "projects" && (
               <aside className="rail no-print" style={{

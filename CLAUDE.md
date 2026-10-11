@@ -352,6 +352,13 @@ Start of each conversation, the owner should say which one it is:
   default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and share page draw
   the real PDF with pdf.js (`src/lib/pdfPreview.js`). Downloads go through
   `saveFile()` in `src/lib/utils.js` (iOS: opens the Share menu).
+- **Page width** (everyone, owner's call): on big screens the site stops
+  at 1280px, centred (`PAGE_MAX` in `EquipmentManifest.jsx`; the same
+  width as the Projects page), so item names and their quantity boxes
+  stay close. The header's line still runs edge to edge; what sits on it
+  keeps to that width.
+- **Visual revamp "A"** (camera-menu look) is on hold: mockups and notes
+  in `design/revamp-a/` (not part of the app). Pick it up from there.
 - Phone details that matter: iOS-only `maximum-scale=1` (no focus zoom) and
   a 6px top strip so Safari's top bar isn't tinted by sticky headers
   (`index.html`, `.top-tint` / `.sticky-top`); per-device UI size via CSS
