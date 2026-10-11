@@ -115,7 +115,7 @@ function ProjectCard({ project, status, hasList, types, today, onOpen, onOpenLis
         </div>
       )}
       {project.notes && (
-        <div title={project.notes} style={{ fontSize: 10.5, color: "var(--muted2)", marginTop: 4, ...oneLine }}>{project.notes.replace(/\s*\n+\s*/g, " · ")}</div>
+        <div title={project.notes} style={{ fontSize: 10.5, color: "var(--text)", marginTop: 4, ...oneLine }}>{project.notes.replace(/\s*\n+\s*/g, " · ")}</div>
       )}
       {locs.length > 0 && <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 5 }}>{locs.join(" · ")}</div>}
       {!dates.length && <div style={{ fontSize: 10.5, color: "var(--accent)", marginTop: 4 }}>⚠ No shoot dates</div>}

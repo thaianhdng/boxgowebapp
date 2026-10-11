@@ -189,7 +189,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               <div
                 title={p.note}
                 style={{
-                  fontSize: 10.5, color: "var(--muted2)", marginTop: 4,
+                  fontSize: 10.5, color: "var(--text)", marginTop: 4,
                   whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 }}
               >
@@ -202,14 +202,14 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
               const m = listMeta?.[p.id];
               const draftNote = listMeta && !p.ghost && !m ? p.listNote : "";
               if (draftNote) {
-                return <div title={draftNote} style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 4, ...oneLine }}>{draftNote}</div>;
+                return <div title={draftNote} style={{ fontSize: 10.5, color: "var(--text)", marginTop: 4, ...oneLine }}>{draftNote}</div>;
               }
               if (!m || (m.count < 2 && !m.note)) return null;
               return (
-                <div title={m.note || undefined} style={{ display: "flex", fontSize: 10.5, color: "var(--muted)", marginTop: 4, minWidth: 0, whiteSpace: "nowrap" }}>
+                <div title={m.note || undefined} style={{ display: "flex", fontSize: 10.5, color: "var(--text)", marginTop: 4, minWidth: 0, whiteSpace: "nowrap" }}>
                   <b style={{ color: "var(--accent)", flexShrink: 0 }}>V{m.v}</b>
                   {m.note && <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>&nbsp;· {m.note}</span>}
-                  {m.count > 1 && <span style={{ color: "var(--muted2)", flexShrink: 0 }}>&nbsp;· {m.count} lists</span>}
+                  {m.count > 1 && <span style={{ flexShrink: 0 }}>&nbsp;· {m.count} lists</span>}
                 </div>
               );
             })()}

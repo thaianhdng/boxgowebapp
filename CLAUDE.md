@@ -136,7 +136,7 @@ Start of each conversation, the owner should say which one it is:
      Project cards copy the equipment list's card layout and size
      (owner's call; 240px grid, same lines: name (accent colour) · dates (text colour), Production
      House + Producer, Rental House +
-     Gaffer, then the notes (one line), shoot locations), then a last row
+     Gaffer, then the notes (one line, text colour), shoot locations), then a last row
      kept at the card's foot: the next event, and what the job has as
      icons in the text colour (white in dark mode): paperclip + file count
      (only when it has files; tapping it opens the Project page at its
@@ -152,7 +152,7 @@ Start of each conversation, the owner should say which one it is:
      own line under the name);
      then the houses, the project note, the version row (owner: "V3 ·
      list note · 3 lists", or a draft's list note; one line, the note cut
-     with "…"), locations, gear; and a foot row
+     with "…"; both notes in the text colour), locations, gear; and a foot row
      with "⚠ No items" at the left and the ⋮ menu (or a greyed card's
      "+ List") in the bottom right corner, opening upwards. The cards'
      camera and lens lines leave out the camera / lens categories and
