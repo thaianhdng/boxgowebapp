@@ -125,7 +125,8 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
   }
   const named = !!focusProjectId;
   // Every day names what's on it: a project's own calendar names its events
-  // (shoot days as "Shooting D1"); the all-projects calendar names the
+  // (shoot days as "Shooting D1", or "Shoot day" when there is only one);
+  // the all-projects calendar names the
   // project, coloured by event type. On a phone names wrap onto two small
   // lines, so day boxes there are taller.
   const showLabels = named || !compact;
@@ -212,7 +213,7 @@ export function MonthGrid({ month, occ, types, selected, onSelect, focusProjectI
                     border: `1px ${faded ? "dashed" : "solid"} ${color}`, opacity: faded ? 0.75 : 1,
                     ...(other ? { fontWeight: 600 } : {}),
                   }}>
-                    {(named && !other ? (dayNo.has(o.event.id) ? `${t.name} D${dayNo.get(o.event.id)}` : t.name) : (o.project.name || t.name)).replace(/-/g, "\u2011")}
+                    {(named && !other ? (dayNo.has(o.event.id) ? (dayNo.size === 1 ? "Shoot day" : `${t.name} D${dayNo.get(o.event.id)}`) : t.name) : (o.project.name || t.name)).replace(/-/g, "\u2011")}
                   </span>
                 ) : (
                   <span key={k} style={{
