@@ -326,6 +326,14 @@ Start of each conversation, the owner should say which one it is:
     Sending a snapshot identical to the project's last one reuses that
     link. Live links show "Updated" from `projects.list_updated_at`, set by
     a trigger only when the list content changes (`supabase/005_…`).
+  - **Share-link previews** (chat apps don't run the app, only read the
+    page's head): `middleware.js` (Vercel Routing Middleware, matcher
+    `/share/:token*`) calls `get_shared_list` with the anon key
+    (`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` from Vercel's env)
+    and puts the list's name (title) and "tag · Equipment list · dates ·
+    Production House" (description) into `<title>` and the og: tags.
+    Any failure, or over 2.5s, serves the page unchanged. It imports only
+    `src/lib/shootDates.js` (no app code). Only runs on Vercel.
   - SQL the owner has already run lives in `supabase/`. New SQL: add a
     numbered file there and give the owner the steps to run it in the
     Supabase SQL Editor.
