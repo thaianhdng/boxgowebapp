@@ -4,25 +4,47 @@ import {
 } from "lucide-react";
 import { Combobox } from "./Combobox.jsx";
 import { Field } from "./Field.jsx";
-import { uid, tomorrowStr, addOneDay, cascadeDates } from "../lib/utils.js";
+import { uid, todayStr, addOneDay, cascadeDates } from "../lib/utils.js";
 
 
-export function ProjectFormModal({ initial, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
-  const [name, setName] = useState(initial?.name || "");
-  const [tag, setTag] = useState((initial && initial.tag) || projectTags[0] || "");
-  const [productionHouse, setProductionHouse] = useState(initial?.productionHouse || "");
-  const [producer, setProducer] = useState(initial?.producer || "");
-  const [rentalHouse, setRentalHouse] = useState(initial?.rentalHouse || "");
-  const [gaffer, setGaffer] = useState(initial?.gaffer || "");
+// `initial` edits an existing project. Two extras, used only by the
+// owner's Calendar module (src/expansion/): `prefill` starts a *new*
+// project from given values, and `noList` is for a project without an
+// equipment list — it hides the list-only parts (template, quantity mode,
+// save as template) and requires every shoot day to have a date.
+// `heading` / `saveLabel` (owner only) replace "New Project" / "Create
+// project" when the window makes a list for an existing project or a draft.
+// `draft` (owner only): a draft list, in no project — the bare-bone list:
+// no production / rental house, Producer or Gaffer (those belong to a
+// project), and the name, tag and shoot dates are optional.
+export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, draft, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
+  const start = initial || prefill;
+  const [name, setName] = useState(start?.name || "");
+  // Editing shows the project's real tag, even none ("—") or one since
+  // removed from the tag list; a new project starts on the first tag.
+  const [tag, setTag] = useState(initial ? initial.tag || "" : draft ? "" : (start && start.tag) || projectTags[0] || "");
+  // "—" (no tag), when offered, is always first; a tag since removed from
+  // the list follows it.
+  const cur = initial?.tag || "";
+  const tagOptions = [
+    ...(draft || (initial && !cur) ? [""] : []),
+    ...(cur && !projectTags.includes(cur) ? [cur] : []),
+    ...projectTags,
+  ];
+  const [productionHouse, setProductionHouse] = useState(start?.productionHouse || "");
+  const [producer, setProducer] = useState(start?.producer || "");
+  const [rentalHouse, setRentalHouse] = useState(start?.rentalHouse || "");
+  const [gaffer, setGaffer] = useState(start?.gaffer || "");
   const [templateId, setTemplateId] = useState("");
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [templateName, setTemplateName] = useState("");
-  const [dayCount, setDayCount] = useState(initial?.days?.length || 1);
-  const [perDayQty, setPerDayQty] = useState(initial?.perDayQty || false);
+  const [missingDate, setMissingDate] = useState(false);
+  const [dayCount, setDayCount] = useState(start?.days?.length || 1);
+  const [perDayQty, setPerDayQty] = useState(start?.perDayQty || false);
   const [dayRows, setDayRows] = useState(
-    initial?.days?.length
-      ? initial.days.map((d) => ({ id: d.id, date: d.date, location: d.location || "", projectLabel: d.projectLabel || "" }))
-      : [{ id: uid(), date: tomorrowStr(), location: "", projectLabel: "" }]
+    start?.days?.length
+      ? start.days.map((d) => ({ id: d.id, date: d.date, location: d.location || "", projectLabel: d.projectLabel || "" }))
+      : [{ id: uid(), date: draft ? "" : todayStr(), location: "", projectLabel: "" }]
   );
 
   function handleDayCount(n) {
@@ -31,7 +53,7 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
       const next = [...prev];
       while (next.length < n) {
         const prevDate = next.length > 0 ? next[next.length - 1].date : "";
-        next.push({ id: uid(), date: prevDate ? addOneDay(prevDate) : tomorrowStr(), location: "", projectLabel: "" });
+        next.push({ id: uid(), date: prevDate ? addOneDay(prevDate) : draft ? "" : todayStr(), location: "", projectLabel: "" });
       }
       while (next.length > n) next.pop();
       return next;
@@ -56,25 +78,29 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
   }
 
   function submit() {
-    if (!name.trim()) return;
+    if (!name.trim() && !draft) return;
+    if (noList && dayRows.some((d) => !d.date)) { setMissingDate(true); return; }
     const days = dayRows.map((d, i) => ({
       id: d.id, label: `Day ${i + 1}`, date: d.date, location: d.location, projectLabel: d.projectLabel,
     }));
-    onSave({ name: name.trim(), tag, productionHouse: productionHouse.trim(), producer: producer.trim(), rentalHouse: rentalHouse.trim(), gaffer: gaffer.trim(), days, perDayQty, templateId: templateId || undefined });
+    const houses = draft
+      ? { productionHouse: "", producer: "", rentalHouse: "", gaffer: "" }
+      : { productionHouse: productionHouse.trim(), producer: producer.trim(), rentalHouse: rentalHouse.trim(), gaffer: gaffer.trim() };
+    onSave({ name: name.trim(), tag, ...houses, days, perDayQty, templateId: templateId || undefined });
   }
 
   return (
-    <div className="no-print" style={{
+    <div className="no-print m-overlay" style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
       alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
     }}>
       <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 440, maxHeight: "90vh", overflowY: "auto", padding: 22, border: "1px solid var(--border2)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div className="stencil" style={{ fontSize: 14 }}>{initial ? "Edit Project" : "New Project"}</div>
+          <div className="stencil" style={{ fontSize: 14 }}>{heading || (initial ? "Edit Project" : "New Project")}</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
 
-        {!initial && templates.length > 0 && (
+        {!initial && !noList && templates.length > 0 && (
           <div style={{ marginBottom: 12 }}>
             <select
               value={templateId}
@@ -94,17 +120,18 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
             onChange={(e) => setTag(e.target.value)}
             title="Project tag"
           >
-            {projectTags.map((t) => <option key={t} value={t}>{t}</option>)}
+            {tagOptions.map((t) => <option key={t} value={t}>{t || "—"}</option>)}
           </select>
           <Combobox
             value={name}
             onChange={setName}
             options={recentProjectNames}
-            placeholder="Project Name"
+            placeholder={draft ? "List name (optional)" : "Project Name"}
             style={{ flex: 1 }}
           />
         </div>
 
+        {!draft && (<>
         <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
           <select
             value={productionHouse}
@@ -138,12 +165,13 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
             style={{ flex: 2 }}
           />
         </div>
+        </>)}
 
         <button
           onClick={onManageTags}
           style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", alignItems: "center", gap: 4, fontSize: 11, marginBottom: 16 }}
         >
-          <Pencil size={11} /> Manage tags, production houses and rental houses
+          <Pencil size={11} /> {draft ? "Manage tags" : "Manage tags, production houses and rental houses"}
         </button>
 
         <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
@@ -165,6 +193,7 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
               ))}
             </div>
           </Field>
+          {!noList && (
           <Field label="Equipment Quantities" style={{ flex: 1, minWidth: 180, marginBottom: 0 }}>
             <div style={{ display: "flex", gap: 4, background: "var(--surface2)", borderRadius: 4, padding: 3 }} title="Whether every shoot day uses the same gear quantities, or each day is entered separately">
               <button
@@ -191,6 +220,7 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
               </button>
             </div>
           </Field>
+          )}
         </div>
 
         <Field label={dayRows.length > 1 ? "Shoot days" : "Shoot day"}>
@@ -198,17 +228,21 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
             <div key={d.id} style={{ marginBottom: 8 }}>
               <div style={{ display: "flex", gap: 6, marginBottom: 4, alignItems: "center" }}>
                 <span style={{ fontSize: 11, fontWeight: 800, color: "var(--muted)", width: 20, flexShrink: 0 }}>D{i + 1}</span>
-                <input
-                  type="date"
-                  style={{ width: 118, flexShrink: 0, fontSize: 12, padding: "5px 6px" }}
-                  value={d.date}
-                  onChange={(e) => updateDayRow(d.id, { date: e.target.value })}
-                />
+                {/* An empty date reads "Select date" (no date is fine for a draft). */}
+                <span style={{ position: "relative", width: 118, flexShrink: 0, display: "flex" }}>
+                  <input
+                    type="date"
+                    style={{ width: "100%", fontSize: 12, padding: "5px 6px", ...(d.date ? {} : { color: "transparent" }) }}
+                    value={d.date}
+                    onChange={(e) => { updateDayRow(d.id, { date: e.target.value }); setMissingDate(false); }}
+                  />
+                  {!d.date && <span style={{ position: "absolute", left: 7, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "var(--muted2)", pointerEvents: "none" }}>Select date</span>}
+                </span>
                 <Combobox
                   value={d.projectLabel}
                   onChange={(v) => updateDayRow(d.id, { projectLabel: v })}
                   options={recentProjectLabels}
-                  placeholder="Type of shooting…"
+                  placeholder="Shoot type…"
                   style={{ flex: 1 }}
                 />
               </div>
@@ -216,13 +250,14 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
                 style={{ width: "calc(100% - 26px)", marginLeft: 26 }}
                 value={d.location}
                 onChange={(e) => updateDayRow(d.id, { location: e.target.value })}
-                placeholder="Location"
+                placeholder="Location and note"
               />
             </div>
           ))}
+          {missingDate && <div style={{ fontSize: 12, color: "var(--danger)" }}>Every shoot day needs a date.</div>}
         </Field>
 
-        {initial && (
+        {initial && !noList && (
           <div style={{ marginBottom: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
             {showSaveTemplate ? (
               <div style={{ display: "flex", gap: 6 }}>
@@ -251,7 +286,7 @@ export function ProjectFormModal({ initial, productionHouses, rentalHouses, rece
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={submit}>{initial ? "Save changes" : "Create project"}</button>
+          <button className="btn btn-primary" onClick={submit}>{saveLabel || (initial ? "Save changes" : "Create project")}</button>
         </div>
       </div>
     </div>

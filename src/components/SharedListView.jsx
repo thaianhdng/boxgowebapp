@@ -102,7 +102,7 @@ export function SharedListView({ token }) {
       <div style={styles.banner}>
         BOXGO · {shared.kind === "snapshot" && shared.sharedAt
           ? `Snapshot sent ${formatDMY(fmtDate(new Date(shared.sharedAt)))}`
-          : "Live list — always shows the latest version"}
+          : `Live list — always shows the latest version${shared.updatedAt ? ` · Updated ${formatDMY(fmtDate(new Date(shared.updatedAt)))}, ${timeHM(new Date(shared.updatedAt))}` : ""}`}
       </div>
 
       {pdfStatus === "loading" && (
@@ -125,6 +125,10 @@ export function SharedListView({ token }) {
       </div>
     </Shell>
   );
+}
+
+function timeHM(d) {
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 function Shell({ children }) {

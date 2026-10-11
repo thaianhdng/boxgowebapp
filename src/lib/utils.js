@@ -1,4 +1,5 @@
 import { DEPT_COLORS } from "../constants.js";
+import { pad2 } from "./shootDates.js";
 
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
@@ -33,61 +34,15 @@ export function loadColor(dept) {
 }
 
 
-export function pad2(n) {
-  return String(n).padStart(2, "0");
-}
-
-// "6-8/10/26" for consecutive shoot days, "10,17/10/26" for non-consecutive,
-// multiple months joined like "28-30/09/26, 1-3/10/26".
-export function formatShootDateRange(days) {
-  const dates = [...new Set((days || []).map((d) => d.date).filter(Boolean))]
-    .map((s) => {
-      const [y, m, d] = s.split("-").map(Number);
-      return { y, m, d, key: s };
-    })
-    .sort((a, b) => a.key.localeCompare(b.key));
-  if (dates.length === 0) return "";
-
-  const monthGroups = [];
-  let current = null;
-  for (const dt of dates) {
-    if (!current || current.y !== dt.y || current.m !== dt.m) {
-      current = { y: dt.y, m: dt.m, days: [] };
-      monthGroups.push(current);
-    }
-    current.days.push(dt.d);
-  }
-
-  const parts = monthGroups.map((g) => {
-    const tokens = [];
-    let start = g.days[0];
-    let prev = g.days[0];
-    for (let i = 1; i <= g.days.length; i++) {
-      const d = g.days[i];
-      if (d === prev + 1) {
-        prev = d;
-        continue;
-      }
-      tokens.push(start === prev ? `${start}` : `${start}-${prev}`);
-      if (i < g.days.length) {
-        start = d;
-        prev = d;
-      }
-    }
-    return `${tokens.join(",")}/${pad2(g.m)}/${String(g.y).slice(-2)}`;
-  });
-
-  return parts.join(", ");
-}
+export { pad2, formatShootDateRange } from "./shootDates.js";
 
 export function fmtDate(d) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-export function tomorrowStr() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return fmtDate(d);
+// The default for any empty date field.
+export function todayStr() {
+  return fmtDate(new Date());
 }
 
 export function addOneDay(dateStr) {
@@ -282,4 +237,12 @@ function download(blob, filename, asGeneric) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// Whether a catalog item shows in the project cards' camera / lens lines:
+// `off` holds the categories ("dept") and subcategories ("dept::sub") the
+// user unticked in the Master Catalog.
+export function inCardPreview(c, off) {
+  if (!off || !off.size) return true;
+  return !off.has(c.department) && !off.has(`${c.department}::${c.subcategory || ""}`);
 }

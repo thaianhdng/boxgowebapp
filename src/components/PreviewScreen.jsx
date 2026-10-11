@@ -4,13 +4,14 @@ import {
 } from "lucide-react";
 import { defaultExportFilename } from "../lib/utils.js";
 import { renderPdfPages } from "../lib/pdfPreview.js";
+import { PDF_FONTS, pdfFontFor } from "../lib/font.js";
 
 
 // Renders the preview screen. Builds the actual PDF and draws those exact
 // bytes page by page with pdf.js (see lib/pdfPreview.js) — no separate
 // layout to keep in sync, so the preview and the downloaded file always
 // match, and pdf.js's text layer keeps the text selectable and copyable.
-export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBack, onDownload, pdfGenerating, onShareSnapshot, onShareLive, hasLiveLink, shareGenerating }) {
+export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownload, pdfGenerating, onSetPdfFont, onShareSnapshot, onShareLive, hasLiveLink, shareGenerating }) {
   const [filename, setFilename] = useState(() => defaultExportFilename(project, userName));
   const [status, setStatus] = useState("loading"); // "loading" | "ready" | "error"
   const pagesRef = useRef(null);
@@ -45,17 +46,28 @@ export function PreviewScreen({ project, userName, buildPdfBlob, showBack, onBac
         background: "var(--surface)", borderBottom: "2px solid var(--border)",
         padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
       }}>
-        {showBack && (
-          <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px" }}>
-            <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Back
-          </button>
-        )}
+        <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px" }}>
+          <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Back
+        </button>
         <div style={{ flex: 1, minWidth: 80 }}>
           <div className="stencil" style={{ fontSize: 13, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {project.name || "Equipment List"}
           </div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 10 }}>
+          {onSetPdfFont && (
+            <select
+              value={pdfFontFor(project.pdfFont).id}
+              onChange={(e) => onSetPdfFont(e.target.value)}
+              title="Font for this project's PDF and share links"
+              aria-label="PDF font"
+              style={{ fontSize: 12, padding: "6px 8px", width: "auto" }}
+            >
+              {PDF_FONTS.map((f) => (
+                <option key={f.id} value={f.id}>Font: {f.name}</option>
+              ))}
+            </select>
+          )}
           {onShareLive && (
             <button
               className="btn btn-ghost"

@@ -5,6 +5,7 @@ import {
 import { Combobox } from "./Combobox.jsx";
 import { fixedScale } from "../lib/fixedPos.js";
 import { ManifestItemRow } from "./ManifestItemRow.jsx";
+import { Fold, Presence } from "./Motion.jsx";
 
 
 export function ManifestDeptSection({
@@ -17,6 +18,11 @@ export function ManifestDeptSection({
   const flatItems = Object.keys(data)
     .filter((k) => k === "" || !definedSet.has(k))
     .flatMap((k) => data[k] || []);
+  // A search opens every category at once (and closing it folds them
+  // back): that happens without motion; a tap on a header animates.
+  const lastForce = useRef(forceExpand);
+  const searchChange = lastForce.current !== forceExpand;
+  useEffect(() => { lastForce.current = forceExpand; });
   const headerScrollRef = useRef(null);
   const bodyScrollRef = useRef(null);
   // The header row (Item / D1 / D2 / …) and the body rows below scroll
@@ -63,6 +69,7 @@ export function ManifestDeptSection({
       {copyMenu && days[copyMenu.index] && (
         <div
           ref={copyMenuRef}
+          className="m-pop"
           style={{
             position: "fixed", top: copyMenu.top, left: copyMenu.left, transform: "translateX(-50%)", zIndex: 200,
             background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
@@ -150,7 +157,7 @@ export function ManifestDeptSection({
           </div>
         )}
       </div>
-      {!collapsed && (
+      <Fold open={!collapsed} still={searchChange}>
         <div
           ref={bodyScrollRef}
           onScroll={syncScroll(bodyScrollRef, headerScrollRef)}
@@ -182,15 +189,17 @@ export function ManifestDeptSection({
                 <div
                   onClick={() => onToggleSubcat(sub)}
                   style={{
+                    // A small, spaced-out label in the accent colour, so it reads
+                    // differently from the item names under it.
                     display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
-                    fontSize: 12, fontWeight: 800, color: "var(--text)", padding: "8px 14px",
-                    textTransform: "uppercase", letterSpacing: "0.06em", background: "var(--surface2)",
+                    fontSize: 10.5, fontWeight: 700, color: "var(--accent)", padding: "9px 14px 7px",
+                    textTransform: "uppercase", letterSpacing: "0.16em", background: "var(--surface2)",
                   }}
                 >
                   {subCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   {sub}
                 </div>
-                {!subCollapsed && data[sub].map((c) => (
+                <Fold open={!subCollapsed} still={searchChange}>{data[sub].map((c) => (
                   <ManifestItemRow
                     key={c.id}
                     item={c}
@@ -201,14 +210,14 @@ export function ManifestDeptSection({
                     onNoteChange={(note) => onNoteChange(c.id, note)}
                     onNoteHiddenChange={(hidden) => onNoteHiddenChange(c.id, hidden)}
                     />
-                ))}
+                ))}</Fold>
               </div>
             );
           })}
 
           {customItems && (
             <div style={{ minWidth: "fit-content" }}>
-              {customItems.map((c) => (
+              <Presence still={forceExpand || searchChange}>{customItems.map((c) => (
                 <ManifestItemRow
                   key={c.id}
                   item={c}
@@ -220,7 +229,7 @@ export function ManifestDeptSection({
                   onNoteHiddenChange={(hidden) => onNoteHiddenChange(c.id, hidden)}
                   onDelete={() => onRemoveCustomItem(c.id)}
                 />
-              ))}
+              ))}</Presence>
               <div style={{ display: "flex", gap: 6, padding: "8px 14px", minWidth: "fit-content" }}>
                 <Combobox
                   value={newCustomName}
@@ -238,7 +247,7 @@ export function ManifestDeptSection({
             </div>
           )}
         </div>
-      )}
+      </Fold>
     </div>
   );
 }

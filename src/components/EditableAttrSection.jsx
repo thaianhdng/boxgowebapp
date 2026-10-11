@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { EditableAttrRow } from "./EditableAttrRow.jsx";
+import { Presence } from "./Motion.jsx";
 
 
-export function EditableAttrSection({ title, placeholder, items, onAdd, onRename, onRemove, uppercase }) {
+// `bare`: no title or bottom margin (inside a fold-out section).
+export function EditableAttrSection({ title, placeholder, items, onAdd, onRename, onRemove, uppercase, bare }) {
   const [newVal, setNewVal] = useState("");
 
   function submitAdd() {
@@ -14,12 +16,12 @@ export function EditableAttrSection({ title, placeholder, items, onAdd, onRename
   const sortedItems = [...items].sort((a, b) => a.localeCompare(b));
 
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>{title}</div>
+    <div style={{ marginBottom: bare ? 0 : 20 }}>
+      {!bare && <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>{title}</div>}
       {items.length === 0 && (
         <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>None yet.</div>
       )}
-      {sortedItems.map((item) => (
+      <Presence>{sortedItems.map((item) => (
         <EditableAttrRow
           key={item}
           value={item}
@@ -27,7 +29,7 @@ export function EditableAttrSection({ title, placeholder, items, onAdd, onRename
           onRename={(v) => onRename(item, v)}
           onRemove={() => onRemove(item)}
         />
-      ))}
+      ))}</Presence>
       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
         <input
           style={{ flex: 1 }}
