@@ -134,7 +134,7 @@ Start of each conversation, the owner should say which one it is:
      `project.files = [{ kind: script|treatment|recce|other, name, url }]`,
      pasted links, open in a new tab; real Google Drive picking later).
      Project cards copy the equipment list's card layout and size
-     (owner's call; 240px grid, same lines: name · dates, Production
+     (owner's call; 240px grid, same lines: name (accent colour) · dates, Production
      House + Producer, Rental House +
      Gaffer, then the notes (one line), shoot locations), then a last row
      kept at the card's foot: the next event, and what the job has as

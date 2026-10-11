@@ -105,7 +105,7 @@ function ProjectCard({ project, status, hasList, types, today, onOpen, onOpenLis
           corner, so only the first line makes room for it. */}
       <div style={{ fontSize: 13, lineHeight: "18px", marginBottom: 3, minWidth: 0 }}>
         {project.tag && <span className="tag-box" style={{ float: "right", marginLeft: 8, marginTop: 2, fontWeight: 700, letterSpacing: 0.4, color: "var(--accent)" }}>{project.tag}</span>}
-        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--text)", textTransform: "uppercase", marginRight: 7, overflowWrap: "anywhere", textDecoration: status === "cancelled" ? "line-through" : "none" }}>{project.name || "Untitled"}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: "var(--accent)", textTransform: "uppercase", marginRight: 7, overflowWrap: "anywhere", textDecoration: status === "cancelled" ? "line-through" : "none" }}>{project.name || "Untitled"}</span>
         {range && <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", whiteSpace: "nowrap" }}>{range}</span>}
       </div>
       {(project.productionHouse || producer || project.rentalHouse || gaffer) && (
