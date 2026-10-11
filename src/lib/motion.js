@@ -123,7 +123,8 @@ function ghost(el, host, kind) {
   if (kind === "window") requestAnimationFrame(() => { if (document.querySelector(".m-overlay")) g.style.background = "transparent"; });
 }
 
-// The CSS side (pop-up windows, menus, cards, the undo bar). Everything is
+// The CSS side (pop-up windows, menus, cards, the undo bar, the save mark,
+// a share link's "Copied"). Everything is
 // under html.motion and only when the device doesn't ask for less motion.
 export const MOTION_CSS = `
 @media (prefers-reduced-motion: no-preference) {
@@ -144,6 +145,8 @@ export const MOTION_CSS = `
   html.motion .m-save-tick path { stroke-dasharray: 24; animation: m-draw 380ms ${EASE}; }
   html.motion .m-save-word { animation: m-fade 300ms ease-out; }
   html.motion .m-save-err > svg { animation: m-shake 360ms ease-in-out; }
+  html.motion .m-copied { animation: m-copied 420ms ${EASE}; }
+  html.motion .m-copied path { stroke-dasharray: 24; animation: m-draw 380ms ${EASE}; }
   @keyframes m-pulse { from { opacity: 1; } to { opacity: 0.45; } }
   @keyframes m-draw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
   @keyframes m-flash { from { color: var(--accent); } 60% { color: var(--accent); } }
@@ -152,5 +155,6 @@ export const MOTION_CSS = `
   @keyframes m-rise { from { opacity: 0; translate: 0 14px; scale: 0.98; } }
   @keyframes m-pop { from { opacity: 0; scale: 0.96; } }
   @keyframes m-toast { from { opacity: 0; translate: 0 10px; } }
+  @keyframes m-copied { 0% { scale: 0.9; } 50% { scale: 1.08; } }
 }
 `;

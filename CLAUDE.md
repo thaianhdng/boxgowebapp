@@ -399,7 +399,10 @@ Start of each conversation, the owner should say which one it is:
   and a Settings tab change fades in the new tab. The save mark
   (`m-save-busy` / `m-save-tick` / `m-save-err`): saving pulses, the
   tick draws itself in the accent colour then fades back to grey, an
-  error gives a small shake.
+  error gives a small shake. A share link's Copy button reads "✓ Copied" for
+  about 2s after each successful copy (accent, pops in: `m-copied`; the
+  link box edge turns accent too); when the automatic copy fails (e.g.
+  iOS blocks it) it simply stays "Copy".
   Closing pop-up windows, menus and the undo bar fade out too
   (`installExitMotion`: just before React removes an `m-overlay` /
   `m-toast` / `m-pop`, a copy — same scroll, typed values, inert, not

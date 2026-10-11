@@ -1518,6 +1518,17 @@ export default function EquipmentManifest({ session }) {
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [shareGenerating, setShareGenerating] = useState(false);
   const [shareResult, setShareResult] = useState(null); // { kind: "live" | "snapshot", url, projectId }
+  // Bumped on every successful copy of the share link: the Copy button reads
+  // "Copied" (and pops) for a moment, then goes back to "Copy".
+  const [linkCopied, setLinkCopied] = useState(0);
+  const [showCopied, setShowCopied] = useState(false);
+  useEffect(() => {
+    if (!linkCopied) return;
+    setShowCopied(true);
+    const t = setTimeout(() => setShowCopied(false), 2200);
+    return () => clearTimeout(t);
+  }, [linkCopied]);
+  const copyShareLink = (url) => navigator.clipboard?.writeText(url).then(() => setLinkCopied((n) => n + 1), () => {});
   const [shareError, setShareError] = useState("");
   // Live-link tokens live in their own projects.share_token column, not in
   // the project's saved data, so they're tracked separately here.
@@ -1543,7 +1554,8 @@ export default function EquipmentManifest({ session }) {
     try {
       const result = await fn();
       setShareResult(result);
-      navigator.clipboard?.writeText(result.url).catch(() => {});
+      setShowCopied(false);
+      copyShareLink(result.url);
     } catch (err) {
       console.error("Share failed:", err);
       setShareError(
@@ -2679,18 +2691,20 @@ export default function EquipmentManifest({ session }) {
               <>
                 <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
                   {shareResult.kind === "live"
-                    ? "Anyone with this link can view this list as it is right now, and it keeps updating as you edit. No account needed. Copied to your clipboard."
+                    ? "Anyone with this link can view this list as it is right now, and it keeps updating as you edit. No account needed."
                     : shareResult.reusedFrom
-                      ? `Nothing has changed since your last snapshot (${formatDMY(fmtDate(new Date(shareResult.reusedFrom)))}), so this is that same link. Anyone with it can view the list, no account needed. Copied to your clipboard.`
-                      : "Anyone with this link can view this list exactly as it is right now. It won't change when you edit the project later; after you make changes, sending another snapshot makes a new link. No account needed. Copied to your clipboard."}
+                      ? `Nothing has changed since your last snapshot (${formatDMY(fmtDate(new Date(shareResult.reusedFrom)))}), so this is that same link. Anyone with it can view the list, no account needed.`
+                      : "Anyone with this link can view this list exactly as it is right now. It won't change when you edit the project later; after you make changes, sending another snapshot makes a new link. No account needed."}
                 </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                  <input readOnly value={shareResult.url} onFocus={(e) => e.target.select()} style={{ flex: 1, fontSize: 12.5 }} />
+                  <input readOnly value={shareResult.url} onFocus={(e) => e.target.select()} style={{ flex: 1, fontSize: 12.5, transition: "border-color 200ms", ...(showCopied ? { borderColor: "var(--accent)" } : {}) }} />
                   <button
-                    className="btn btn-ghost"
-                    onClick={() => navigator.clipboard?.writeText(shareResult.url).catch(() => {})}
+                    key={linkCopied}
+                    className={showCopied ? "btn btn-ghost m-copied" : "btn btn-ghost"}
+                    onClick={() => copyShareLink(shareResult.url)}
+                    style={showCopied ? { color: "var(--accent)", borderColor: "var(--accent)", minWidth: 96 } : { minWidth: 96 }}
                   >
-                    <Copy size={14} /> Copy
+                    {showCopied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
                   </button>
                 </div>
               </>
