@@ -1916,7 +1916,14 @@ export default function EquipmentManifest({ session }) {
                   <span style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 2 }}>
                     {[
                       ["Calendar", view === "x" && xModule === "calendar", () => goX({ screen: "calendar" })],
-                      ["Equipment", view !== "x", () => { setActiveProjectId(null); setView("projects"); }],
+                      ["Equipment", view !== "x", () => {
+                        // From a Project page: straight to that project's current list
+                        // (when it has one); from anywhere else, the list manager.
+                        const listId = view === "x" && xRoute.screen === "project" && xListMeta
+                          && Object.keys(xListMeta).find((id) => xListMeta[id].projectId === xRoute.projectId && xListMeta[id].current);
+                        if (listId && projects.some((p) => p.id === listId)) { openProject(listId); window.scrollTo(0, 0); return; }
+                        setActiveProjectId(null); setView("projects");
+                      }],
                     ].map(([label, on, go]) => (
                       <span key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ color: "var(--border2)", fontSize: 10 }}>|</span>

@@ -91,7 +91,9 @@ Start of each conversation, the owner should say which one it is:
      module switch instead of the "Equipment List Composer" caption: the
      logo stays as it is, the BOXGO wordmark is the home tab (Projects;
      accent while Projects shows), then | CALENDAR | EQUIPMENT (on the
-     owner's phone the name shrinks so it fits). The crumb's
+     owner's phone the name shrinks so it fits). EQUIPMENT tapped on a Project page
+     opens that project's current list (a project with no list: the
+     list manager); from anywhere else, the list manager. The crumb's
      section names: "Projects Manager", "Calendar", "Equipment Lists
      Manager" (others keep "Project Manager"); the crumb wraps, so a list /
      project name too long to sit beside it takes the next line and is cut
