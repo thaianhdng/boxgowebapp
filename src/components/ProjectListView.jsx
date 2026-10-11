@@ -143,7 +143,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
                 {p.name || (listMeta && !listMeta[p.id] ? <span style={{ color: "var(--muted)" }}>Untitled list</span> : null)}
               </span>
               {formatShootDateRange(p.days) && (
-                <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--muted2)", whiteSpace: "nowrap" }}>{formatShootDateRange(p.days)}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.3, color: "var(--text)", whiteSpace: "nowrap" }}>{formatShootDateRange(p.days)}</span>
               )}
               {cancelledIds?.has(p.id) && (
                 <span className="tag-box" style={{ marginLeft: 6, fontWeight: 800, letterSpacing: 0.5, color: "var(--danger)", verticalAlign: "middle", position: "relative", top: -1 }}>Cancelled</span>

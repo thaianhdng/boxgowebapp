@@ -134,7 +134,7 @@ Start of each conversation, the owner should say which one it is:
      `project.files = [{ kind: script|treatment|recce|other, name, url }]`,
      pasted links, open in a new tab; real Google Drive picking later).
      Project cards copy the equipment list's card layout and size
-     (owner's call; 240px grid, same lines: name (accent colour) · dates, Production
+     (owner's call; 240px grid, same lines: name (accent colour) · dates (text colour), Production
      House + Producer, Rental House +
      Gaffer, then the notes (one line), shoot locations), then a last row
      kept at the card's foot: the next event, and what the job has as
@@ -147,8 +147,9 @@ Start of each conversation, the owner should say which one it is:
      name (owner's call), so only the name's first line makes room for it.
      The top row is flowing text, not flex items. The equipment list's
      cards (everyone, owner's call: synced with the Projects cards) work
-     the same way: name (accent colour) · dates with the tag floating in
-     the top right corner (a draft's "No project" mark on its own line under the name);
+     the same way: name (accent colour) · dates (text colour) with the tag
+     floating in the top right corner (a draft's "No project" mark on its
+     own line under the name);
      then the houses, the project note, the version row (owner: "V3 ·
      list note · 3 lists", or a draft's list note; one line, the note cut
      with "…"), locations, gear; and a foot row
