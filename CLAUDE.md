@@ -379,6 +379,18 @@ Start of each conversation, the owner should say which one it is:
   a 6px top strip so Safari's top bar isn't tinted by sticky headers
   (`index.html`, `.top-tint` / `.sticky-top`); per-device UI size via CSS
   zoom (pop-up menus position through `src/lib/fixedPos.js`).
+- **Home-screen app** (everyone, owner's call: "option 1"): added to the
+  iPhone home screen, BOXGO opens full screen (manifest `"display":
+  "standalone"`, `apple-mobile-web-app-status-bar-style` black-translucent).
+  `index.html` adds `standalone` to `<html>` and `viewport-fit=cover` only
+  then; `.standalone` CSS grows the top strip to the status bar's height
+  (`--safe-top` / `--safe-bottom` on `.app-root`, divided by the UI-size
+  zoom), stops sticky bars below it, pads pop-up windows (and caps their
+  height) and lifts the floating buttons / undo bar (`.safe-bottom`) clear
+  of the home bar. Safari in the browser is unchanged. The home-screen app
+  keeps its own sign-in (signs in once). A real App Store app (Capacitor
+  wrapper, $99/yr Apple account, Mac or cloud build) is "option 2", not
+  built.
 - **Motion** (everyone since the owner's call; the owner's "level 1":
   short motion that helps follow what changed; `src/lib/motion.js`,
   `src/components/Motion.jsx`). `EquipmentManifest` puts the class

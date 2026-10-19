@@ -1765,6 +1765,10 @@ export default function EquipmentManifest({ session }) {
       // CSS zoom scales everything inside, including 100vh, so divide it back.
       zoom: uiZoom,
       minHeight: `calc(100vh / ${uiZoom})`,
+      // The iPhone's status bar / home bar heights, for when BOXGO is opened
+      // from the home screen (full screen; see .standalone below).
+      "--safe-top": `calc(env(safe-area-inset-top, 0px) / ${uiZoom})`,
+      "--safe-bottom": `calc(env(safe-area-inset-bottom, 0px) / ${uiZoom})`,
       display: "flex",
       flexDirection: "column",
     }}>
@@ -1801,6 +1805,17 @@ export default function EquipmentManifest({ session }) {
            the top edge, and an element taps pass through is skipped. */
         .ios .top-tint { display: block; position: fixed; top: 0; left: 0; right: 0; height: 6px; background: var(--bg); z-index: 100; }
         .ios .sticky-top { top: 6px !important; }
+        /* Opened from the home screen (index.html adds .standalone): full
+           screen, the status bar drawn over the page. The same strip grows
+           to the status bar's height, sticky bars stop below it, and the
+           page, pop-up windows and floating buttons keep clear of the
+           status bar and the home bar. */
+        .standalone .app-root { box-sizing: border-box; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
+        .standalone .top-tint { height: var(--safe-top); }
+        .standalone .sticky-top { top: var(--safe-top) !important; }
+        .standalone .m-overlay { padding-top: calc(var(--safe-top) + 16px) !important; padding-bottom: calc(var(--safe-bottom) + 16px) !important; }
+        .standalone .m-overlay > * { max-height: 100% !important; }
+        .standalone .safe-bottom { bottom: calc(20px + var(--safe-bottom)) !important; }
         .btn {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 5px 10px; border-radius: 3px; border: 1px solid var(--text);
@@ -2393,7 +2408,7 @@ export default function EquipmentManifest({ session }) {
           </div>
           {(showBackToTop || ((view === "catalog" || view === "manifest") && deptNames.length > 0)) && (
             <div
-              className="no-print"
+              className="no-print safe-bottom"
               style={{
                 position: "fixed", bottom: 20, right: 16, zIndex: 40,
                 display: "flex", flexDirection: "column-reverse", alignItems: "flex-end", gap: 8,
@@ -2439,7 +2454,7 @@ export default function EquipmentManifest({ session }) {
               at the same height, regardless of what else is showing. */}
           {showCategoryMenu && (view === "catalog" || view === "manifest") && deptNames.length > 0 && (
             <div
-              className="category-fab-menu no-print m-pop m-up"
+              className="category-fab-menu no-print m-pop m-up safe-bottom"
               style={{
                 position: "fixed", bottom: 20, right: 66, zIndex: 41,
                 width: 200, maxHeight: "50vh", overflowY: "auto",
@@ -2481,7 +2496,7 @@ export default function EquipmentManifest({ session }) {
           {view === "x" && showBackToTop && (
             // The owner's Projects / Calendar pages: same floating button.
             <button
-              className="no-print"
+              className="no-print safe-bottom"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               title="Back to top"
               style={{
@@ -2720,7 +2735,7 @@ export default function EquipmentManifest({ session }) {
       )}
 
       {undoState && (
-        <div className="no-print m-toast" style={{
+        <div className="no-print m-toast safe-bottom" style={{
           position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 90,
           background: "var(--text)", color: "var(--bg)", borderRadius: 6, padding: "10px 16px",
           display: "flex", alignItems: "center", gap: 14, boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
