@@ -670,7 +670,15 @@ export default function EquipmentManifest({ session }) {
     const base = projectFilter
       ? all.filter((p) => (p[projectFilter.field] || "") === projectFilter.value)
       : all;
-    return [...base].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    // By first shoot date, latest first (owner's call), so upcoming jobs sit
+    // at the top and past ones follow, most recent first. Lists with no
+    // shoot date yet come first; ties: newest created first.
+    const firstDate = (p) => (p.days || []).map((d) => d.date).filter(Boolean).sort()[0] || "";
+    return [...base].sort((a, b) => {
+      const fa = firstDate(a), fb = firstDate(b);
+      if (!fa !== !fb) return fa ? 1 : -1;
+      return fb.localeCompare(fa) || (b.createdAt || 0) - (a.createdAt || 0);
+    });
   }, [projects, projectFilter, isCatalogOwner, xGhosts, xListMeta]);
 
   const recentProjectNames = useMemo(() => {

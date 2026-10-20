@@ -159,6 +159,8 @@ Start of each conversation, the owner should say which one it is:
      subcategories unticked in the Master Catalog ("In card preview" on
      their bars; `settings.cardPreviewOff`, keys "dept" / "dept::sub",
      `inCardPreview`; not in the backup file). The
+     cards are ordered by first shoot date, latest first (lists with no
+     date yet first; everyone, owner's call). The
      Equipment page is capped at the Projects page's width (1236px of
      cards), so cards are the same size on wide screens. On both kinds
      of card a house and its person (Producer / Gaffer) stay on one line,
