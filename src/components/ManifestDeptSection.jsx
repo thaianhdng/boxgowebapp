@@ -18,6 +18,14 @@ export function ManifestDeptSection({
   const flatItems = Object.keys(data)
     .filter((k) => k === "" || !definedSet.has(k))
     .flatMap((k) => data[k] || []);
+  // Folding hides only what isn't picked: items with a quantity on any day
+  // stay showing under a folded category or subcategory, so a folded
+  // section reads as "what's in the list". (A fold with nothing picked
+  // closes as before.)
+  const isPicked = (c) => Object.values(itemData[c.id]?.quantities || {}).some((q) => q > 0);
+  const deptPicked = Object.values(data).some((arr) => arr.some(isPicked)) || (customItems || []).some(isPicked);
+  const picksOnly = collapsed && deptPicked; // folded, showing the picked items
+  const bodyOpen = !collapsed || deptPicked;
   // A search opens every category at once (and closing it folds them
   // back): that happens without motion; a tap on a header animates.
   const lastForce = useRef(forceExpand);
@@ -91,7 +99,7 @@ export function ManifestDeptSection({
           </div>
         </div>
       )}
-      <div className="sticky-top" style={{ position: "sticky", top: 0, zIndex: 6, borderRadius: collapsed ? "4px" : "4px 4px 0 0", overflow: "hidden" }}>
+      <div className="sticky-top" style={{ position: "sticky", top: 0, zIndex: 6, borderRadius: bodyOpen ? "4px 4px 0 0" : "4px", overflow: "hidden" }}>
         <div
           onClick={onToggle}
           style={{
@@ -104,7 +112,7 @@ export function ManifestDeptSection({
             {dept}
           </span>
         </div>
-        {!collapsed && (
+        {bodyOpen && (
           <div
             ref={headerScrollRef}
             onScroll={syncScroll(headerScrollRef, bodyScrollRef)}
@@ -157,15 +165,18 @@ export function ManifestDeptSection({
           </div>
         )}
       </div>
-      <Fold open={!collapsed} still={searchChange}>
+      <Fold open={bodyOpen} still={searchChange}>
         <div
           ref={bodyScrollRef}
           onScroll={syncScroll(bodyScrollRef, headerScrollRef)}
           style={{ background: "var(--surface)", overflowX: "auto", borderRadius: "0 0 4px 4px" }}
         >
-          {flatItems.length > 0 && (
+          {flatItems.length > 0 && (() => {
+            const any = flatItems.some(isPicked);
+            return (
+            <Fold open={!picksOnly || any} still={searchChange}>
             <div style={{ minWidth: "fit-content" }}>
-              {flatItems.map((c) => (
+              <Presence still={searchChange}>{(picksOnly && any ? flatItems.filter(isPicked) : flatItems).map((c) => (
                 <ManifestItemRow
                   key={c.id}
                   item={c}
@@ -176,18 +187,29 @@ export function ManifestDeptSection({
                   onNoteChange={(note) => onNoteChange(c.id, note)}
                   onNoteHiddenChange={(hidden) => onNoteHiddenChange(c.id, hidden)}
                 />
-              ))}
+              ))}</Presence>
             </div>
-          )}
+            </Fold>
+            );
+          })()}
 
           {(subcats || []).map((sub) => {
             if (!data[sub] || data[sub].length === 0) return null;
             const subKey = `${dept}::${sub}`;
             const subCollapsed = !forceExpand && !!(collapsedSubcats && collapsedSubcats[subKey]);
+            const subPicked = data[sub].some(isPicked);
+            // Under a folded category only subcategories with picked items
+            // show (their heading then opens the category); the others fold
+            // away whole.
+            const hidden = picksOnly && !subPicked;
+            const folded = picksOnly || subCollapsed;
+            const subOpen = !folded || subPicked;
+            const items = folded && subPicked ? data[sub].filter(isPicked) : data[sub];
             return (
-              <div key={sub} style={{ minWidth: "fit-content" }}>
+              <Fold key={sub} open={!hidden} still={searchChange}>
+              <div style={{ minWidth: "fit-content" }}>
                 <div
-                  onClick={() => onToggleSubcat(sub)}
+                  onClick={() => (picksOnly ? onToggle() : onToggleSubcat(sub))}
                   style={{
                     // A small, spaced-out label in the accent colour, so it reads
                     // differently from the item names under it.
@@ -196,10 +218,10 @@ export function ManifestDeptSection({
                     textTransform: "uppercase", letterSpacing: "0.16em", background: "var(--surface2)",
                   }}
                 >
-                  {subCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                  {picksOnly ? null : subCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   {sub}
                 </div>
-                <Fold open={!subCollapsed} still={searchChange}>{data[sub].map((c) => (
+                <Fold open={subOpen} still={searchChange}><Presence still={searchChange}>{items.map((c) => (
                   <ManifestItemRow
                     key={c.id}
                     item={c}
@@ -210,14 +232,18 @@ export function ManifestDeptSection({
                     onNoteChange={(note) => onNoteChange(c.id, note)}
                     onNoteHiddenChange={(hidden) => onNoteHiddenChange(c.id, hidden)}
                     />
-                ))}</Fold>
+                ))}</Presence></Fold>
               </div>
+              </Fold>
             );
           })}
 
-          {customItems && (
+          {customItems && (() => {
+            const any = customItems.some(isPicked);
+            return (
+            <Fold open={!picksOnly || any} still={searchChange}>
             <div style={{ minWidth: "fit-content" }}>
-              <Presence still={forceExpand || searchChange}>{customItems.map((c) => (
+              <Presence still={forceExpand || searchChange}>{(picksOnly && any ? customItems.filter(isPicked) : customItems).map((c) => (
                 <ManifestItemRow
                   key={c.id}
                   item={c}
@@ -230,7 +256,7 @@ export function ManifestDeptSection({
                   onDelete={() => onRemoveCustomItem(c.id)}
                 />
               ))}</Presence>
-              <div style={{ display: "flex", gap: 6, padding: "8px 14px", minWidth: "fit-content" }}>
+              {!picksOnly && <div style={{ display: "flex", gap: 6, padding: "8px 14px", minWidth: "fit-content" }}>
                 <Combobox
                   value={newCustomName}
                   onChange={setNewCustomName}
@@ -243,9 +269,11 @@ export function ManifestDeptSection({
                 <button className="btn btn-ghost" style={{ padding: "4px 10px", fontSize: 12 }} onClick={submitCustom} disabled={!newCustomName.trim()}>
                   <Plus size={12} /> Add
                 </button>
-              </div>
+              </div>}
             </div>
-          )}
+            </Fold>
+            );
+          })()}
         </div>
       </Fold>
     </div>

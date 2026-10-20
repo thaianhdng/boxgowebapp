@@ -440,6 +440,14 @@ Start of each conversation, the owner should say which one it is:
   categories (grip on the card; ▲ / ▼ kept, owner's call) and
   subcategories (`DepartmentManagerModal`). Event types keep their
   arrows (owner's call). The browser's own drag and drop was removed.
+- **Folding in the composer** (everyone, owner's call): folding a
+  category or subcategory hides only the items still at 0 on every day;
+  picked items stay showing under the bar (with the Item / D1… header), so
+  a folded section reads as what's in the list. Under a folded category
+  only subcategories with picked items show, without a chevron (tapping
+  one opens the category). A fold with nothing picked closes as before;
+  a search still opens everything (`ManifestDeptSection`: `isPicked`,
+  `picksOnly`).
 - **Renaming by tapping** (everyone, owner's call): categories and
   subcategories (Manage Categories), tags and houses (Settings) are renamed
   by tapping the name; `EditableAttrRow` has no pencil button, and each
