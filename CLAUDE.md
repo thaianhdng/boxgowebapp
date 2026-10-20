@@ -445,11 +445,14 @@ Start of each conversation, the owner should say which one it is:
 - **Folding in the composer** (everyone, owner's call): folding a
   category or subcategory hides only the items still at 0 on every day;
   picked items stay showing under the bar (with the Item / D1… header), so
-  a folded section reads as what's in the list. Under a folded category
-  only subcategories with picked items show, without a chevron (tapping
-  one opens the category). A fold with nothing picked closes as before;
-  a search still opens everything (`ManifestDeptSection`: `isPicked`,
-  `picksOnly`). **Fold all / Open all** (owner's call: both places): a
+  a folded section reads as what's in the list. A folded category still
+  lists every subcategory heading (owner's call: compact, but nothing
+  hidden), each folded with its picked items under it; tapping one opens
+  just that subcategory (`peek`, not saved; cleared when the category is
+  opened or folded again). The Item / D1… row shows only when rows do. A
+  category with no subcategories and nothing picked folds to its bar; a
+  search still opens everything (`ManifestDeptSection`: `isPicked`,
+  `peek`). **Fold all / Open all** (owner's call: both places): a
   button beside the composer's "Search items…" and the first line of the
   floating category menu (composer only, not the Master Catalog); one
   state, `allDeptsFolded` / `setAllFolded` — folding all sets every

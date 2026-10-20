@@ -18,14 +18,21 @@ export function ManifestDeptSection({
   const flatItems = Object.keys(data)
     .filter((k) => k === "" || !definedSet.has(k))
     .flatMap((k) => data[k] || []);
-  // Folding hides only what isn't picked: items with a quantity on any day
-  // stay showing under a folded category or subcategory, so a folded
-  // section reads as "what's in the list". (A fold with nothing picked
-  // closes as before.)
+  // Folding makes the list compact without losing track of it: items with
+  // a quantity on any day stay showing under a folded category or
+  // subcategory, and a folded category still lists all its subcategory
+  // headings (each folded), so one not worked on yet can be opened on its
+  // own. Opening one there ("peek") lasts until the category itself is
+  // opened or folded again.
   const isPicked = (c) => Object.values(itemData[c.id]?.quantities || {}).some((q) => q > 0);
   const deptPicked = Object.values(data).some((arr) => arr.some(isPicked)) || (customItems || []).some(isPicked);
-  const picksOnly = collapsed && deptPicked; // folded, showing the picked items
-  const bodyOpen = !collapsed || deptPicked;
+  const hasSubs = (subcats || []).some((sub) => data[sub]?.length);
+  const [peek, setPeek] = useState(() => new Set());
+  useEffect(() => { setPeek(new Set()); }, [collapsed]);
+  const togglePeek = (sub) => setPeek((cur) => { const n = new Set(cur); if (n.has(sub)) n.delete(sub); else n.add(sub); return n; });
+  const picksOnly = collapsed; // folded: loose and custom items show only when picked
+  const bodyOpen = !collapsed || deptPicked || hasSubs;
+  const showColumns = !collapsed || deptPicked || peek.size > 0; // the Item / D1… row, when rows show
   // A search opens every category at once (and closing it folds them
   // back): that happens without motion; a tap on a header animates.
   const lastForce = useRef(forceExpand);
@@ -112,7 +119,7 @@ export function ManifestDeptSection({
             {dept}
           </span>
         </div>
-        {bodyOpen && (
+        {showColumns && (
           <div
             ref={headerScrollRef}
             onScroll={syncScroll(headerScrollRef, bodyScrollRef)}
@@ -198,18 +205,15 @@ export function ManifestDeptSection({
             const subKey = `${dept}::${sub}`;
             const subCollapsed = !forceExpand && !!(collapsedSubcats && collapsedSubcats[subKey]);
             const subPicked = data[sub].some(isPicked);
-            // Under a folded category only subcategories with picked items
-            // show (their heading then opens the category); the others fold
-            // away whole.
-            const hidden = picksOnly && !subPicked;
-            const folded = picksOnly || subCollapsed;
+            // Under a folded category every subcategory is folded too unless
+            // opened there (peek); folded ones show only their picked items.
+            const folded = collapsed ? !peek.has(sub) : subCollapsed;
             const subOpen = !folded || subPicked;
             const items = folded && subPicked ? data[sub].filter(isPicked) : data[sub];
             return (
-              <Fold key={sub} open={!hidden} still={searchChange}>
-              <div style={{ minWidth: "fit-content" }}>
+              <div key={sub} style={{ minWidth: "fit-content" }}>
                 <div
-                  onClick={() => (picksOnly ? onToggle() : onToggleSubcat(sub))}
+                  onClick={() => (collapsed ? togglePeek(sub) : onToggleSubcat(sub))}
                   style={{
                     // A small, spaced-out label in the accent colour, so it reads
                     // differently from the item names under it.
@@ -218,7 +222,7 @@ export function ManifestDeptSection({
                     textTransform: "uppercase", letterSpacing: "0.16em", background: "var(--surface2)",
                   }}
                 >
-                  {picksOnly ? null : subCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                  {folded ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   {sub}
                 </div>
                 <Fold open={subOpen} still={searchChange}><Presence still={searchChange}>{items.map((c) => (
@@ -234,7 +238,6 @@ export function ManifestDeptSection({
                     />
                 ))}</Presence></Fold>
               </div>
-              </Fold>
             );
           })}
 
