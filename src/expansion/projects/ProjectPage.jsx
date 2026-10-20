@@ -283,14 +283,16 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
       )}
 
       {showInfo && (list ? (
-        // With a list: exactly the equipment list's Edit Project (the link
-        // then brings any change back into this Project).
+        // With a list: exactly the equipment list's Edit Project, saved into
+        // the current list (not always the one with this Project's id: V1
+        // may be gone); the link then brings the change back into this
+        // Project and its other lists.
         <ProjectForm
           app={app}
           initial={list}
-          onSaveAsTemplate={(name) => app.saveAsTemplate(id, name)}
+          onSaveAsTemplate={(name) => app.saveAsTemplate(list.id, name)}
           onClose={() => setShowInfo(false)}
-          onSave={(data) => { app.updateEquipmentList(id, data); setShowInfo(false); }}
+          onSave={(data) => { app.updateEquipmentList(list.id, data); setShowInfo(false); }}
         />
       ) : (
         <ProjectForm
