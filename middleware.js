@@ -2,7 +2,8 @@
 // run the app, they only read the page's <head>, which always said "BOXGO".
 // For /share/<token>, Vercel runs this first: it looks the list up the same
 // way the share page does (get_shared_list, public by token) and puts its
-// name, tag, dates and production house into the title and preview tags.
+// name, production house and dates into the title, its tag into the
+// description.
 // Anything goes wrong → the page is served exactly as before.
 import { formatShootDateRange } from "./src/lib/shootDates.js";
 
@@ -13,14 +14,17 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 export function previewHead(project, origin, pageUrl) {
   const name = (project?.name || "").trim() || "Untitled list";
   const dates = formatShootDateRange(project?.days);
-  const desc = [project?.tag, "Equipment list", dates, project?.productionHouse].filter(Boolean).join(" · ");
+  // The title carries it all (owner's call; most chat apps show only the
+  // title): project name - production house - shoot dates.
+  const title = [name, (project?.productionHouse || "").trim(), dates].filter(Boolean).join(" - ");
+  const desc = [project?.tag, "Equipment list"].filter(Boolean).join(" · ");
   const image = `${origin}/apple-touch-icon.png`;
   return [
-    `<title>${esc(name)} — BOXGO</title>`,
+    `<title>${esc(title)} — BOXGO</title>`,
     `<meta name="description" content="${esc(desc)}" />`,
     `<meta property="og:site_name" content="BOXGO" />`,
     `<meta property="og:type" content="website" />`,
-    `<meta property="og:title" content="${esc(name)}" />`,
+    `<meta property="og:title" content="${esc(title)}" />`,
     `<meta property="og:description" content="${esc(desc)}" />`,
     `<meta property="og:url" content="${esc(pageUrl)}" />`,
     `<meta property="og:image" content="${esc(image)}" />`,
