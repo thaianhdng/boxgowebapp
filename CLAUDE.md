@@ -449,7 +449,12 @@ Start of each conversation, the owner should say which one it is:
   only subcategories with picked items show, without a chevron (tapping
   one opens the category). A fold with nothing picked closes as before;
   a search still opens everything (`ManifestDeptSection`: `isPicked`,
-  `picksOnly`).
+  `picksOnly`). **Fold all / Open all** (owner's call: both places): a
+  button beside the composer's "Search items…" and the first line of the
+  floating category menu (composer only, not the Master Catalog); one
+  state, `allDeptsFolded` / `setAllFolded` — folding all sets every
+  category folded (a quick "what's in this list" view), opening all opens
+  categories and subcategories.
 - **Renaming by tapping** (everyone, owner's call): categories and
   subcategories (Manage Categories), tags and houses (Settings) are renamed
   by tapping the name; `EditableAttrRow` has no pencil button, and each

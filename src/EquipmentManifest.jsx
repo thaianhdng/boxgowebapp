@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, lazy, Suspense } from "react";
 import {
-  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, ChevronDown, ArrowRight, CalendarDays, ListFilter, Loader2, Check, Settings,
+  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, ChevronDown, ChevronsDownUp, ChevronsUpDown, ArrowRight, CalendarDays, ListFilter, Loader2, Check, Settings,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient.js";
 import { AttributesManagerModal } from "./components/AttributesManagerModal.jsx";
@@ -1050,6 +1050,24 @@ export default function EquipmentManifest({ session }) {
     } else {
       setActiveDept(d);
     }
+  }
+
+  // "Fold all" / "Open all" for the open list (beside its item search and
+  // at the top of the floating category menu). Folded categories keep
+  // their picked items showing, so folding all reviews what's in the list;
+  // opening all opens subcategories too.
+  const allDeptsFolded = deptNames.length > 0 && deptNames.every((d) => activeProject?.collapsedDepts?.[d]);
+  function setAllFolded(fold) {
+    if (!activeProjectId) return;
+    setProjectsState((prev) =>
+      prev.map((p) => {
+        if (p.id !== activeProjectId) return p;
+        const collapsedDepts = Object.fromEntries(deptNames.map((d) => [d, fold]));
+        if (fold) return { ...p, collapsedDepts };
+        const collapsedSubcats = Object.fromEntries(Object.keys(p.collapsedSubcats || {}).map((k) => [k, false]));
+        return { ...p, collapsedDepts, collapsedSubcats };
+      })
+    );
   }
 
   function toggleSubcatCollapse(dept, sub) {
@@ -2314,14 +2332,24 @@ export default function EquipmentManifest({ session }) {
                       </div>
                     )}
 
-                    <div style={{ position: "relative", marginBottom: 14 }}>
-                      <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
-                      <input
-                        value={manifestSearch}
-                        onChange={(e) => setManifestSearch(e.target.value)}
-                        placeholder="Search items…"
-                        style={{ width: "100%", paddingLeft: 30, fontSize: 13 }}
-                      />
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14 }}>
+                      <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+                        <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
+                        <input
+                          value={manifestSearch}
+                          onChange={(e) => setManifestSearch(e.target.value)}
+                          placeholder="Search items…"
+                          style={{ width: "100%", paddingLeft: 30, fontSize: 13 }}
+                        />
+                      </div>
+                      <button
+                        className="btn btn-ghost"
+                        onClick={() => setAllFolded(!allDeptsFolded)}
+                        title={allDeptsFolded ? "Open every category" : "Fold every category (picked items stay showing)"}
+                        style={{ flexShrink: 0, padding: "6px 10px" }}
+                      >
+                        {allDeptsFolded ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />} {allDeptsFolded ? "Open all" : "Fold all"}
+                      </button>
                     </div>
 
                     {deptsToShow.length === 0 && (
@@ -2471,6 +2499,22 @@ export default function EquipmentManifest({ session }) {
                 boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
               }}
             >
+              {view === "manifest" && (
+                <>
+                  <button
+                    onClick={() => { setAllFolded(!allDeptsFolded); setShowCategoryMenu(false); }}
+                    style={{
+                      padding: "8px 10px", borderRadius: 6, border: "none", width: "100%",
+                      fontSize: 12, fontWeight: 700, cursor: "pointer", textAlign: "left",
+                      display: "flex", alignItems: "center", gap: 6,
+                      background: "transparent", color: "var(--accent)",
+                    }}
+                  >
+                    {allDeptsFolded ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />} {allDeptsFolded ? "Open all" : "Fold all"}
+                  </button>
+                  <div style={{ height: 1, background: "var(--border)", margin: "2px 4px" }} />
+                </>
+              )}
               <button
                 onClick={() => { selectCategory("all"); setShowCategoryMenu(false); }}
                 style={{
