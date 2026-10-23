@@ -5,7 +5,7 @@ import {
 import { Combobox } from "./Combobox.jsx";
 import { Field } from "./Field.jsx";
 import { uid, todayStr, addOneDay, cascadeDates } from "../lib/utils.js";
-import { cleanLinks } from "../lib/dayLinks.js";
+import { cleanLinks, linkedWith, withoutDay } from "../lib/dayLinks.js";
 
 
 // `initial` edits an existing project. Two extras, used only by the
@@ -84,11 +84,14 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
   // "Same equipment as" another day: only for a list being edited, with
   // per-day quantities and more than one day.
   const showLinks = !!linkDays && !!initial && !noList && perDayQty && dayRows.length > 1;
-  const links = cleanLinks(dayRows, dayLinks);
-  function setDayLink(dayId, sourceId) {
+  // Linked days are an equal group: each day reads "Same as" the first
+  // other day in its group. Choosing "Same as Dn" moves the day into Dn's
+  // group (taking its numbers on save); "Own list" takes it out (the
+  // others stay linked).
+  function setDayLink(dayId, otherId) {
     setDayLinks((cur) => {
-      const next = { ...cleanLinks(dayRows, cur) };
-      if (sourceId) next[dayId] = sourceId; else delete next[dayId];
+      const next = withoutDay(dayRows, cur, dayId);
+      if (otherId) next[dayId] = otherId;
       return next;
     });
   }
@@ -104,7 +107,9 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
       : { productionHouse: productionHouse.trim(), producer: producer.trim(), rentalHouse: rentalHouse.trim(), gaffer: gaffer.trim() };
     onSave({
       name: name.trim(), tag, ...houses, days, perDayQty, templateId: templateId || undefined,
-      ...(showLinks || initial?.dayLinks ? { dayLinks: cleanLinks(days, dayLinks) } : {}),
+      // Handed over as chosen; saving tidies them and gives every day in a
+      // group the numbers of the day it was linked to (lib/dayLinks.js).
+      ...(showLinks || initial?.dayLinks ? { dayLinks } : {}),
     });
   }
 
@@ -272,26 +277,22 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
                 placeholder="Location and note"
               />
               {showLinks && (() => {
-                const followers = dayRows.filter((x) => links[x.id] === d.id);
-                const short = (x) => `D${dayRows.indexOf(x) + 1}`;
+                const others = linkedWith(dayRows, dayLinks, d.id);
+                const short = (id) => `D${dayRows.findIndex((x) => x.id === id) + 1}`;
                 return (
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, marginLeft: 26, fontSize: 11.5, color: "var(--muted)" }}>
                     <span>Equipment</span>
-                    {followers.length ? (
-                      // A day others follow keeps its own list (links never chain).
-                      <span style={{ color: "var(--text)" }}>Own list · {followers.map(short).join(", ")} same as this day</span>
-                    ) : (
-                      <select
-                        value={links[d.id] || ""}
-                        onChange={(e) => setDayLink(d.id, e.target.value)}
-                        style={{ fontSize: 11.5, padding: "3px 6px", width: "auto", ...(links[d.id] ? { color: "var(--accent)", borderColor: "var(--accent)", fontWeight: 700 } : {}) }}
-                      >
-                        <option value="">Own list</option>
-                        {dayRows.filter((x) => x.id !== d.id && !links[x.id]).map((x) => (
-                          <option key={x.id} value={x.id}>Same as {short(x)}</option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      value={others[0] || ""}
+                      onChange={(e) => setDayLink(d.id, e.target.value)}
+                      style={{ fontSize: 11.5, padding: "3px 6px", width: "auto", ...(others.length ? { color: "var(--accent)", borderColor: "var(--accent)", fontWeight: 700 } : {}) }}
+                    >
+                      <option value="">Own list</option>
+                      {dayRows.filter((x) => x.id !== d.id).map((x) => (
+                        <option key={x.id} value={x.id}>Same as {short(x.id)}</option>
+                      ))}
+                    </select>
+                    {others.length > 1 && <span>(and {others.slice(1).map(short).join(", ")})</span>}
                   </div>
                 );
               })()}

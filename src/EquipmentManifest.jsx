@@ -22,7 +22,7 @@ import { buildPdf } from "./lib/pdf.js";
 import { DEFAULT_PDF_FONT, pdfFontFor } from "./lib/font.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
 import { uid, newProjectId, relabelDays, todayStr, addOneDay, cascadeDates, formatDM, formatDMY, fmtDate, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
-import { cleanLinks, dayColumns, followersOf, withLinkedQuantities } from "./lib/dayLinks.js";
+import { dayColumns, linkedWith, withLinkedQuantities, withoutDay } from "./lib/dayLinks.js";
 
 
 // Gives every day an explicit number for every item that has any. A day
@@ -664,9 +664,9 @@ export default function EquipmentManifest({ session }) {
   const dayCols = activeProject?.perDayQty ? dayColumns(days, activeProject.dayLinks) : days;
   const visibleDays = activeDay === "all" ? dayCols : dayCols.filter((d) => d.id === activeDay || d.followers?.some((f) => f.id === activeDay));
   const linkNote = (dayId) => {
-    const src = activeProject?.perDayQty && cleanLinks(days, activeProject.dayLinks)[dayId];
-    const d = src && days.find((x) => x.id === src);
-    return d ? `same as ${d.label.replace("Day ", "D")}` : "";
+    const others = activeProject?.perDayQty ? linkedWith(days, activeProject.dayLinks, dayId) : [];
+    const names = others.map((id) => days.find((x) => x.id === id)?.label.replace("Day ", "D")).filter(Boolean);
+    return names.length ? `same as ${names.join(", ")}` : "";
   };
 
   const filteredProjects = useMemo(() => {
@@ -745,8 +745,8 @@ export default function EquipmentManifest({ session }) {
         let quantities;
         if (p.perDayQty) {
           quantities = { ...entry.quantities, [dayId]: q };
-          // Days linked to this one ("same equipment as") follow it.
-          followersOf(p.dayLinks, dayId).forEach((f) => { quantities[f] = q; });
+          // Days linked with this one (same equipment) get the same number.
+          linkedWith(p.days, p.dayLinks, dayId).forEach((f) => { quantities[f] = q; });
         } else {
           // "All days same" mode: every day shares one value, so writing
           // it once fans out to every day this project has.
@@ -802,14 +802,13 @@ export default function EquipmentManifest({ session }) {
     );
   }
 
-  // Turns a linked day back into one with its own list (it keeps the
-  // numbers it had).
+  // Takes a day out of its linked group: it gets its own list again
+  // (keeping the numbers it had); the other days stay linked.
   function unlinkDay(dayId) {
     setProjectsState((prev) =>
       prev.map((p) => {
-        if (p.id !== activeProjectId || !p.dayLinks?.[dayId]) return p;
-        const { [dayId]: _gone, ...dayLinks } = p.dayLinks;
-        return withLinkedQuantities({ ...p, dayLinks });
+        if (p.id !== activeProjectId || !p.dayLinks) return p;
+        return withLinkedQuantities({ ...p, dayLinks: withoutDay(p.days, p.dayLinks, dayId) });
       })
     );
   }

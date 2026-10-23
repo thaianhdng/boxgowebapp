@@ -108,14 +108,14 @@ export function ManifestDeptSection({
             ))}
           </div>}
           {days[copyMenu.index].followers && onUnlinkDay && (
-            // A shared column: give a linked day its own column again.
+            // A shared column: give any of its days its own column again.
             <div style={{ display: "flex", alignItems: "center", gap: 4, padding: days.length > 1 ? "0 6px 6px" : 6 }}>
               <span style={{ fontSize: 12, color: "var(--muted)", padding: "0 4px 0 2px" }}>Split</span>
-              {days[copyMenu.index].followers.map((f) => (
+              {[days[copyMenu.index], ...days[copyMenu.index].followers].map((f) => (
                 <button
                   key={f.id}
                   onClick={() => { onUnlinkDay(f.id); setCopyMenu(null); }}
-                  title={`Give ${dayShort(f)} its own column again (it keeps these numbers)`}
+                  title={`Give ${dayShort(f)} its own column again (it keeps these numbers; the other days stay linked)`}
                   className="pop-item"
                   style={{ minWidth: 40, padding: "6px 8px", border: "1px solid var(--border2)", borderRadius: 3, color: "var(--text)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
                 >

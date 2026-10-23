@@ -458,21 +458,26 @@ Start of each conversation, the owner should say which one it is:
   state, `allDeptsFolded` / `setAllFolded` — folding all sets every
   category folded (a quick "what's in this list" view), opening all opens
   categories and subcategories.
-- **Linked days** ("same equipment as", owner's account first; owner's
-  call: shared column): `src/lib/dayLinks.js`, list field `dayLinks =
-  { followerDayId: sourceDayId }` (in backups with the list; no chains). A
-  follower's quantities are always written through as a copy of its
-  source's (`setItemQty`, `copyDayQuantities` by day id,
+- **Linked days** ("same equipment", owner's account first; owner's
+  calls: shared column, and every day in a group equal): `src/lib/dayLinks.js`,
+  list field `dayLinks = { dayId: otherDayId }` (in backups with the list);
+  following the links from any day reaches its group's root. Saved lists
+  are tidy (`cleanLinks`: each group's first day is the root, the others
+  point at it); the Edit window hands in links as chosen, so a day that
+  joins a group takes that group's numbers (`withLinkedQuantities`).
+  Every day in a group always carries the same quantities (written
+  through: `setItemQty` via `linkedWith`, `copyDayQuantities` by day id,
   `withLinkedQuantities` in `updateProject`), so the PDF, share page and
   everything else read plain per-day numbers (each day still prints its
   own column). Set in Edit project under each shoot day ("Equipment: Own
-  list / Same as Dn"; `ProjectFormModal` `linkDays`, owner, editing a
-  per-day list with 2+ days; a day others follow reads "Own list · D3
-  same as this day"). The composer shows a source and its followers as
-  one column ("D1/D3" stacked in the accent colour, `dayColumns`), at the
-  source's place; its heading menu has Copy and **Split** (the day gets
-  its own column back, keeping its numbers). Links to days that are gone
-  are dropped; the side list notes "same as D1".
+  list / Same as Dn", "(and D3)" when the group is bigger;
+  `ProjectFormModal` `linkDays`, owner, editing a per-day list with 2+
+  days). The composer shows a group as one column ("D1/D3" stacked in the
+  accent colour, `dayColumns`) at its first day's place; its heading menu
+  has Copy and **Split** for any of its days (`withoutDay`: that day gets
+  its own column back, keeping its numbers; the others stay linked).
+  Removing a day keeps the rest of its group linked; the side list notes
+  "same as D1, D3".
 - **Renaming by tapping** (everyone, owner's call): categories and
   subcategories (Manage Categories), tags and houses (Settings) are renamed
   by tapping the name; `EditableAttrRow` has no pencil button, and each
