@@ -12,6 +12,7 @@ export function ProjectForm({ app, ...props }) {
       projectTags={app.projectTags || []}
       templates={app.templates || []}
       onManageTags={app.openSettings}
+      linkDays
       {...props}
     />
   );

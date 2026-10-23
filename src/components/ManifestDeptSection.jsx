@@ -10,7 +10,7 @@ import { Fold, Presence } from "./Motion.jsx";
 
 export function ManifestDeptSection({
   id, dept, color, subcats, data, days, itemData, perDayQty, collapsed, onToggle, onQtyChange, onNoteChange, onNoteHiddenChange,
-  customItems, onAddCustomItem, onRemoveCustomItem, collapsedSubcats, onToggleSubcat, forceExpand, onAddDay, onCopyDay, recentCustomNames,
+  customItems, onAddCustomItem, onRemoveCustomItem, collapsedSubcats, onToggleSubcat, forceExpand, onAddDay, onCopyDay, onUnlinkDay, recentCustomNames,
 }) {
   const total = Object.values(data).reduce((n, arr) => n + arr.length, 0) + (customItems ? customItems.length : 0);
   const [newCustomName, setNewCustomName] = useState("");
@@ -48,6 +48,9 @@ export function ManifestDeptSection({
   const [copyMenu, setCopyMenu] = useState(null); // { index, top, left }
   const copyMenuRef = useRef(null);
   const dayShort = (d) => d.label.replace("Day ", "D");
+  // A column can stand for several days ("same equipment as", see
+  // lib/dayLinks.js): D1 with D3 following it reads "D1/D3".
+  const colShort = (d) => [d, ...(d.followers || [])].map(dayShort).join("/");
   function openCopyMenu(e, index) {
     const r = e.currentTarget.getBoundingClientRect();
     const k = fixedScale(e.currentTarget);
@@ -90,20 +93,37 @@ export function ManifestDeptSection({
             background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4, boxShadow: "0 4px 10px rgba(0,0,0,0.35)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: 6 }}>
+          {days.length > 1 && <div style={{ display: "flex", alignItems: "center", gap: 4, padding: 6 }}>
             <span style={{ fontSize: 12, color: "var(--muted)", padding: "0 4px 0 2px" }}>Copy</span>
             {days.map((d, i) => i === copyMenu.index ? null : (
               <button
                 key={d.id}
-                onClick={() => { onCopyDay(i, copyMenu.index); setCopyMenu(null); }}
-                title={`Copy ${dayShort(d)} into ${dayShort(days[copyMenu.index])}`}
+                onClick={() => { onCopyDay(d.id, days[copyMenu.index].id); setCopyMenu(null); }}
+                title={`Copy ${colShort(d)} into ${colShort(days[copyMenu.index])}`}
                 className="pop-item"
                 style={{ minWidth: 40, padding: "6px 8px", border: "1px solid var(--border2)", borderRadius: 3, color: "var(--text)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
               >
-                {dayShort(d)}
+                {colShort(d)}
               </button>
             ))}
-          </div>
+          </div>}
+          {days[copyMenu.index].followers && onUnlinkDay && (
+            // A shared column: give a linked day its own column again.
+            <div style={{ display: "flex", alignItems: "center", gap: 4, padding: days.length > 1 ? "0 6px 6px" : 6 }}>
+              <span style={{ fontSize: 12, color: "var(--muted)", padding: "0 4px 0 2px" }}>Split</span>
+              {days[copyMenu.index].followers.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => { onUnlinkDay(f.id); setCopyMenu(null); }}
+                  title={`Give ${dayShort(f)} its own column again (it keeps these numbers)`}
+                  className="pop-item"
+                  style={{ minWidth: 40, padding: "6px 8px", border: "1px solid var(--border2)", borderRadius: 3, color: "var(--text)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  {dayShort(f)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       <div className="sticky-top" style={{ position: "sticky", top: 0, zIndex: 6, borderRadius: bodyOpen ? "4px 4px 0 0" : "4px", overflow: "hidden" }}>
@@ -138,7 +158,7 @@ export function ManifestDeptSection({
                       Max
                     </div>
                   )}
-                  {days.length === 1 ? (
+                  {days.length === 1 && !days[0].followers ? (
                     <div style={{ ...dayHeadStyle, fontSize: 10.5, cursor: "default" }}>Qty</div>
                   ) : days.map((d, i) => (
                     // Tapping a day heading offers "copy from" any other
@@ -148,9 +168,13 @@ export function ManifestDeptSection({
                       key={d.id}
                       onClick={(e) => openCopyMenu(e, i)}
                       style={dayHeadStyle}
-                      title={`Copy quantities from another day into ${dayShort(d)}`}
+                      title={d.followers ? `${colShort(d)} share one list: copy into them, or split a day off` : `Copy quantities from another day into ${dayShort(d)}`}
                     >
-                      {dayShort(d)}
+                      {d.followers ? (
+                        <span style={{ display: "inline-flex", flexDirection: "column", lineHeight: 1.15, color: "var(--accent)" }}>
+                          {[d, ...d.followers].map((x) => <span key={x.id}>{dayShort(x)}</span>)}
+                        </span>
+                      ) : dayShort(d)}
                       <span style={{ position: "absolute", left: "50%", bottom: -1, transform: "translateX(-50%)", width: 3, height: 3, borderRadius: "50%", background: "currentColor", opacity: 0.7 }} />
                     </button>
                   ))}

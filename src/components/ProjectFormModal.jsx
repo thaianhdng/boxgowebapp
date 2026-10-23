@@ -5,6 +5,7 @@ import {
 import { Combobox } from "./Combobox.jsx";
 import { Field } from "./Field.jsx";
 import { uid, todayStr, addOneDay, cascadeDates } from "../lib/utils.js";
+import { cleanLinks } from "../lib/dayLinks.js";
 
 
 // `initial` edits an existing project. Two extras, used only by the
@@ -17,7 +18,9 @@ import { uid, todayStr, addOneDay, cascadeDates } from "../lib/utils.js";
 // `draft` (owner only): a draft list, in no project — the bare-bone list:
 // no production / rental house, Producer or Gaffer (those belong to a
 // project), and the name, tag and shoot dates are optional.
-export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, draft, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
+// `linkDays` (owner first): editing a list with per-day quantities, each
+// shoot day gets "Equipment: Own list / Same as Dn" (lib/dayLinks.js).
+export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, draft, linkDays, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
   const start = initial || prefill;
   const [name, setName] = useState(start?.name || "");
   // Editing shows the project's real tag, even none ("—") or one since
@@ -41,6 +44,7 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
   const [missingDate, setMissingDate] = useState(false);
   const [dayCount, setDayCount] = useState(start?.days?.length || 1);
   const [perDayQty, setPerDayQty] = useState(start?.perDayQty || false);
+  const [dayLinks, setDayLinks] = useState(() => cleanLinks(initial?.days, initial?.dayLinks));
   const [dayRows, setDayRows] = useState(
     start?.days?.length
       ? start.days.map((d) => ({ id: d.id, date: d.date, location: d.location || "", projectLabel: d.projectLabel || "" }))
@@ -77,6 +81,18 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
     setShowSaveTemplate(false);
   }
 
+  // "Same equipment as" another day: only for a list being edited, with
+  // per-day quantities and more than one day.
+  const showLinks = !!linkDays && !!initial && !noList && perDayQty && dayRows.length > 1;
+  const links = cleanLinks(dayRows, dayLinks);
+  function setDayLink(dayId, sourceId) {
+    setDayLinks((cur) => {
+      const next = { ...cleanLinks(dayRows, cur) };
+      if (sourceId) next[dayId] = sourceId; else delete next[dayId];
+      return next;
+    });
+  }
+
   function submit() {
     if (!name.trim() && !draft) return;
     if (noList && dayRows.some((d) => !d.date)) { setMissingDate(true); return; }
@@ -86,7 +102,10 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
     const houses = draft
       ? { productionHouse: "", producer: "", rentalHouse: "", gaffer: "" }
       : { productionHouse: productionHouse.trim(), producer: producer.trim(), rentalHouse: rentalHouse.trim(), gaffer: gaffer.trim() };
-    onSave({ name: name.trim(), tag, ...houses, days, perDayQty, templateId: templateId || undefined });
+    onSave({
+      name: name.trim(), tag, ...houses, days, perDayQty, templateId: templateId || undefined,
+      ...(showLinks || initial?.dayLinks ? { dayLinks: cleanLinks(days, dayLinks) } : {}),
+    });
   }
 
   return (
@@ -252,6 +271,30 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
                 onChange={(e) => updateDayRow(d.id, { location: e.target.value })}
                 placeholder="Location and note"
               />
+              {showLinks && (() => {
+                const followers = dayRows.filter((x) => links[x.id] === d.id);
+                const short = (x) => `D${dayRows.indexOf(x) + 1}`;
+                return (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, marginLeft: 26, fontSize: 11.5, color: "var(--muted)" }}>
+                    <span>Equipment</span>
+                    {followers.length ? (
+                      // A day others follow keeps its own list (links never chain).
+                      <span style={{ color: "var(--text)" }}>Own list · {followers.map(short).join(", ")} same as this day</span>
+                    ) : (
+                      <select
+                        value={links[d.id] || ""}
+                        onChange={(e) => setDayLink(d.id, e.target.value)}
+                        style={{ fontSize: 11.5, padding: "3px 6px", width: "auto", ...(links[d.id] ? { color: "var(--accent)", borderColor: "var(--accent)", fontWeight: 700 } : {}) }}
+                      >
+                        <option value="">Own list</option>
+                        {dayRows.filter((x) => x.id !== d.id && !links[x.id]).map((x) => (
+                          <option key={x.id} value={x.id}>Same as {short(x)}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ))}
           {missingDate && <div style={{ fontSize: 12, color: "var(--danger)" }}>Every shoot day needs a date.</div>}

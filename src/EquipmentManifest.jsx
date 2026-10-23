@@ -22,6 +22,7 @@ import { buildPdf } from "./lib/pdf.js";
 import { DEFAULT_PDF_FONT, pdfFontFor } from "./lib/font.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
 import { uid, newProjectId, relabelDays, todayStr, addOneDay, cascadeDates, formatDM, formatDMY, fmtDate, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
+import { cleanLinks, dayColumns, followersOf, withLinkedQuantities } from "./lib/dayLinks.js";
 
 
 // Gives every day an explicit number for every item that has any. A day
@@ -657,7 +658,16 @@ export default function EquipmentManifest({ session }) {
     );
   }, [itemData]);
 
-  const visibleDays = activeDay === "all" ? days : days.filter((d) => d.id === activeDay);
+  // The composer's day columns: days linked to another ("same equipment
+  // as") share its column. A single day picked in the side list shows the
+  // column it's in.
+  const dayCols = activeProject?.perDayQty ? dayColumns(days, activeProject.dayLinks) : days;
+  const visibleDays = activeDay === "all" ? dayCols : dayCols.filter((d) => d.id === activeDay || d.followers?.some((f) => f.id === activeDay));
+  const linkNote = (dayId) => {
+    const src = activeProject?.perDayQty && cleanLinks(days, activeProject.dayLinks)[dayId];
+    const d = src && days.find((x) => x.id === src);
+    return d ? `same as ${d.label.replace("Day ", "D")}` : "";
+  };
 
   const filteredProjects = useMemo(() => {
     // A greyed "no list yet" card never doubles a project that has a list
@@ -735,6 +745,8 @@ export default function EquipmentManifest({ session }) {
         let quantities;
         if (p.perDayQty) {
           quantities = { ...entry.quantities, [dayId]: q };
+          // Days linked to this one ("same equipment as") follow it.
+          followersOf(p.dayLinks, dayId).forEach((f) => { quantities[f] = q; });
         } else {
           // "All days same" mode: every day shares one value, so writing
           // it once fans out to every day this project has.
@@ -773,20 +785,31 @@ export default function EquipmentManifest({ session }) {
 
   // Copies every item's quantity (catalog items and project-specific custom
   // items alike) from one shoot day into another.
-  function copyDayQuantities(fromIndex, toIndex) {
+  // (By day id; days linked to the target day follow it.)
+  function copyDayQuantities(fromDayId, toDayId) {
     setProjectsState((prev) =>
       prev.map((p) => {
         if (p.id !== activeProjectId) return p;
-        const days = p.days || [];
-        if (fromIndex === toIndex || !days[fromIndex] || !days[toIndex]) return p;
-        const fromDayId = days[fromIndex].id;
-        const toDayId = days[toIndex].id;
+        const ids = new Set((p.days || []).map((d) => d.id));
+        if (fromDayId === toDayId || !ids.has(fromDayId) || !ids.has(toDayId)) return p;
         const nextItemData = {};
         Object.entries(p.itemData || {}).forEach(([itemId, entry]) => {
           const val = entry.quantities?.[fromDayId] || 0;
           nextItemData[itemId] = { ...entry, quantities: { ...(entry.quantities || {}), [toDayId]: val } };
         });
-        return { ...p, itemData: nextItemData };
+        return withLinkedQuantities({ ...p, itemData: nextItemData });
+      })
+    );
+  }
+
+  // Turns a linked day back into one with its own list (it keeps the
+  // numbers it had).
+  function unlinkDay(dayId) {
+    setProjectsState((prev) =>
+      prev.map((p) => {
+        if (p.id !== activeProjectId || !p.dayLinks?.[dayId]) return p;
+        const { [dayId]: _gone, ...dayLinks } = p.dayLinks;
+        return withLinkedQuantities({ ...p, dayLinks });
       })
     );
   }
@@ -1014,6 +1037,9 @@ export default function EquipmentManifest({ session }) {
         // (an untouched box shows 0 but stores nothing), so switching back
         // restores exactly what was there.
         if (patch.perDayQty === false && p.perDayQty) next.itemData = fillUnsetDays(next.itemData, next.days, 0);
+        // Linked days ("same equipment as"): drop links to days that are
+        // gone and copy each source day's numbers into its followers.
+        if (next.dayLinks || p.dayLinks) return withLinkedQuantities(next);
         return next;
       })
     );
@@ -2159,7 +2185,7 @@ export default function EquipmentManifest({ session }) {
                         key={d.id}
                         active={activeDay === d.id}
                         label={d.label.replace("Day ", "D")}
-                        sub={[formatDM(d.date), d.location, d.projectLabel].filter(Boolean).join(" · ")}
+                        sub={[formatDM(d.date), d.location, d.projectLabel, linkNote(d.id)].filter(Boolean).join(" · ")}
                         onClick={() => setActiveDay(d.id)}
                       />
                     ))}
@@ -2388,6 +2414,7 @@ export default function EquipmentManifest({ session }) {
                           onNoteHiddenChange={setItemNoteHidden}
                           onCopyDay={copyDayQuantities}
                           onAddDay={addDay}
+                          onUnlinkDay={unlinkDay}
                           customItems={isCustomEligible ? customItems.filter((c) => (c.department || "Others") === dept && (!searching || c.name.toLowerCase().includes(manifestSearch.trim().toLowerCase()))) : null}
                           onAddCustomItem={isCustomEligible ? (name) => addCustomItem(name, dept) : null}
                           recentCustomNames={isCustomEligible ? recentCustomItemNames : null}
@@ -2648,6 +2675,7 @@ export default function EquipmentManifest({ session }) {
       {showProjectForm && (
         <ProjectFormModal
           initial={projects.find((p) => p.id === editingProjectId)}
+          linkDays={isCatalogOwner}
           heading={isCatalogOwner && xLinksRef.current ? (editingProjectId ? (xListMeta && !xListMeta[editingProjectId] ? "Edit draft list" : undefined) : (!newListTarget ? "New draft list" : undefined)) : undefined}
           draft={isCatalogOwner && xLinksRef.current ? (editingProjectId ? !!xListMeta && !xListMeta[editingProjectId] : !newListTarget) : false}
           saveLabel={!editingProjectId && isCatalogOwner && xLinksRef.current && !newListTarget ? "Create list" : undefined}
