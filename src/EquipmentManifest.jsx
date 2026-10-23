@@ -2674,7 +2674,7 @@ export default function EquipmentManifest({ session }) {
       {showProjectForm && (
         <ProjectFormModal
           initial={projects.find((p) => p.id === editingProjectId)}
-          linkDays={isCatalogOwner}
+          linkDays
           heading={isCatalogOwner && xLinksRef.current ? (editingProjectId ? (xListMeta && !xListMeta[editingProjectId] ? "Edit draft list" : undefined) : (!newListTarget ? "New draft list" : undefined)) : undefined}
           draft={isCatalogOwner && xLinksRef.current ? (editingProjectId ? !!xListMeta && !xListMeta[editingProjectId] : !newListTarget) : false}
           saveLabel={!editingProjectId && isCatalogOwner && xLinksRef.current && !newListTarget ? "Create list" : undefined}

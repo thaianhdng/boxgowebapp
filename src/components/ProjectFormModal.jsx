@@ -18,7 +18,7 @@ import { cleanLinks, linkedWith, withoutDay } from "../lib/dayLinks.js";
 // `draft` (owner only): a draft list, in no project — the bare-bone list:
 // no production / rental house, Producer or Gaffer (those belong to a
 // project), and the name, tag and shoot dates are optional.
-// `linkDays` (owner first): editing a list with per-day quantities, each
+// `linkDays`: editing a list with per-day quantities, each
 // shoot day gets "Equipment: Own list / Same as Dn" (lib/dayLinks.js).
 export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, draft, linkDays, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
   const start = initial || prefill;

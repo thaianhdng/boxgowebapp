@@ -458,8 +458,8 @@ Start of each conversation, the owner should say which one it is:
   state, `allDeptsFolded` / `setAllFolded` — folding all sets every
   category folded (a quick "what's in this list" view), opening all opens
   categories and subcategories.
-- **Linked days** ("same equipment", owner's account first; owner's
-  calls: shared column, and every day in a group equal): `src/lib/dayLinks.js`,
+- **Linked days** ("same equipment", everyone since the owner's call;
+  owner's calls: shared column, and every day in a group equal): `src/lib/dayLinks.js`,
   list field `dayLinks = { dayId: otherDayId }` (in backups with the list);
   following the links from any day reaches its group's root. Saved lists
   are tidy (`cleanLinks`: each group's first day is the root, the others
@@ -471,8 +471,7 @@ Start of each conversation, the owner should say which one it is:
   everything else read plain per-day numbers (each day still prints its
   own column). Set in Edit project under each shoot day ("Equipment: Own
   list / Same as Dn", "(and D3)" when the group is bigger;
-  `ProjectFormModal` `linkDays`, owner, editing a per-day list with 2+
-  days). The composer shows a group as one column ("D1/D3" stacked in the
+  `ProjectFormModal` `linkDays`, editing a per-day list with 2+ days). The composer shows a group as one column ("D1/D3" stacked in the
   accent colour, `dayColumns`) at its first day's place; its heading menu
   has Copy and **Split** for any of its days (`withoutDay`: that day gets
   its own column back, keeping its numbers; the others stay linked).
