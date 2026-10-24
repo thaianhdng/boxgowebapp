@@ -186,46 +186,59 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
 
     y = Math.max(leftY + 8, rightY) + 6;
 
-    // Info strip: Production House and Rental House (the house, with its
-    // Producer / Gaffer on the line below) flow left to right, and Created
-    // On (date, with the time below) sits right-aligned. Houses too long
-    // for the space are cut off with "…".
+    // Info strip: Production House and Rental House (the house and its
+    // Producer / Gaffer on one line, "·" between; owner's call) flow left
+    // to right, and Created On (date · time) sits right-aligned. The names
+    // are slightly spaced out; houses too long for the space are cut off
+    // with "…".
     const hasCreatedOn = Boolean(project?.createdAt);
     if (infoPairs.length > 0 || hasCreatedOn) {
       const gap = 24;
+      const SPACE = 0.4; // extra space between letters of the names
       const createdD = hasCreatedOn ? new Date(project.createdAt) : null;
-      const createdLines = hasCreatedOn ? [formatDMY(fmtDate(createdD)), formatTime24(createdD)] : [];
-      const width = (text, style, size) => { doc.setFont(FONT, style); doc.setFontSize(size); return doc.getTextWidth(text); };
-      const createdW = hasCreatedOn ? Math.max(width("CREATED ON", "bold", 6.5), ...createdLines.map((t) => width(t, "bold", 8.5))) : 0;
+      const createdText = hasCreatedOn ? `${formatDMY(fmtDate(createdD))} · ${formatTime24(createdD)}` : "";
+      const width = (text, size, cs = 0) => {
+        doc.setFont(FONT, "bold");
+        doc.setFontSize(size);
+        return doc.getTextWidth(text) + cs * Math.max(0, text.length - 1);
+      };
+      const createdW = hasCreatedOn ? Math.max(width("CREATED ON", 6.5), width(createdText, 8.5, SPACE)) : 0;
       const cols = [
-        { label: "Production House", lines: [[project?.productionHouse, "bold"], [project?.producer, "bold"]] },
-        { label: "Rental House", lines: [[project?.rentalHouse, "bold"], [project?.gaffer, "bold"]] },
-      ].map((c) => ({ ...c, lines: c.lines.filter(([t]) => t) })).filter((c) => c.lines.length);
-      const natural = cols.map((c) => Math.max(width(c.label.toUpperCase(), "bold", 6.5), ...c.lines.map(([t, st]) => width(t, st, 8.5))));
+        { label: "Production House", parts: [project?.productionHouse, project?.producer] },
+        { label: "Rental House", parts: [project?.rentalHouse, project?.gaffer] },
+      ].map((c) => ({ ...c, parts: c.parts.filter(Boolean) })).filter((c) => c.parts.length);
+      const natural = cols.map((c) => Math.max(width(c.label.toUpperCase(), 6.5), width(c.parts.join(" · "), 8.5, SPACE)));
       const avail = usableWidth - (hasCreatedOn ? createdW + gap : 0);
       const fits = natural.reduce((a, b) => a + b, 0) + gap * Math.max(0, cols.length - 1) <= avail;
       const share = cols.length ? (avail - gap * (cols.length - 1)) / cols.length : 0;
-      const cut = (text, style, max) => {
-        if (width(text, style, 8.5) <= max) return text;
+      const cut = (text, max) => {
+        if (width(text, 8.5, SPACE) <= max) return text;
         let t = text;
-        while (t.length > 1 && width(`${t}…`, style, 8.5) > max) t = t.slice(0, -1);
+        while (t.length > 1 && width(`${t}…`, 8.5, SPACE) > max) t = t.slice(0, -1);
         return `${t.trimEnd()}…`;
       };
+      // House and person on one line: when they don't fit, the house is
+      // cut first so the person still shows (each keeps at least half).
+      const pair = ([house, person], max) => {
+        if (!person) return cut(house, max);
+        const full = `${house} · ${person}`;
+        if (width(full, 8.5, SPACE) <= max) return full;
+        const rest = max - width(` · ${person}`, 8.5, SPACE);
+        const houseMax = Math.max(rest, max / 2);
+        const h = cut(house, houseMax);
+        return `${h} · ${cut(person, max - width(`${h} · `, 8.5, SPACE))}`;
+      };
       let px = marginX;
-      let rows = createdLines.length;
       cols.forEach((c, i) => {
         const colW = fits ? natural[i] : share;
         doc.setFont(FONT, "bold");
         doc.setFontSize(6.5);
         doc.setTextColor(136, 136, 136);
         doc.text(c.label.toUpperCase(), px, y);
-        c.lines.forEach(([text, style], k) => {
-          doc.setFont(FONT, style);
-          doc.setFontSize(8.5);
-          doc.setTextColor(0, 0, 0);
-          doc.text(cut(text, style, colW), px, y + 10 * (k + 1));
-        });
-        rows = Math.max(rows, c.lines.length);
+        const text = pair(c.parts, colW);
+        doc.setFontSize(8.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text(text, px, y + 10, { charSpace: SPACE });
         px += colW + gap;
       });
 
@@ -236,10 +249,11 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         doc.text("CREATED ON", rightX, y, { align: "right" });
         doc.setFontSize(8.5);
         doc.setTextColor(0, 0, 0);
-        createdLines.forEach((t, k) => doc.text(t, rightX, y + 10 * (k + 1), { align: "right" }));
+        // Right-aligned by hand: jsPDF's align ignores the letter spacing.
+        doc.text(createdText, rightX - width(createdText, 8.5, SPACE), y + 10, { charSpace: SPACE });
       }
 
-      y += 10 * rows + 9;
+      y += 10 + 9;
     }
 
     // Divider

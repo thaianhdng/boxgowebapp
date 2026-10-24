@@ -370,9 +370,10 @@ Start of each conversation, the owner should say which one it is:
 - PDF: `src/lib/pdf.js` (jsPDF). Header (owner's call): prepared-by at
   the right; tag + name at the left in the space beside it (a long name
   wraps; the shoot dates follow it, or take their own line when they
-  don't fit); then Production House and Rental House (house, with the
-  Producer / Gaffer on the line below, same bold font; cut with "…"
-  when too wide) and Created On (date, time below) at the right; a thin
+  don't fit); then Production House and Rental House ("house · Producer"
+  / "house · Gaffer" on one line, bold, letters spaced 0.4pt; when too
+  wide the house is cut with "…" first so the person still shows) and
+  Created On ("date · time", one line) at the right; a thin
   (1.5pt) accent line; the project note has no label. **Compact layout**
   (owner's call, option "B"): ~1.3cm margins (36pt), 8pt items, 13pt
   title, slim 13pt category bars, rows padded 4.4pt; a catalog spec note
