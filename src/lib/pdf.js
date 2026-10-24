@@ -182,10 +182,13 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     if (shootDateRange) {
       doc.setTextColor(0, 0, 0);
       const last = nameLines[nameLines.length - 1] || "";
-      const after = `· ${shootDateRange}`;
+      // "·" with the same gap on both sides, whatever the font's space width.
+      const GAP = 7;
       const lastW = doc.getTextWidth(last);
-      if (lastW + 8 + doc.getTextWidth(after) <= nameWidth) {
-        doc.text(after, leftX + lastW + 8, leftY);
+      const dotW = doc.getTextWidth("·");
+      if (lastW + GAP * 2 + dotW + doc.getTextWidth(shootDateRange) <= nameWidth) {
+        doc.text("·", leftX + lastW + GAP, leftY);
+        doc.text(shootDateRange, leftX + lastW + GAP * 2 + dotW, leftY);
       } else {
         leftY += lh(13);
         doc.text(shootDateRange, leftX, leftY);
