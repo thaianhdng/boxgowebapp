@@ -404,9 +404,10 @@ Start of each conversation, the owner should say which one it is:
   device, `boxgo-preview-mode`): List shows `ReadOnlyList`, exactly what
   share-link viewers see, in the app's colours; the PDF stays built in
   the background so switching back is instant. The preview's
-  top bar (owner's call): Back, the name and the Font picker always on one
-  line (phones drop the "Font" word; on small phones the name and the
-  picker both narrow, cut with "…"),
+  top bar (owner's call): Back, the name (accent colour) and the Font
+  picker on one line (phones drop the "Font" word); when a phone is too
+  narrow for the name (~10 letters) and the full picker, the picker moves
+  down a line (right-aligned) instead of either being squeezed,
   then Share and Download PDF on one line (`.pv-actions`; on phones they
   split the width and Download drops "PDF"). **Share** opens one window
   (owner's call: no second window) with two choices, each with a short

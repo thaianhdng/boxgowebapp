@@ -102,15 +102,17 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
         background: "var(--surface)", borderBottom: "2px solid var(--border)",
         padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
       }}>
-        {/* Back, name and Font always share one line (owner's call): the
-            name and the font picker both narrow to fit small phones. */}
-        <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
+        {/* Back, name and Font share one line; when a phone is too narrow
+            for the name and the full font picker, the picker moves down a
+            line (owner's call) rather than either being squeezed. */}
+        <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px", flexShrink: 0 }}>
           <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Back
         </button>
-        {/* The name keeps at least a few letters (plus the live icon). */}
-        <div style={{ flex: "1 1 0", minWidth: liveUrl ? 88 : 52, display: "flex", alignItems: "center", gap: 8 }}>
-          <div className="stencil" style={{ fontSize: 13, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+        {/* The name (accent colour, owner's call) keeps room for about ten
+            letters, plus the live icon. */}
+        <div style={{ flex: "1 1 0", minWidth: liveUrl ? 126 : 90, display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="stencil" style={{ fontSize: 13, color: "var(--accent)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
             {project.name || "Equipment List"}
           </div>
           {/* Beside the name only while this list's live link is on, in red
@@ -131,13 +133,13 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
           )}
         </div>
         {onSetPdfFont && (
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--muted)", flex: "0 1 auto", minWidth: 0, maxWidth: 190 }} title="Font for this project's PDF and share links">
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--muted)", flex: "0 0 auto", marginLeft: "auto" }} title="Font for this project's PDF and share links">
             <span className="pv-long">Font</span>
             <select
               value={pdfFontFor(project.pdfFont).id}
               onChange={(e) => onSetPdfFont(e.target.value)}
               aria-label="PDF font"
-              style={{ fontSize: 12, padding: "6px 8px", width: "auto", maxWidth: "100%", minWidth: 72, textOverflow: "ellipsis" }}
+              style={{ fontSize: 12, padding: "6px 8px", width: "auto" }}
             >
               {PDF_FONTS.map((f) => (
                 <option key={f.id} value={f.id}>{f.name}</option>
