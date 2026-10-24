@@ -21,7 +21,7 @@ import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_T
 import { buildPdf } from "./lib/pdf.js";
 import { DEFAULT_PDF_FONT, pdfFontFor } from "./lib/font.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
-import { uid, newProjectId, relabelDays, todayStr, addOneDay, cascadeDates, formatDM, formatDMY, fmtDate, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
+import { uid, newProjectId, relabelDays, todayStr, addOneDay, cascadeDates, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
 import { dayColumns, linkedWith, withLinkedQuantities, withoutDay } from "./lib/dayLinks.js";
 
 
@@ -1569,19 +1569,6 @@ export default function EquipmentManifest({ session }) {
 
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [shareGenerating, setShareGenerating] = useState(false);
-  const [shareResult, setShareResult] = useState(null); // { kind: "live" | "snapshot", url, projectId }
-  // Bumped on every successful copy of the share link: the Copy button reads
-  // "Copied" (and pops) for a moment, then goes back to "Copy".
-  const [linkCopied, setLinkCopied] = useState(0);
-  const [showCopied, setShowCopied] = useState(false);
-  useEffect(() => {
-    if (!linkCopied) return;
-    setShowCopied(true);
-    const t = setTimeout(() => setShowCopied(false), 2200);
-    return () => clearTimeout(t);
-  }, [linkCopied]);
-  const copyShareLink = (url) => navigator.clipboard?.writeText(url).then(() => setLinkCopied((n) => n + 1), () => {});
-  const [shareError, setShareError] = useState("");
   // Live-link tokens live in their own projects.share_token column, not in
   // the project's saved data, so they're tracked separately here.
   const [liveShareTokens, setLiveShareTokens] = useState({});
@@ -1600,17 +1587,15 @@ export default function EquipmentManifest({ session }) {
   const buildPdfBlob = () => buildPdf(pdfInputs(activeProject));
 
 
+  // The preview's Share window shows the links itself; these make them and
+  // hand back { url, … }, or throw an error with a message for the owner.
   async function runShare(fn) {
     setShareGenerating(true);
-    setShareError("");
     try {
-      const result = await fn();
-      setShareResult(result);
-      setShowCopied(false);
-      copyShareLink(result.url);
+      return await fn();
     } catch (err) {
       console.error("Share failed:", err);
-      setShareError(
+      throw new Error(
         /shared_snapshots|share_token|get_shared_list|schema cache/.test(err?.message || "")
           ? "Sharing hasn't been set up in Supabase yet (the share SQL needs to be run once)."
           : "Sorry, the link couldn't be created. Please try again."
@@ -1632,7 +1617,7 @@ export default function EquipmentManifest({ session }) {
         accentId,
         preparedBy: pdfInputs(project).preparedBy,
       });
-      return { kind: "snapshot", url: shareUrlFor(token), projectId: project.id, reusedFrom };
+      return { url: shareUrlFor(token), reusedFrom };
     });
   }
 
@@ -1642,23 +1627,22 @@ export default function EquipmentManifest({ session }) {
     return runShare(async () => {
       const token = await enableLiveLink({ userId: session.user.id, project, existingToken: liveShareTokens[project.id] });
       setLiveShareTokens((prev) => ({ ...prev, [project.id]: token }));
-      return { kind: "live", url: shareUrlFor(token), projectId: project.id };
+      return { url: shareUrlFor(token) };
     });
   }
 
   async function stopLiveLink(projectId) {
     try {
       await disableLiveLink(projectId);
-      setLiveShareTokens((prev) => {
-        const next = { ...prev };
-        delete next[projectId];
-        return next;
-      });
-      setShareResult(null);
     } catch (err) {
       console.error("Couldn't turn off live link:", err);
-      setShareError("Couldn't turn off the live link. Please try again.");
+      throw new Error("Couldn't turn off the live link. Please try again.");
     }
+    setLiveShareTokens((prev) => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
   }
 
   // `ready` is the PDF the preview already built, when there is one.
@@ -2624,7 +2608,8 @@ export default function EquipmentManifest({ session }) {
             onSetPdfFont={(id) => { updateProject(activeProject.id, { pdfFont: id }); setPdfFontId(id); }}
             onShareSnapshot={shareSnapshot}
             onShareLive={shareLive}
-            hasLiveLink={Boolean(liveShareTokens[activeProject.id])}
+            onStopLive={stopLiveLink}
+            liveUrl={liveShareTokens[activeProject.id] ? shareUrlFor(liveShareTokens[activeProject.id]) : null}
             shareGenerating={shareGenerating}
           />
         ) : (
@@ -2787,51 +2772,6 @@ export default function EquipmentManifest({ session }) {
             has: (d) => !!d.expansion?.projects,
           }] : null}
         />
-      )}
-
-      {(shareResult || shareError) && (
-        <div className="no-print m-overlay" style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
-          alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
-        }}>
-          <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 440, padding: 22, border: "1px solid var(--border2)" }}>
-            <div className="stencil" style={{ fontSize: 14, marginBottom: 10 }}>
-              {shareResult?.kind === "live" ? "Live Link" : "Snapshot Link"}
-            </div>
-            {shareError ? (
-              <div style={{ fontSize: 13, color: "#AA0000", marginBottom: 16 }}>{shareError}</div>
-            ) : (
-              <>
-                <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
-                  {shareResult.kind === "live"
-                    ? "Anyone with this link can view this list as it is right now, and it keeps updating as you edit. No account needed."
-                    : shareResult.reusedFrom
-                      ? `Nothing has changed since your last snapshot (${formatDMY(fmtDate(new Date(shareResult.reusedFrom)))}), so this is that same link. Anyone with it can view the list, no account needed.`
-                      : "Anyone with this link can view this list exactly as it is right now. It won't change when you edit the project later; after you make changes, sending another snapshot makes a new link. No account needed."}
-                </div>
-                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                  <input readOnly value={shareResult.url} onFocus={(e) => e.target.select()} style={{ flex: 1, fontSize: 12.5, transition: "border-color 200ms", ...(showCopied ? { borderColor: "var(--accent)" } : {}) }} />
-                  <button
-                    key={linkCopied}
-                    className={showCopied ? "btn btn-ghost m-copied" : "btn btn-ghost"}
-                    onClick={() => copyShareLink(shareResult.url)}
-                    style={showCopied ? { color: "var(--accent)", borderColor: "var(--accent)", minWidth: 96 } : { minWidth: 96 }}
-                  >
-                    {showCopied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
-                  </button>
-                </div>
-              </>
-            )}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-              {shareResult?.kind === "live" ? (
-                <button className="btn btn-ghost" style={{ color: "#AA0000" }} onClick={() => stopLiveLink(shareResult.projectId)}>
-                  Turn off live link
-                </button>
-              ) : <span />}
-              <button className="btn btn-primary" onClick={() => { setShareResult(null); setShareError(""); }}>Done</button>
-            </div>
-          </div>
-        </div>
       )}
 
       {undoState && (

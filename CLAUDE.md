@@ -397,11 +397,16 @@ Start of each conversation, the owner should say which one it is:
   page's View PDF draw the real PDF with pdf.js (`src/lib/pdfPreview.js`). The preview's
   top bar (owner's call): Back, the name and the Font picker on one line,
   then Share and Download PDF on one line (`.pv-actions`; on phones they
-  split the width and Download drops "PDF"). **Share** opens a window
-  with two choices, each with a short hint (`ShareChoice`): Snapshot
-  (frozen copy) or Live link (always the latest; "· on" when it is). A
-  small accent **Live** button sits before Share only while the list's
-  live link is on; it reopens the link window (copy / turn off). Downloads go through
+  split the width and Download drops "PDF"). **Share** opens one window
+  (owner's call: no second window) with two choices, each with a short
+  hint (`ShareChoice`): Snapshot (frozen copy) and Live link (always the
+  latest; "· on" when it is). Tapping one makes its link, which shows
+  inside that choice with Copy (copied at once; `LinkRow`), the live one
+  with "Turn off live link"; an on live link shows there straight away.
+  A small accent **Live** button sits before Share only while the list's
+  live link is on, and opens the same window. `shareSnapshot` /
+  `shareLive` / `stopLiveLink` in `EquipmentManifest` return the link or
+  throw a message for the window; there is no separate link window. Downloads go through
   `saveFile()` in `src/lib/utils.js` (iOS: opens the Share menu).
 - **Page width** (everyone, owner's call): on big screens the site stops
   at 1280px, centred (`PAGE_MAX` in `EquipmentManifest.jsx`; the same
