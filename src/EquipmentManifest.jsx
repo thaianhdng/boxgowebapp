@@ -2357,23 +2357,27 @@ export default function EquipmentManifest({ session }) {
                       </div>
                     )}
 
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14 }}>
+                    {/* The item search and Fold all / Open all share one height,
+                        with room between them and the button in the accent
+                        colour, so it reads as a control for the whole list
+                        rather than part of the search (owner's call). */}
+                    <div style={{ display: "flex", gap: 14, alignItems: "stretch", marginBottom: 14 }}>
                       <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
-                        <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
+                        <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--muted)" }} />
                         <input
                           value={manifestSearch}
                           onChange={(e) => setManifestSearch(e.target.value)}
                           placeholder="Search items…"
-                          style={{ width: "100%", paddingLeft: 30, fontSize: 13 }}
+                          style={{ width: "100%", height: 40, boxSizing: "border-box", paddingLeft: 32, fontSize: 13 }}
                         />
                       </div>
                       <button
                         className="btn btn-ghost"
                         onClick={() => setAllFolded(!allDeptsFolded)}
                         title={allDeptsFolded ? "Open every category" : "Fold every category (picked items stay showing)"}
-                        style={{ flexShrink: 0, padding: "6px 10px" }}
+                        style={{ flexShrink: 0, height: 40, boxSizing: "border-box", padding: "0 14px", gap: 7, fontSize: 13, borderColor: "var(--accent)", color: "var(--accent)" }}
                       >
-                        {allDeptsFolded ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />} {allDeptsFolded ? "Open all" : "Fold all"}
+                        {allDeptsFolded ? <ChevronsUpDown size={16} /> : <ChevronsDownUp size={16} />} {allDeptsFolded ? "Open all" : "Fold all"}
                       </button>
                     </div>
 

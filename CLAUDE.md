@@ -461,7 +461,9 @@ Start of each conversation, the owner should say which one it is:
   the page colour) instead of solid, with "N hidden" at its right;
   a folded subcategory shows "N hidden" (owner's call: a fold should look
   folded). **Fold all / Open all** (owner's call: both places): a
-  button beside the composer's "Search items…" and the first line of the
+  button beside the composer's "Search items…" (both 40px tall, 14px apart,
+  the button outlined in the accent colour so it reads as a list control,
+  not part of the search; owner's call) and the first line of the
   floating category menu (composer only, not the Master Catalog); one
   state, `allDeptsFolded` / `setAllFolded` — folding all sets every
   category folded (a quick "what's in this list" view), opening all opens
