@@ -415,7 +415,8 @@ Start of each conversation, the owner should say which one it is:
   (owner's call: no second window) with two choices, each with a short
   hint (`ShareChoice`): Snapshot (frozen copy) and Live link (always the
   latest; "· on" when it is). Tapping one makes its link, which shows
-  inside that choice with Copy (copied at once; `LinkRow`), the live one
+  inside that choice with Copy (copied at once) and Open (the share page
+  in a new tab; owner's call) under it (`LinkRow`), the live one
   with "Turn off live link"; an on live link shows there straight away.
   A small red live icon sits beside the list's name only while its
   live link is on; tapping it asks "Turn off live link?" (Cancel / Turn

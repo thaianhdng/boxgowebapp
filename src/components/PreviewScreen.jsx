@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Printer, ChevronRight, Loader2, Share2, Radio, Camera, Copy, Check,
+  Printer, ChevronRight, Loader2, Share2, Radio, Camera, Copy, Check, ExternalLink,
 } from "lucide-react";
 import { defaultExportFilename, fmtDate, formatDMY } from "../lib/utils.js";
 import { renderPdfPages } from "../lib/pdfPreview.js";
@@ -327,20 +327,32 @@ function ShareChoice({ icon, title, hint, accent, onPick, busy, disabled, childr
   );
 }
 
-// A link with its Copy button ("✓ Copied" for a moment after copying).
+// A link with its Copy button ("✓ Copied" for a moment after copying) and
+// Open (owner's call): the share page in a new tab, as people will see it.
 function LinkRow({ url, copied, onCopy }) {
   const done = copied?.url === url;
   return (
-    <div style={{ display: "flex", gap: 8 }}>
-      <input readOnly value={url} onFocus={(e) => e.target.select()} style={{ flex: 1, minWidth: 0, fontSize: 12, transition: "border-color 200ms", ...(done ? { borderColor: "var(--accent)" } : {}) }} />
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {/* The link on its own line when Copy and Open don't fit beside it. */}
+      <input readOnly value={url} onFocus={(e) => e.target.select()} style={{ flex: "1 1 220px", minWidth: 0, fontSize: 12, transition: "border-color 200ms", ...(done ? { borderColor: "var(--accent)" } : {}) }} />
       <button
         key={done ? copied.n : "copy"}
         className={done ? "btn btn-ghost m-copied" : "btn btn-ghost"}
         onClick={() => onCopy(url)}
-        style={{ minWidth: 86, justifyContent: "center", ...(done ? { color: "var(--accent)", borderColor: "var(--accent)" } : {}) }}
+        style={{ flex: "1 0 auto", minWidth: 86, justifyContent: "center", ...(done ? { color: "var(--accent)", borderColor: "var(--accent)" } : {}) }}
       >
         {done ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy</>}
       </button>
+      <a
+        className="btn btn-ghost"
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Open the link in a new tab, as the people you send it to will see it"
+        style={{ flex: "1 0 auto", justifyContent: "center", textDecoration: "none" }}
+      >
+        <ExternalLink size={14} /> Open
+      </a>
     </div>
   );
 }
