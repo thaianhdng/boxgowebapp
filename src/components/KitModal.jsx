@@ -116,21 +116,37 @@ function changeText(ch, mode) {
   return `${ch.before.join("/")} → ${ch.after.join("/")}`;
 }
 
-// "Save as kit": the list's gear (each item at its highest number on any
-// day) under a name; the name of an existing kit replaces that kit.
+// "Save as kit": the list's gear under a name — each item at its highest
+// number on any day (MAX), or one chosen day's numbers (owner's call); the
+// name of an existing kit replaces that kit.
 export function SaveKitModal({ project, kits, onSave, onClose }) {
   const [name, setName] = useState("");
-  const draft = kitFromProject(project, name || "x");
+  const [fromDay, setFromDay] = useState(""); // "" = MAX, else a day id
+  const days = project.days || [];
+  // Linked days carry the same numbers, so they're one choice.
+  const cols = project.perDayQty && days.length > 1 ? dayColumns(days, project.dayLinks) : [];
+  const colLabel = (c) => [c, ...(c.followers || [])].map((d) => d.label.replace("Day ", "D")).join("/");
+  const draft = kitFromProject(project, name || "x", fromDay || undefined);
   const n = Object.keys(draft.itemQuantities).length + draft.customItems.length;
   const existing = kits.find((k) => k.name.trim().toLowerCase() === name.trim().toLowerCase());
-  const save = () => { if (name.trim() && n > 0) onSave(name.trim()); };
+  const save = () => { if (name.trim() && n > 0) onSave(name.trim(), fromDay || undefined); };
+  const fromText = fromDay ? `at its number on ${colLabel(cols.find((c) => c.id === fromDay))}` : cols.length ? "at its highest number on any day" : "at its number";
   return (
     <Window onClose={onClose}>
       <Head title="Save as kit" onClose={onClose} />
+      {cols.length > 0 && (
+        <>
+          <div style={styles.label}>Numbers from</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+            <Chip on={!fromDay} onClick={() => setFromDay("")}>Highest (MAX)</Chip>
+            {cols.map((c) => <Chip key={c.id} on={fromDay === c.id} onClick={() => setFromDay(c.id)}>{colLabel(c)}</Chip>)}
+          </div>
+        </>
+      )}
       <div style={styles.hint}>
         {n === 0
-          ? "This list has no gear yet. Pick some items first, then save them as a kit."
-          : `Saves this list's ${n} item${n === 1 ? "" : "s"} as a kit, each at its highest number on any day. Only the gear is saved — no days, dates, houses or notes.`}
+          ? (fromDay ? "Nothing is picked on that day." : "This list has no gear yet. Pick some items first, then save them as a kit.")
+          : `Saves ${n} item${n === 1 ? "" : "s"} as a kit, each ${fromText}. Only the gear is saved — no days, dates, houses or notes.`}
       </div>
       <input
         autoFocus

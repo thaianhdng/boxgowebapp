@@ -554,10 +554,13 @@ Start of each conversation, the owner should say which one it is:
   keeps that name: `app_state.templates`, `templates` in backups, unchanged
   format): saved bundles of gear, items and quantities only — no days,
   dates, tag, houses or notes (`src/lib/kits.js`). A row under the list's
-  info box: **+ Add kit** (dashed accent; only when there are kits) and
-  **Save as kit** (`components/KitModal.jsx`). Save as kit keeps each item
-  at its highest number on any day (its MAX) plus the list's typed-in
-  items (`kitFromProject`: `itemQuantities`, `customItems` [{ name,
+  info box, and again under Fold all in the floating category menu
+  (owner's call): **+ Add kit** (dashed accent; only when there are kits)
+  and **Save as kit** (`components/KitModal.jsx`). Save as kit keeps each
+  item at its highest number on any day (its MAX), or one chosen day's
+  numbers ("Numbers from: Highest (MAX) · D1 · D2…", shown for per-day
+  lists with 2+ columns; linked days are one choice), plus the list's
+  typed-in items (`kitFromProject`: `itemQuantities`, `customItems` [{ name,
   department, qty }]); a kit's name already used replaces that kit (undo
   restores). Add kit: pick a kit, the days (all, or chosen days; linked
   days are one choice and stay equal; "All days same" lists have no day

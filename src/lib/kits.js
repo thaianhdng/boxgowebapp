@@ -1,7 +1,7 @@
 // Kits (owner's call; called "templates" before): reusable bundles of gear,
 // items and quantities only — no days, dates, tag, houses or notes. Saved
 // from a list (each item at its highest number on any day, like the MAX
-// column) and added to any list, or used as the start of a new one.
+// column, or one chosen day's numbers) and added to any list.
 //
 // Stored where templates always were (`app_state.templates`, also in
 // backups): { id, name, itemQuantities: { catalogItemId: qty },
@@ -13,16 +13,18 @@ import { linkedWith } from "./dayLinks.js";
 
 const peakOf = (entry) => Math.max(0, ...Object.values(entry?.quantities || {}).filter((q) => q > 0));
 
-// A new kit from a list's gear.
-export function kitFromProject(project, name) {
+// A new kit from a list's gear: each item at its highest number on any
+// day (the MAX column), or, with `fromDay`, at that one day's number.
+export function kitFromProject(project, name, fromDay) {
+  const qtyOf = (entry) => (fromDay ? Math.max(0, entry?.quantities?.[fromDay] || 0) : peakOf(entry));
   const itemQuantities = {};
   const customIds = new Set((project.customItems || []).map((c) => c.id));
   for (const [itemId, entry] of Object.entries(project.itemData || {})) {
-    const peak = peakOf(entry);
-    if (peak > 0 && !customIds.has(itemId)) itemQuantities[itemId] = peak;
+    const qty = qtyOf(entry);
+    if (qty > 0 && !customIds.has(itemId)) itemQuantities[itemId] = qty;
   }
   const customItems = (project.customItems || [])
-    .map((c) => ({ name: c.name, department: c.department || "Others", qty: peakOf(project.itemData?.[c.id]) }))
+    .map((c) => ({ name: c.name, department: c.department || "Others", qty: qtyOf(project.itemData?.[c.id]) }))
     .filter((c) => c.qty > 0);
   return { id: uid(), name: name.trim(), itemQuantities, customItems };
 }

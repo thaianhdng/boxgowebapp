@@ -65,6 +65,12 @@ function buildAppStatePayload(v) {
   };
 }
 
+// The kit buttons in the floating category menu.
+const fabKitBtn = {
+  flex: 1, height: 36, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+  display: "flex", alignItems: "center", justifyContent: "center", gap: 5, background: "transparent", padding: "0 8px",
+};
+
 // Owner-only expansion, split into its own download: this import only runs
 // when <Expansion> is rendered, which only happens for the owner.
 const Expansion = lazy(() => import("./expansion/Expansion.jsx"));
@@ -929,9 +935,9 @@ export default function EquipmentManifest({ session }) {
 
   // Saves a list's gear as a kit (`lib/kits.js`); a kit with the same name
   // is replaced (keeping its place and id).
-  function saveAsKit(project, name) {
+  function saveAsKit(project, name, fromDay) {
     if (!project || !(name || "").trim()) return;
-    const kit = kitFromProject(project, name);
+    const kit = kitFromProject(project, name, fromDay);
     setTemplates((prev) => {
       const i = prev.findIndex((t) => t.name.trim().toLowerCase() === kit.name.toLowerCase());
       if (i === -1) return [...prev, kit];
@@ -2553,6 +2559,17 @@ export default function EquipmentManifest({ session }) {
                   >
                     {allDeptsFolded ? <ChevronsUpDown size={16} /> : <ChevronsDownUp size={16} />} {allDeptsFolded ? "Open all" : "Fold all"}
                   </button>
+                  {/* The list's kit buttons here too (owner's call). */}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {templates.length > 0 && (
+                      <button onClick={() => { setKitWindow("add"); setShowCategoryMenu(false); }} style={{ ...fabKitBtn, border: "1px dashed var(--accent)", color: "var(--accent)" }}>
+                        <Plus size={14} /> Add kit
+                      </button>
+                    )}
+                    <button onClick={() => { setKitWindow("save"); setShowCategoryMenu(false); }} style={{ ...fabKitBtn, border: "1px solid var(--border2)", color: "var(--text)" }}>
+                      <Package size={13} /> Save as kit
+                    </button>
+                  </div>
                   <div style={{ height: 1, background: "var(--border)", margin: "2px 4px" }} />
                 </>
               )}
@@ -2786,7 +2803,7 @@ export default function EquipmentManifest({ session }) {
         <AddKitModal kits={templates} project={activeProject} catalog={catalog} departments={departments} onApply={addKitToList} onClose={() => setKitWindow(null)} />
       )}
       {kitWindow === "save" && activeProject && (
-        <SaveKitModal project={activeProject} kits={templates} onSave={(name) => { const kitsBefore = templates; saveAsKit(activeProject, name); setKitWindow(null); showUndo(`Saved kit "${name}"`, () => setTemplates(kitsBefore)); }} onClose={() => setKitWindow(null)} />
+        <SaveKitModal project={activeProject} kits={templates} onSave={(name, fromDay) => { const kitsBefore = templates; saveAsKit(activeProject, name, fromDay); setKitWindow(null); showUndo(`Saved kit "${name}"`, () => setTemplates(kitsBefore)); }} onClose={() => setKitWindow(null)} />
       )}
 
       {undoState && (
