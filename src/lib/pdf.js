@@ -346,8 +346,10 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           if (perDayQty) {
+            // A 0 prints grey (owner's call), like MAX's.
             cols.forEach((c) => {
               const qty = entry?.quantities?.[c.id] || 0;
+              if (qty > 0) doc.setTextColor(0, 0, 0); else doc.setTextColor(210, 210, 206);
               doc.text(String(qty), c.x, rowTop + topPad, { align: "center" });
             });
           } else {
@@ -355,6 +357,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
             // the max across whatever's stored is the value to show.
             const sharedVals = days.map((d) => entry?.quantities?.[d.id] || 0).filter((q) => q > 0);
             const sharedQty = sharedVals.length > 0 ? Math.max(...sharedVals) : 0;
+            if (sharedQty > 0) doc.setTextColor(0, 0, 0); else doc.setTextColor(210, 210, 206);
             doc.text(String(sharedQty), rowX + nameColW + maxColW + singleQtyColW / 2, rowTop + topPad, { align: "center" });
           }
 

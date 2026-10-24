@@ -365,7 +365,7 @@ Start of each conversation, the owner should say which one it is:
   (1.5pt) accent line; the project note has no label. In the list (as in the
   composer, owner's call): category bars in the accent colour, subcategory
   labels small, spaced-out and in the accent colour on a light grey bar,
-  item names in regular weight (quantities bold); the column headings MAX,
+  item names in regular weight (quantities bold, a 0 in light grey); the column headings MAX,
   D1, D2… (and QTY) in the accent colour, ITEM / NOTES grey. Back-to-back linked
   days share one day column (see Linked days). Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
