@@ -1,4 +1,5 @@
 import { loadPdfFont, pdfFontFor } from "./font.js";
+import { runColumns } from "./dayLinks.js";
 import { formatShootDateRange, fmtDate, formatDMY, formatTime24, computeVisibleGrouped, orderedKeys, hexToRgb, groupCatalog } from "./utils.js";
 
 // Rasterizes the visible preview screen and slices it into a real
@@ -44,9 +45,13 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     // quantity for every day ("All days same"), the PDF prints a single
     // QTY column instead of a MAX column plus one column per day.
     const perDayQty = !!project?.perDayQty;
+    // Linked days (same equipment) that sit back to back print as one
+    // column, headed "D1", "D2"… stacked; the rest keep a column each.
+    const cols = perDayQty ? runColumns(days, project?.dayLinks) : [];
+    const headLines = Math.max(1, ...cols.map((c) => c.days.length));
     const singleQtyColW = 24;
-    const maxColW = perDayQty && days.length > 1 ? 24 : 0;
-    const dayColsWidth = perDayQty ? days.length * dayColW : singleQtyColW;
+    const maxColW = perDayQty && cols.length > 1 ? 24 : 0;
+    const dayColsWidth = perDayQty ? cols.length * dayColW : singleQtyColW;
     // Item rows get an extra inset on top of the page margin (matching the
     // on-screen preview's row padding), so they read as nested under their
     // subcategory bar instead of running flush to the page edge.
@@ -78,14 +83,16 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         doc.text("MAX", rowX + nameColW + maxColW / 2, y, { align: "center" });
       }
       if (perDayQty) {
-        days.forEach((d, i) => {
-          doc.text(days.length === 1 ? "QTY" : d.label.replace("Day ", "D"), rowX + nameColW + maxColW + i * dayColW + dayColW / 2, y, { align: "center" });
+        cols.forEach((c, i) => {
+          const x = rowX + nameColW + maxColW + i * dayColW + dayColW / 2;
+          if (days.length === 1) doc.text("QTY", x, y, { align: "center" });
+          else c.days.forEach((d, k) => doc.text(d.label.replace("Day ", "D"), x, y + k * 9, { align: "center" }));
         });
       } else {
         doc.text("QTY", rowX + nameColW + maxColW + singleQtyColW / 2, y, { align: "center" });
       }
       doc.text("NOTES", rowX + nameColW + maxColW + dayColsWidth, y);
-      y += 12;
+      y += 12 + (headLines - 1) * 9;
     }
 
     const visibleGrouped = computeVisibleGrouped(manifestGrouped, itemData);
@@ -248,7 +255,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       doc.setTextColor(136, 136, 136);
       doc.text("No quantities entered for this shoot yet.", marginX, y);
     } else {
-      ensureSpace(16);
+      ensureSpace(16 + (headLines - 1) * 9);
       drawColumnHeader();
     }
 
@@ -332,8 +339,8 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           if (perDayQty) {
-            days.forEach((d, i) => {
-              const qty = entry?.quantities?.[d.id] || 0;
+            cols.forEach((c, i) => {
+              const qty = entry?.quantities?.[c.id] || 0;
               doc.text(String(qty), rowX + nameColW + maxColW + i * dayColW + dayColW / 2, rowTop + topPad, { align: "center" });
             });
           } else {

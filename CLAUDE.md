@@ -365,7 +365,8 @@ Start of each conversation, the owner should say which one it is:
   (1.5pt) accent line; the project note has no label. In the list (as in the
   composer, owner's call): category bars in the accent colour, subcategory
   labels small, spaced-out and in the accent colour on a light grey bar,
-  item names in regular weight (quantities bold). Font is per project (`project.pdfFont`,
+  item names in regular weight (quantities bold). Back-to-back linked
+  days share one day column (see Linked days). Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
   default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and share page draw
   the real PDF with pdf.js (`src/lib/pdfPreview.js`). Downloads go through
@@ -467,9 +468,12 @@ Start of each conversation, the owner should say which one it is:
   joins a group takes that group's numbers (`withLinkedQuantities`).
   Every day in a group always carries the same quantities (written
   through: `setItemQty` via `linkedWith`, `copyDayQuantities` by day id,
-  `withLinkedQuantities` in `updateProject`), so the PDF, share page and
-  everything else read plain per-day numbers (each day still prints its
-  own column). Set in Edit project under each shoot day ("Equipment: Own
+  `withLinkedQuantities` in `updateProject`), so the share page and
+  everything else read plain per-day numbers. **PDF** (owner's call,
+  "smart combine"): back-to-back days of one group print as one column
+  headed with the days stacked ("D1" over "D2"; `runColumns`); linked days
+  that aren't next to each other keep their own columns; MAX only shows
+  when there's more than one column. Set in Edit project under each shoot day ("Equipment: Own
   list / Same as Dn", "(and D3)" when the group is bigger;
   `ProjectFormModal` `linkDays`, editing a per-day list with 2+ days). The composer shows a group as one column ("D1/D3" stacked in the
   accent colour, `dayColumns`) at its first day's place; its heading menu

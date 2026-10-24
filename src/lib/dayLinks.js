@@ -111,3 +111,18 @@ export function withLinkedQuantities(p) {
   }
   return { ...rest, dayLinks: links, itemData };
 }
+
+// The PDF's day columns (owner's call): back-to-back days of one group
+// print as one column headed "D1/D2"; linked days that aren't next to each
+// other keep their own columns. [{ id: first day's id, days: [day, …] }]
+export function runColumns(days, links) {
+  const clean = cleanLinks(days, links);
+  const group = (id) => clean[id] || id;
+  const cols = [];
+  for (const d of days || []) {
+    const last = cols[cols.length - 1];
+    if (last && group(last.days[last.days.length - 1].id) === group(d.id)) last.days.push(d);
+    else cols.push({ id: d.id, days: [d] });
+  }
+  return cols;
+}
