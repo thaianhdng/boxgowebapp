@@ -30,7 +30,7 @@ Run → open BOXGO again.
 
 - Past jobs (2025 and 2026) that show as Done; jobs now (Cicaplast is
   shooting on 4–6/10/26), upcoming jobs, and jobs in 2027.
-- 1 to 10 shoot days, gaps between days (non-consecutive), one list with a
+- 1 to 7 shoot days (BOXGO's limit), gaps between days (non-consecutive), one list with a
   day that has no date, and one with no items at all.
 - Per-day quantities that differ by day (some days 0), "all days same"
   lists, quantities up to 94.

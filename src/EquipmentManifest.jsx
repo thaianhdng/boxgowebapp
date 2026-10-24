@@ -838,12 +838,14 @@ export default function EquipmentManifest({ session }) {
   // columns. Existing days keep whatever they hold — including custom
   // per-day numbers kept from before the project was set to "All days
   // same" — and only the new day is filled, with the item's shared
-  // quantity (what "all days same" showed for it).
+  // quantity (what "all days same" showed for it). A list has at most 7
+  // days (as in the Create New / Edit window).
   function addDay() {
     setProjectsState((prev) =>
       prev.map((p) => {
         if (p.id !== activeProjectId) return p;
         const days = p.days || [];
+        if (days.length >= 7) return p;
         const prevDate = days.length > 0 ? days[days.length - 1].date : "";
         const date = prevDate ? addOneDay(prevDate) : todayStr();
         const newDay = { id: `day${Date.now()}`, date, location: "", projectLabel: "" };
@@ -2416,7 +2418,7 @@ export default function EquipmentManifest({ session }) {
                           onNoteChange={setItemNote}
                           onNoteHiddenChange={setItemNoteHidden}
                           onCopyDay={copyDayQuantities}
-                          onAddDay={addDay}
+                          onAddDay={(activeProject?.days || []).length < 7 ? addDay : undefined}
                           onUnlinkDay={unlinkDay}
                           customItems={isCustomEligible ? customItems.filter((c) => (c.department || "Others") === dept && (!searching || c.name.toLowerCase().includes(manifestSearch.trim().toLowerCase()))) : null}
                           onAddCustomItem={isCustomEligible ? (name) => addCustomItem(name, dept) : null}

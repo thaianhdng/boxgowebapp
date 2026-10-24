@@ -1,5 +1,5 @@
 // Made-up test data for every screen of BOXGO and the owner's Projects /
-// Calendar: 35 equipment lists (1–10 shoot days, per-day quantities,
+// Calendar: 35 equipment lists (1–7 shoot days, per-day quantities,
 // notes, custom / subrent items, empty lists, no dates, long names,
 // Vietnamese text, every PDF font, a full-catalog list…), their Projects /
 // Calendar details (every status, event type, files, clashes; projects
@@ -155,10 +155,10 @@ const L = [
     days: [
       ["2026-11-02", "Studio Kỳ Hòa – Q.10", "Prelight"], ["2026-11-03", "Studio Kỳ Hòa – Q.10", "Studio"], ["2026-11-04", "Studio Kỳ Hòa – Q.10", "Studio"],
       ["2026-11-05", "Studio Kỳ Hòa – Q.10", "Studio"], ["2026-11-06", "Studio Kỳ Hòa – Q.10", "Pack shot"], ["2026-11-09", "Hội An", "Exterior Day"],
-      ["2026-11-10", "Hội An", "Night Ext"], ["2026-11-11", "Hội An", "Lanterns"], ["2026-11-12", "Đà Nẵng airport", "Travel"], ["2026-11-13", "Studio Kỳ Hòa – Q.10", "Pickups"],
+      ["2026-11-10", "Hội An", "Night Ext"],
     ],
     perDayQty: true, vary, items: { ...kit("bigTVC"), ...kit("anamorphic", 0.5) }, note: LONG_NOTE,
-    custom: [["Technocrane 30ft (subrent)", "Subrent", [0, 1, 1, 1, 0, 1, 1, 0, 0, 0]], ["Phantom Flex 4K + tech", "Subrent", [0, 0, 1, 0, 1, 0, 0, 0, 0, 1]], ["Balloon light 4K", "Others", 2]],
+    custom: [["Technocrane 30ft (subrent)", "Subrent", [0, 1, 1, 1, 0, 1, 1]], ["Phantom Flex 4K + tech", "Subrent", [0, 0, 1, 0, 1, 0, 1]], ["Balloon light 4K", "Others", 2]],
     collapsed: { Grip: true } }),
   list(19, { name: "Coca-Cola Christmas Truck", ph: "Mango Films", producer: "Quân Hồ", rh: "Lumière Rental", gaffer: "Tuấn Lê",
     days: [["2026-12-10", "Phú Mỹ Hưng – Crescent Mall", "Night Ext"], ["2026-12-11", "Studio Phú Mỹ Hưng", "Pack shot"]], items: kit("bigTVC", 0.8) }),

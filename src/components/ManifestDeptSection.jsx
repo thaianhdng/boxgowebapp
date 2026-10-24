@@ -193,13 +193,17 @@ export function ManifestDeptSection({
                 </div>
               )}
               <div style={{ width: 24, flexShrink: 0 }} />
-              <button
-                onClick={onAddDay}
-                style={{ width: 24, flexShrink: 0, background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", justifyContent: "center" }}
-                title="Add another shoot day"
-              >
-                <Plus size={18} />
-              </button>
+              {onAddDay ? (
+                <button
+                  onClick={onAddDay}
+                  style={{ width: 24, flexShrink: 0, background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", justifyContent: "center" }}
+                  title="Add another shoot day"
+                >
+                  <Plus size={18} />
+                </button>
+              ) : (
+                <div style={{ width: 24, flexShrink: 0 }} title="7-day maximum reached" />
+              )}
             </div>
           </div>
         )}

@@ -331,6 +331,17 @@ Start of each conversation, the owner should say which one it is:
     Sending a snapshot identical to the project's last one reuses that
     link. Live links show "Updated" from `projects.list_updated_at`, set by
     a trigger only when the list content changes (`supabase/005_…`).
+  - **Share page** (`SharedListView`, everyone; owner's call): opens as a
+    read-only copy of the composer's folded view: info box (tag, name ·
+    dates, houses, prepared by, project note, list note), then only the
+    picked items by category / subcategory with MAX and each day's
+    quantity (linked days share a stacked "D1/D3" column, as in the
+    composer), 720px wide. The PDF is built only when asked: **View PDF**
+    (the real PDF page by page, over the list) and **Download PDF** in a
+    bar at the bottom. A Light / Dark / Auto switch on top (Auto = the
+    device's setting) is remembered per viewer in localStorage; colours
+    are the app's, with the owner's accent. Live-link tokens stay random
+    and tied to the project (owner's call: details change, links don't).
   - **Share-link previews** (chat apps don't run the app, only read the
     page's head): `middleware.js` (Vercel Routing Middleware, matcher
     `/share/:token*`) calls `get_shared_list` with the anon key
@@ -370,8 +381,8 @@ Start of each conversation, the owner should say which one it is:
   D1, D2… (and QTY) in the accent colour, ITEM / NOTES grey. Back-to-back linked
   days share one day column (see Linked days). Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
-  default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and share page draw
-  the real PDF with pdf.js (`src/lib/pdfPreview.js`). Downloads go through
+  default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and the share
+  page's View PDF draw the real PDF with pdf.js (`src/lib/pdfPreview.js`). Downloads go through
   `saveFile()` in `src/lib/utils.js` (iOS: opens the Share menu).
 - **Page width** (everyone, owner's call): on big screens the site stops
   at 1280px, centred (`PAGE_MAX` in `EquipmentManifest.jsx`; the same
@@ -472,6 +483,9 @@ Start of each conversation, the owner should say which one it is:
   state, `allDeptsFolded` / `setAllFolded` — folding all sets every
   category folded (a quick "what's in this list" view), opening all opens
   categories and subcategories.
+- **At most 7 shoot days per list** (owner's rule): Create New / Edit
+  offers 1–7, Manage Days stops at 7, and the composer's "+" (add a day)
+  disappears at 7 (`addDay`). Older longer lists keep their days.
 - **Linked days** ("same equipment", everyone since the owner's call;
   owner's calls: shared column, and every day in a group equal): `src/lib/dayLinks.js`,
   list field `dayLinks = { dayId: otherDayId }` (in backups with the list);

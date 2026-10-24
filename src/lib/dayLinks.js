@@ -11,8 +11,9 @@
 //
 // Every day in a group always carries the same quantities (written
 // through on every change), so the PDF, share page, backups and everything
-// else keep reading plain per-day numbers. Only the composer knows: it
-// shows a group as one column, at its first day's place.
+// else keep reading plain per-day numbers. Only the composer (and the
+// share page, which copies it) knows: it shows a group as one column, at
+// its first day's place.
 
 // [[root, memberIds in day order], …] for every day. A root is a day
 // (or, when a link points at a day that's gone, that missing day).
