@@ -102,10 +102,14 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
         background: "var(--surface)", borderBottom: "2px solid var(--border)",
         padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
       }}>
-        <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px" }}>
+        {/* Back, name and Font always share one line (owner's call): the
+            name and the font picker both narrow to fit small phones. */}
+        <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
+        <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px", flexShrink: 0 }}>
           <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Back
         </button>
-        <div style={{ flex: "1 1 60px", minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
+        {/* The name keeps at least a few letters (plus the live icon). */}
+        <div style={{ flex: "1 1 0", minWidth: liveUrl ? 88 : 52, display: "flex", alignItems: "center", gap: 8 }}>
           <div className="stencil" style={{ fontSize: 13, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
             {project.name || "Equipment List"}
           </div>
@@ -127,13 +131,13 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
           )}
         </div>
         {onSetPdfFont && (
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--muted)", flexShrink: 0 }} title="Font for this project's PDF and share links">
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--muted)", flex: "0 1 auto", minWidth: 0, maxWidth: 190 }} title="Font for this project's PDF and share links">
             <span className="pv-long">Font</span>
             <select
               value={pdfFontFor(project.pdfFont).id}
               onChange={(e) => onSetPdfFont(e.target.value)}
               aria-label="PDF font"
-              style={{ fontSize: 12, padding: "6px 8px", width: "auto" }}
+              style={{ fontSize: 12, padding: "6px 8px", width: "auto", maxWidth: "100%", minWidth: 72, textOverflow: "ellipsis" }}
             >
               {PDF_FONTS.map((f) => (
                 <option key={f.id} value={f.id}>{f.name}</option>
@@ -141,6 +145,7 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
             </select>
           </label>
         )}
+        </div>
         <div className="pv-actions">
           {(onShareSnapshot || onShareLive) && (
             <button className="btn btn-ghost" onClick={openShare} title="Share this list as a snapshot or a live link">
