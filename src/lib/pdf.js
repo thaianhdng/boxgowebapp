@@ -46,12 +46,18 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     // QTY column instead of a MAX column plus one column per day.
     const perDayQty = !!project?.perDayQty;
     // Linked days (same equipment) that sit back to back print as one
-    // column, headed "D1", "D2"… stacked; the rest keep a column each.
-    const cols = perDayQty ? runColumns(days, project?.dayLinks) : [];
-    const headLines = Math.max(1, ...cols.map((c) => c.days.length));
+    // column headed "D1/2/3" on one line, widened to fit its heading
+    // (owner's call); the rest keep a 24pt column each. `x` = centre.
+    const dayNo = (d) => d.label.replace("Day ", "");
+    doc.setFont(FONT, "bold");
+    doc.setFontSize(8);
+    const cols = (perDayQty ? runColumns(days, project?.dayLinks) : []).map((c) => {
+      const head = days.length === 1 ? "QTY" : `D${c.days.map(dayNo).join("/")}`;
+      return { ...c, head, w: Math.max(dayColW, Math.ceil(doc.getTextWidth(head)) + 8) };
+    });
     const singleQtyColW = 24;
     const maxColW = perDayQty && cols.length > 1 ? 24 : 0;
-    const dayColsWidth = perDayQty ? cols.length * dayColW : singleQtyColW;
+    const dayColsWidth = perDayQty ? cols.reduce((sum, c) => sum + c.w, 0) : singleQtyColW;
     // Item rows get an extra inset on top of the page margin (matching the
     // on-screen preview's row padding), so they read as nested under their
     // subcategory bar instead of running flush to the page edge.
@@ -59,6 +65,8 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const rowX = marginX + rowInset;
     const rowWidth = usableWidth - rowInset * 2;
     const nameColW = rowWidth - maxColW - dayColsWidth - notesColW;
+    let colLeft = rowX + nameColW + maxColW;
+    cols.forEach((c) => { c.x = colLeft + c.w / 2; colLeft += c.w; });
     const accentRgb = hexToRgb(accentHex);
     const lh = (size) => size * 1.28;
     const BAR_H = 17;
@@ -83,16 +91,12 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         doc.text("MAX", rowX + nameColW + maxColW / 2, y, { align: "center" });
       }
       if (perDayQty) {
-        cols.forEach((c, i) => {
-          const x = rowX + nameColW + maxColW + i * dayColW + dayColW / 2;
-          if (days.length === 1) doc.text("QTY", x, y, { align: "center" });
-          else c.days.forEach((d, k) => doc.text(d.label.replace("Day ", "D"), x, y + k * 9, { align: "center" }));
-        });
+        cols.forEach((c) => doc.text(c.head, c.x, y, { align: "center" }));
       } else {
         doc.text("QTY", rowX + nameColW + maxColW + singleQtyColW / 2, y, { align: "center" });
       }
       doc.text("NOTES", rowX + nameColW + maxColW + dayColsWidth, y);
-      y += 12 + (headLines - 1) * 9;
+      y += 12;
     }
 
     const visibleGrouped = computeVisibleGrouped(manifestGrouped, itemData);
@@ -255,7 +259,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       doc.setTextColor(136, 136, 136);
       doc.text("No quantities entered for this shoot yet.", marginX, y);
     } else {
-      ensureSpace(16 + (headLines - 1) * 9);
+      ensureSpace(16);
       drawColumnHeader();
     }
 
@@ -339,9 +343,9 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
           if (perDayQty) {
-            cols.forEach((c, i) => {
+            cols.forEach((c) => {
               const qty = entry?.quantities?.[c.id] || 0;
-              doc.text(String(qty), rowX + nameColW + maxColW + i * dayColW + dayColW / 2, rowTop + topPad, { align: "center" });
+              doc.text(String(qty), c.x, rowTop + topPad, { align: "center" });
             });
           } else {
             // "All days same" mode: every day carries the same value, so

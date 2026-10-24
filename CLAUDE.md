@@ -471,7 +471,8 @@ Start of each conversation, the owner should say which one it is:
   `withLinkedQuantities` in `updateProject`), so the share page and
   everything else read plain per-day numbers. **PDF** (owner's call,
   "smart combine"): back-to-back days of one group print as one column
-  headed with the days stacked ("D1" over "D2"; `runColumns`); linked days
+  headed "D1/2/3" on one line and widened to fit it (`runColumns`, column
+  `w` from the heading's width); linked days
   that aren't next to each other keep their own columns; MAX only shows
   when there's more than one column. Set in Edit project under each shoot day ("Equipment: Own
   list / Same as Dn", "(and D3)" when the group is bigger;
