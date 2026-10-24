@@ -425,8 +425,8 @@ Start of each conversation, the owner should say which one it is:
 - **Page width** (everyone, owner's call): on big screens the site stops
   at 1280px, centred (`PAGE_MAX` in `EquipmentManifest.jsx`; the same
   width as the Projects page), so item names and their quantity boxes
-  stay close. The header's line still runs edge to edge; what sits on it
-  keeps to that width.
+  stay close. The header's line (and the PDF preview's top bar) still runs
+  edge to edge; what sits on it keeps to that width.
 - **Visual revamp "A"** (camera-menu look) is on hold: mockups and notes
   in `design/revamp-a/` (not part of the app). Pick it up from there.
 - Phone details that matter: iOS-only `maximum-scale=1` (no focus zoom) and

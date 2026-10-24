@@ -100,7 +100,10 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
       <div style={{
         position: "sticky", top: 0, zIndex: 50,
         background: "var(--surface)", borderBottom: "2px solid var(--border)",
-        padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+        // On big screens what sits on the bar keeps to the site's 1280px
+        // width (PAGE_MAX in EquipmentManifest), like the main header.
+        padding: "12px 16px", paddingInline: "max(16px, calc((100% - 1280px) / 2 + 20px))",
+        display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
       }}>
         {/* Back, name and Font share one line; when a phone is too narrow
             for the name and the full font picker, the picker moves down a
