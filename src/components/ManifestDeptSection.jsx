@@ -150,7 +150,7 @@ export function ManifestDeptSection({
             {dept}
           </span>
           {deptHidden > 0 && (
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>Folded · {deptHidden} hidden</span>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>{deptHidden} hidden</span>
           )}
         </div>
         {showColumns && (
@@ -194,7 +194,7 @@ export function ManifestDeptSection({
                   ))}
                 </>
               ) : (
-                <div style={{ width: 40, flexShrink: 0, textAlign: "center", fontSize: 10.5, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }} title="Same quantity applies to every shoot day">
+                <div style={{ width: 40, flexShrink: 0, textAlign: "center", fontSize: 10.5, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase" }} title="Same quantity applies to every shoot day">
                   Qty
                 </div>
               )}
@@ -326,6 +326,6 @@ export function ManifestDeptSection({
 
 const dayHeadStyle = {
   width: 40, flexShrink: 0, position: "relative", padding: "2px 0", background: "none", border: "none",
-  textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase",
+  textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase",
   cursor: "pointer", fontFamily: "inherit",
 };

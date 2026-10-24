@@ -444,6 +444,9 @@ Start of each conversation, the owner should say which one it is:
   categories (grip on the card; ▲ / ▼ kept, owner's call) and
   subcategories (`DepartmentManagerModal`). Event types keep their
   arrows (owner's call). The browser's own drag and drop was removed.
+- **Composer column headings** (everyone, owner's call): MAX, every day
+  heading (D1, D2…, a linked group's stacked one) and QTY in the accent
+  colour; ITEM stays grey (`dayHeadStyle`), as in the PDF.
 - **Folding in the composer** (everyone, owner's call): folding a
   category or subcategory hides only the items still at 0 on every day;
   picked items stay showing under the bar (with the Item / D1… header), so
@@ -455,7 +458,7 @@ Start of each conversation, the owner should say which one it is:
   category with no subcategories and nothing picked folds to its bar; a
   search still opens everything (`ManifestDeptSection`: `isPicked`,
   `peek`). A folded category's bar is outlined (accent border and text on
-  the page colour) instead of solid, with "Folded · N hidden" at its right;
+  the page colour) instead of solid, with "N hidden" at its right;
   a folded subcategory shows "N hidden" (owner's call: a fold should look
   folded). **Fold all / Open all** (owner's call: both places): a
   button beside the composer's "Search items…" and the first line of the
