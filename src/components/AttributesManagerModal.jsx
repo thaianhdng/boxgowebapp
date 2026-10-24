@@ -1,10 +1,12 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
-  Trash2, FileSpreadsheet, X, ClipboardPaste, Sun, Moon, Monitor,
+  Trash2, FileSpreadsheet, X, ClipboardPaste, Sun, Moon, Monitor, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { EditableAttrSection } from "./EditableAttrSection.jsx";
 import { Logo } from "./Logo.jsx";
 import { ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "../constants.js";
+import { Fold } from "./Motion.jsx";
+import { fadeIn, motionOn } from "../lib/motion.js";
 
 
 // The selected Light/Dark/System button uses the accent, so picking a
@@ -27,22 +29,71 @@ export function AttributesManagerModal({
   includeUsernameInPdf, onSetIncludeUsernameInPdf, includeEmailInPdf, onSetIncludeEmailInPdf, includePhoneInPdf, onSetIncludePhoneInPdf,
   theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId, uiSize, onSetUiSize,
   onOpenCatalog, onExportBackup, onRestoreFileSelect, backupError, onClose, onSignOut,
+  librarySections, testData, backupNote,
 }) {
   const restoreInputRef = useRef(null);
-  const [tab, setTab] = useState(SETTINGS_TABS[0].id);
+  // Owner layout (`librarySections` given), three tabs:
+  //   General     — your details (the old Profile) and Appearance
+  //   Preferences — tags, houses and the extra sections (e.g. Event
+  //                 Types), each a fold-out, one open at a time
+  //   Data        — Backup & Restore, Master Equipment Catalog, Equipment
+  //                 Templates, Test data (`testData`)
+  // Everyone else keeps the v1.0 tabs.
+  const owner = !!librarySections;
+  const tabs = owner
+    ? [{ id: "general", label: "General" }, { id: "lists", label: "Preferences" }, { id: "data", label: "Data" }]
+    : SETTINGS_TABS;
+  const [tab, setTab] = useState(tabs[0].id);
+  // Motion: the new tab's content fades in.
+  const tabBarRef = useRef(null);
+  const lastTab = useRef(tab);
+  useLayoutEffect(() => {
+    if (lastTab.current === tab) return;
+    lastTab.current = tab;
+    if (!motionOn()) return;
+    for (let n = tabBarRef.current?.nextElementSibling; n; n = n.nextElementSibling) fadeIn(n);
+  }, [tab]);
+  const segmentTitle = (text) => <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>{text}</div>;
+  const [openSection, setOpenSection] = useState(null);
+  const fold = (id, title, body) => {
+    const open = openSection === id;
+    return (
+      <div key={id} data-acc-open={open} style={{ borderBottom: "1px solid var(--border)" }}>
+        <button
+          type="button"
+          onClick={() => setOpenSection(open ? null : id)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 0",
+            background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: open ? "var(--accent)" : "var(--text)",
+          }}
+        >
+          <span className="stencil" style={{ fontSize: 12 }}>{title}</span>
+          {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </button>
+        <Fold open={open}><div style={{ paddingBottom: 16 }}>{body}</div></Fold>
+      </div>
+    );
+  };
+  const renameHint = (
+    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 10 }}>
+      Tap a name to rename it; every project using it updates. Removing one only takes it off this list: projects already using it keep it.
+    </div>
+  );
   return (
-    <div className="no-print" style={{
+    <div className="no-print m-overlay" style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
       alignItems: "center", justifyContent: "center", zIndex: 60, padding: 16,
     }}>
-      <div style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 400, maxHeight: "88vh", overflowY: "auto", padding: 22, border: "1px solid var(--border2)" }}>
+      {/* The owner's window is wider on bigger screens (more in Data). */}
+      {owner && <style>{".settings-x { max-width: 520px !important; }"}</style>}
+      <div className={owner ? "settings-x" : undefined} style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 400, maxHeight: "88vh", overflowY: "auto", padding: 22, border: "1px solid var(--border2)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, position: "sticky", top: -22, background: "var(--surface)", paddingTop: 22, marginTop: -22, zIndex: 5 }}>
           <div className="stencil" style={{ fontSize: 14, color: "var(--accent)" }}>Settings</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)" }}>
-          {SETTINGS_TABS.map((t) => (
+        <div ref={tabBarRef} style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--border)" }}>
+          {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -58,10 +109,10 @@ export function AttributesManagerModal({
           ))}
         </div>
 
-        {tab === "profile" && (
+        {(tab === "profile" || (owner && tab === "general")) && (
           <>
           <div style={{ marginBottom: 20 }}>
-            <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Username</div>
+            <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>{owner ? "Your details" : "Username"}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <input
                 value={userName}
@@ -100,11 +151,16 @@ export function AttributesManagerModal({
                 in PDF
               </label>
             </div>
+            {owner && (
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
+                Ticked details are printed on your PDFs and shown on your share links.
+              </div>
+            )}
           </div>
           </>
         )}
 
-        {tab === "appearance" && (
+        {(tab === "appearance" || (owner && tab === "general")) && (
           <>
           <div style={{ marginBottom: 20 }}>
             <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Appearance</div>
@@ -178,7 +234,30 @@ export function AttributesManagerModal({
           </>
         )}
 
-        {tab === "lists" && (
+        {tab === "lists" && owner && (
+          <>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.5, marginBottom: 10 }}>
+            The choices offered when you create and edit projects and events. Open one to add, rename or remove entries: tags and houses are listed A–Z; event types can also be recoloured and put in any order.
+          </div>
+          <div style={{ marginBottom: 20, borderTop: "1px solid var(--border)" }}>
+            {fold("tags", "Project Tags", <>
+              <EditableAttrSection bare placeholder="New tag…" items={tags} onAdd={onAddTag} onRename={onRenameTag} onRemove={onRemoveTag} uppercase />
+              {renameHint}
+            </>)}
+            {fold("production", "Production Houses", <>
+              <EditableAttrSection bare placeholder="New production house…" items={productionHouses} onAdd={onAddProductionHouse} onRename={onRenameProductionHouse} onRemove={onRemoveProductionHouse} />
+              {renameHint}
+            </>)}
+            {fold("rental", "Rental Houses", <>
+              <EditableAttrSection bare placeholder="New rental house…" items={rentalHouses} onAdd={onAddRentalHouse} onRename={onRenameRentalHouse} onRemove={onRemoveRentalHouse} />
+              {renameHint}
+            </>)}
+            {librarySections.map((sec) => fold(sec.id, sec.title, sec.content))}
+          </div>
+          </>
+        )}
+
+        {tab === "lists" && !owner && (
           <>
           <EditableAttrSection
             title="Project Tags"
@@ -207,7 +286,7 @@ export function AttributesManagerModal({
           />
 
           <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 20 }}>
-            Click a name to rename it — this updates every project using it. Removing one just takes it off the list; projects already using it keep their saved value.
+            Tap a name to rename it — this updates every project using it. Removing one just takes it off the list; projects already using it keep their saved value.
           </div>
 
           <div style={{ marginBottom: 20 }}>
@@ -228,7 +307,51 @@ export function AttributesManagerModal({
           </>
         )}
 
-        {tab === "data" && (
+        {tab === "data" && owner && (
+          <>
+          <div style={{ marginBottom: 22 }}>
+            {segmentTitle("Backup & Restore")}
+            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              <button className="btn btn-ghost" style={{ flex: 1, justifyContent: "center" }} onClick={onExportBackup}>
+                <FileSpreadsheet size={14} /> Backup
+              </button>
+              <button className="btn btn-ghost" style={{ flex: 1, justifyContent: "center" }} onClick={() => restoreInputRef.current?.click()}>
+                <ClipboardPaste size={14} /> Restore
+              </button>
+              <input ref={restoreInputRef} type="file" accept=".json" onChange={onRestoreFileSelect} style={{ display: "none" }} />
+            </div>
+            {backupError && <div style={{ fontSize: 11.5, color: "#AA0000", marginBottom: 8 }}>{backupError}</div>}
+            <div style={{ fontSize: 11, color: "var(--muted)" }}>{backupNote}</div>
+          </div>
+
+          <div style={{ marginBottom: 22 }}>
+            {segmentTitle("Master Equipment Catalog")}
+            <button className="btn btn-ghost" style={{ width: "100%", justifyContent: "center" }} onClick={onOpenCatalog}>
+              <Logo size={15} /> Manage Master Catalog
+            </button>
+          </div>
+
+          <div style={{ marginBottom: 22 }}>
+            {segmentTitle("Equipment Templates")}
+            {templates.map((t) => (
+              <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ fontSize: 13 }}>{t.name}</span>
+                <button onClick={() => onDeleteTemplate(t.id)} title="Delete template" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
+              {templates.length === 0 && "No templates yet. "}
+              To make one, open an equipment list → Edit project → Save as Template. New equipment lists can then start from it (the "Start from" menu in Create New).
+            </div>
+          </div>
+
+          {testData}
+          </>
+        )}
+
+        {tab === "data" && !owner && (
           <>
           <div style={{ marginBottom: 20 }}>
             <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Master Catalog</div>
@@ -259,7 +382,7 @@ export function AttributesManagerModal({
               <div style={{ fontSize: 11.5, color: "#AA0000", marginBottom: 12 }}>{backupError}</div>
             )}
             <div style={{ fontSize: 11, color: "var(--muted)" }}>
-              Backup saves every project, tag, house, and the master catalog to one file. Restore lets you pick which parts of that file to bring back.
+              {backupNote || "Backup saves every project, tag, house, and the master catalog to one file. Restore lets you pick which parts of that file to bring back."}
             </div>
           </div>
           </>

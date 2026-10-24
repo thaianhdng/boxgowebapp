@@ -2,7 +2,7 @@
   "name": "BOXGO — Equipment List Composer",
   "short_name": "BOXGO",
   "start_url": "/",
-  "display": "browser",
+  "display": "standalone",
   "background_color": "#0D0D0D",
   "theme_color": "#0D0D0D",
   "icons": [

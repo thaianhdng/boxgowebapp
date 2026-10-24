@@ -80,6 +80,7 @@ export function QtyDropdown({ value, onChange }) {
       {open && pos && (
         <div
           ref={menuRef}
+          className="m-pop"
           style={{
             position: "fixed", top: pos.top, left: pos.left, zIndex: 200,
             background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 4,

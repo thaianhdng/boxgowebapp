@@ -21,7 +21,7 @@ export function Combobox({ value, onChange, options, placeholder, style, inputSt
         onKeyDown={onKeyDown}
       />
       {open && filtered.length > 0 && (
-        <div style={{
+        <div className="m-pop" style={{
           position: "absolute", top: "calc(100% - 1px)", left: 0, right: 0, zIndex: 30,
           background: "var(--surface)", border: "1px solid var(--border2)", borderTop: "none",
           borderRadius: "0 0 3px 3px", maxHeight: 160, overflowY: "auto",

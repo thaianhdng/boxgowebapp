@@ -16,8 +16,21 @@ function publicProject(project) {
   return { ...rest, itemData };
 }
 
+// The database stores jsonb, which doesn't keep object key order, so
+// compare with keys sorted.
+function canonical(v) {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
+  if (v && typeof v === "object") {
+    return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(v);
+}
+
 // Frozen copy with its own permanent token: later edits, and later
 // snapshots of the same project, never change what this link shows.
+// If nothing changed since this project's last snapshot, that link is
+// handed back instead of storing another identical copy.
+// Returns { token, reusedFrom } (reusedFrom = when that snapshot was made).
 export async function createSnapshot({ userId, project, catalog, departments, accentId, preparedBy }) {
   const usedIds = new Set(
     Object.entries(project.itemData || {})
@@ -32,13 +45,25 @@ export async function createSnapshot({ userId, project, catalog, departments, ac
     accentId,
     preparedBy,
   };
+  const { data: last, error: lastErr } = await supabase
+    .from("shared_snapshots")
+    .select("token, data, created_at")
+    .eq("user_id", userId)
+    .eq("project_id", project.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (lastErr) throw lastErr;
+  if (last && canonical(last.data) === canonical(JSON.parse(JSON.stringify(data)))) {
+    return { token: last.token, reusedFrom: last.created_at };
+  }
   const { data: row, error } = await supabase
     .from("shared_snapshots")
     .insert({ user_id: userId, project_id: project.id, data })
     .select("token")
     .single();
   if (error) throw error;
-  return row.token;
+  return { token: row.token, reusedFrom: null };
 }
 
 // Upserts the whole row (not just share_token) so this also works for a

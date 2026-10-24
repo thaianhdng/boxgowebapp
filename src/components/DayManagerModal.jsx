@@ -6,7 +6,7 @@ import { Combobox } from "./Combobox.jsx";
 
 export function DayManagerModal({ days, recentProjectLabels, onUpdate, onAdd, onRemove, onClose }) {
   return (
-    <div className="no-print" style={{
+    <div className="no-print m-overlay" style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
       alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16,
     }}>
@@ -30,7 +30,7 @@ export function DayManagerModal({ days, recentProjectLabels, onUpdate, onAdd, on
                 value={d.projectLabel || ""}
                 onChange={(v) => onUpdate(d.id, { projectLabel: v })}
                 options={recentProjectLabels}
-                placeholder="Type of shooting…"
+                placeholder="Shoot type…"
                 style={{ flex: 1 }}
               />
               <button onClick={() => onRemove(d.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)", flexShrink: 0 }}>
@@ -41,7 +41,7 @@ export function DayManagerModal({ days, recentProjectLabels, onUpdate, onAdd, on
               style={{ width: "calc(100% - 26px)", marginLeft: 26 }}
               value={d.location || ""}
               onChange={(e) => onUpdate(d.id, { location: e.target.value })}
-              placeholder="Location"
+              placeholder="Location and note"
             />
           </div>
         ))}
