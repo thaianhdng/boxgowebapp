@@ -415,8 +415,10 @@ Start of each conversation, the owner should say which one it is:
   (owner's call: no second window) with two choices, each with a short
   hint (`ShareChoice`): Snapshot (frozen copy) and Live link (always the
   latest; "· on" when it is). Tapping one makes its link, which shows
-  inside that choice with Copy (copied at once) and Open (the share page
-  in a new tab; owner's call) under it (`LinkRow`), the live one
+  inside that choice (`LinkRow`): the link box itself copies it (owner's
+  call: no Copy button; copied at once when made, again on tapping the
+  box, which reads "Copied" for a moment; shown without "https://") and
+  Open beside it (the share page in a new tab; owner's call), the live one
   with "Turn off live link"; an on live link shows there straight away.
   A small red live icon sits beside the list's name only while its
   live link is on; tapping it asks "Turn off live link?" (Cancel / Turn
@@ -472,10 +474,10 @@ Start of each conversation, the owner should say which one it is:
   and a Settings tab change fades in the new tab. The save mark
   (`m-save-busy` / `m-save-tick` / `m-save-err`): saving pulses, the
   tick draws itself in the accent colour then fades back to grey, an
-  error gives a small shake. A share link's Copy button reads "✓ Copied" for
-  about 2s after each successful copy (accent, pops in: `m-copied`; the
-  link box edge turns accent too); when the automatic copy fails (e.g.
-  iOS blocks it) it simply stays "Copy".
+  error gives a small shake. A share link's box reads "Copied" with a tick
+  for about 2s after each successful copy (accent edge and text, the tick
+  pops in: `m-copied`); when the automatic copy fails (e.g. iOS blocks
+  it) it simply keeps showing the link — tap it to copy.
   Closing pop-up windows, menus and the undo bar fade out too
   (`installExitMotion`: just before React removes an `m-overlay` /
   `m-toast` / `m-pop`, a copy — same scroll, typed values, inert, not
