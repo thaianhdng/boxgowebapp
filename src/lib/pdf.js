@@ -279,16 +279,20 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       y += BAR_H;
 
       orderedKeys(visibleGrouped[dept], departments[dept] || []).forEach((sub) => {
-        ensureSpace(BAR_H + 14 + 16);
-        doc.setFillColor(242, 242, 242);
-        doc.rect(marginX, y, usableWidth, BAR_H, "F");
-        // Like the composer: a small, spaced-out label in the accent colour,
-        // so it reads differently from the item names under it.
-        doc.setFont(FONT, "bold");
-        doc.setFontSize(8);
-        doc.setTextColor(...accentRgb);
-        doc.text(sub.toUpperCase(), marginX + 12, y + barBaseline(8), { charSpace: 1 });
-        y += BAR_H;
+        // "Others" is the wildcard category (owner's call): its items, and
+        // any item without a subcategory, print without a subcategory bar.
+        if (sub && !/^others?$/i.test(dept.trim())) {
+          ensureSpace(BAR_H + 14 + 16);
+          doc.setFillColor(242, 242, 242);
+          doc.rect(marginX, y, usableWidth, BAR_H, "F");
+          // Like the composer: a small, spaced-out label in the accent colour,
+          // so it reads differently from the item names under it.
+          doc.setFont(FONT, "bold");
+          doc.setFontSize(8);
+          doc.setTextColor(...accentRgb);
+          doc.text(sub.toUpperCase(), marginX + 12, y + barBaseline(8), { charSpace: 1 });
+          y += BAR_H;
+        }
 
         // Row geometry: the same gap above the first line's capitals and
         // below the last line's baseline, so text sits centred between the
