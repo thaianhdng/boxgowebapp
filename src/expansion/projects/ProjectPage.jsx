@@ -271,7 +271,7 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
 
       {creatingList && (
         // The equipment list composer's own Create New, starting from this
-        // Project's info and Shooting days (template and quantities too).
+        // Project's info and Shooting days (kit and quantities too).
         <ProjectForm
           app={app}
           prefill={listLike(id, project, types)}
@@ -290,7 +290,6 @@ export function ProjectPage({ app, id, project, allProjects, types, actions, int
         <ProjectForm
           app={app}
           initial={list}
-          onSaveAsTemplate={(name) => app.saveAsTemplate(list.id, name)}
           onClose={() => setShowInfo(false)}
           onSave={(data) => { app.updateEquipmentList(list.id, data); setShowInfo(false); }}
         />

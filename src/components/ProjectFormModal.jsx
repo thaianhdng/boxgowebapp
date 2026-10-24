@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  Pencil, X, BookmarkPlus,
+  Pencil, X,
 } from "lucide-react";
 import { Combobox } from "./Combobox.jsx";
 import { Field } from "./Field.jsx";
@@ -11,8 +11,8 @@ import { cleanLinks, linkedWith, withoutDay } from "../lib/dayLinks.js";
 // `initial` edits an existing project. Two extras, used only by the
 // owner's Calendar module (src/expansion/): `prefill` starts a *new*
 // project from given values, and `noList` is for a project without an
-// equipment list — it hides the list-only parts (template, quantity mode,
-// save as template) and requires every shoot day to have a date.
+// equipment list — it hides the list-only parts (start from a kit, quantity
+// mode) and requires every shoot day to have a date.
 // `heading` / `saveLabel` (owner only) replace "New Project" / "Create
 // project" when the window makes a list for an existing project or a draft.
 // `draft` (owner only): a draft list, in no project — the bare-bone list:
@@ -20,7 +20,7 @@ import { cleanLinks, linkedWith, withoutDay } from "../lib/dayLinks.js";
 // project), and the name, tag and shoot dates are optional.
 // `linkDays`: editing a list with per-day quantities, each
 // shoot day gets "Equipment: Own list / Same as Dn" (lib/dayLinks.js).
-export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, draft, linkDays, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onSaveAsTemplate, onManageTags, onClose, onSave }) {
+export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, draft, linkDays, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onManageTags, onClose, onSave }) {
   const start = initial || prefill;
   const [name, setName] = useState(start?.name || "");
   // Editing shows the project's real tag, even none ("—") or one since
@@ -39,8 +39,6 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
   const [rentalHouse, setRentalHouse] = useState(start?.rentalHouse || "");
   const [gaffer, setGaffer] = useState(start?.gaffer || "");
   const [templateId, setTemplateId] = useState("");
-  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
-  const [templateName, setTemplateName] = useState("");
   const [missingDate, setMissingDate] = useState(false);
   const [dayCount, setDayCount] = useState(start?.days?.length || 1);
   const [perDayQty, setPerDayQty] = useState(start?.perDayQty || false);
@@ -74,12 +72,6 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
     });
   }
 
-  function submitSaveTemplate() {
-    if (!templateName.trim()) return;
-    onSaveAsTemplate(templateName.trim());
-    setTemplateName("");
-    setShowSaveTemplate(false);
-  }
 
   // "Same equipment as" another day: only for a list being edited, with
   // per-day quantities and more than one day.
@@ -132,7 +124,7 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
               style={{ width: "100%", fontSize: 13, fontWeight: 800 }}
             >
               <option value="">Start from scratch</option>
-              {templates.map((t) => <option key={t.id} value={t.id}>Start from "{t.name}"</option>)}
+              {templates.map((t) => <option key={t.id} value={t.id}>Start from kit "{t.name}"</option>)}
             </select>
           </div>
         )}
@@ -300,33 +292,6 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
           ))}
           {missingDate && <div style={{ fontSize: 12, color: "var(--danger)" }}>Every shoot day needs a date.</div>}
         </Field>
-
-        {initial && !noList && (
-          <div style={{ marginBottom: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
-            {showSaveTemplate ? (
-              <div style={{ display: "flex", gap: 6 }}>
-                <input
-                  autoFocus
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") submitSaveTemplate(); }}
-                  placeholder="Template name…"
-                  style={{ flex: 1, fontSize: 12.5 }}
-                />
-                <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={submitSaveTemplate} disabled={!templateName.trim()}>Save</button>
-                <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => { setShowSaveTemplate(false); setTemplateName(""); }}>Cancel</button>
-              </div>
-            ) : (
-              <button
-                className="btn btn-ghost"
-                onClick={() => setShowSaveTemplate(true)}
-                style={{ width: "100%", justifyContent: "center" }}
-              >
-                <BookmarkPlus size={14} /> Save as Template
-              </button>
-            )}
-          </div>
-        )}
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>

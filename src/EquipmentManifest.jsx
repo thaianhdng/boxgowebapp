@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, lazy, Suspense } from "react";
 import {
-  Plus, Pencil, Search, FileSpreadsheet, X, Copy, ChevronUp, ChevronDown, ChevronsDownUp, ChevronsUpDown, ArrowRight, CalendarDays, ListFilter, Loader2, Check, Settings,
+  Plus, Pencil, Search, FileSpreadsheet, X, Copy, Package, ChevronUp, ChevronDown, ChevronsDownUp, ChevronsUpDown, ArrowRight, CalendarDays, ListFilter, Loader2, Check, Settings,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient.js";
 import { AttributesManagerModal } from "./components/AttributesManagerModal.jsx";
@@ -21,6 +21,8 @@ import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_T
 import { buildPdf } from "./lib/pdf.js";
 import { DEFAULT_PDF_FONT, pdfFontFor } from "./lib/font.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
+import { applyKit, kitFromProject } from "./lib/kits.js";
+import { AddKitModal, SaveKitModal } from "./components/KitModal.jsx";
 import { uid, newProjectId, relabelDays, todayStr, addOneDay, cascadeDates, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
 import { dayColumns, linkedWith, withLinkedQuantities, withoutDay } from "./lib/dayLinks.js";
 
@@ -197,6 +199,7 @@ export default function EquipmentManifest({ session }) {
   const [backupError, setBackupError] = useState("");
   const [catalogCopyState, setCatalogCopyState] = useState("idle"); // "idle" | "copied"
   const [undoState, setUndoState] = useState(null);
+  const [kitWindow, setKitWindow] = useState(null); // "add" | "save" (the composer's kit windows)
   const undoTimerRef = useRef(null);
   const [saveState, setSaveState] = useState("idle");
   const noteRef = useRef(null);
@@ -893,34 +896,33 @@ export default function EquipmentManifest({ session }) {
       (subs || []).forEach((s) => { collapsedSubcats[`${d}::${s}`] = true; });
     });
     const newDays = data.days && data.days.length ? data.days : [{ id: "day1", label: "Day 1", date: todayStr(), location: "", projectLabel: "" }];
-    const template = data.templateId ? templates.find((t) => t.id === data.templateId) : null;
-    const itemData = {};
-    if (template) {
-      Object.entries(template.itemQuantities || {}).forEach(([itemId, qty]) => {
-        const quantities = {};
-        newDays.forEach((d) => { quantities[d.id] = qty; });
-        itemData[itemId] = { quantities, notes: "" };
-      });
-      // expand collapse state for any category/subcategory the template touches, so applied items are visible
-      Object.keys(template.itemQuantities || {}).forEach((itemId) => {
+    // Starting from a kit (owner's call: gear only) fills in its items on
+    // every day; the tag and houses are what the form says.
+    const kit = data.templateId ? templates.find((t) => t.id === data.templateId) : null;
+    let kitted = { itemData: {}, customItems: [] };
+    if (kit) {
+      kitted = applyKit({ days: newDays, perDayQty: false, itemData: {}, customItems: [] }, kit, [], "replace", catalog).project;
+      // open the categories / subcategories the kit fills, so its items show
+      Object.keys(kit.itemQuantities || {}).forEach((itemId) => {
         const c = catalog.find((x) => x.id === itemId);
         if (!c) return;
         collapsedDepts[c.department] = false;
         if (c.subcategory) collapsedSubcats[`${c.department}::${c.subcategory}`] = false;
       });
+      (kit.customItems || []).forEach((c) => { collapsedDepts[c.department || "Others"] = false; });
     }
     let newProject = {
       id: data.id || newProjectId(),
       name: data.name,
-      tag: (template && template.tag) || data.tag || "",
-      productionHouse: (template && template.productionHouse) || data.productionHouse || "",
-      producer: (template && template.producer) || data.producer || "",
-      rentalHouse: (template && template.rentalHouse) || data.rentalHouse || "",
-      gaffer: (template && template.gaffer) || data.gaffer || "",
+      tag: data.tag || "",
+      productionHouse: data.productionHouse || "",
+      producer: data.producer || "",
+      rentalHouse: data.rentalHouse || "",
+      gaffer: data.gaffer || "",
       days: newDays,
       perDayQty: data.perDayQty || false,
-      itemData,
-      customItems: [],
+      itemData: kitted.itemData,
+      customItems: kitted.customItems,
       note: "",
       collapsedDepts,
       collapsedSubcats,
@@ -929,7 +931,7 @@ export default function EquipmentManifest({ session }) {
     };
     if (isCatalogOwner && target && xLinksRef.current) newProject = xLinksRef.current.link(newProject, target) || newProject;
     // Owner's draft (no project): houses, Producer and Gaffer belong to a
-    // project, even when a template has them.
+    // project.
     if (isCatalogOwner && !target && xLinksRef.current) newProject = { ...newProject, productionHouse: "", producer: "", rentalHouse: "", gaffer: "" };
     setProjectsState((prev) => [...prev, newProject]);
     addProductionHouse(newProject.productionHouse);
@@ -940,28 +942,31 @@ export default function EquipmentManifest({ session }) {
     setView("manifest");
   }
 
-  // Saves the current per-item peak quantities (the highest value across any
-  // day) plus tag/house/producer/gaffer as a reusable starting point for
-  // future projects. Shoot days and dates are deliberately not included.
-  function saveAsTemplate(project, name) {
-    const trimmed = (name || "").trim();
-    if (!trimmed) return;
-    const itemQuantities = {};
-    Object.entries(project.itemData || {}).forEach(([itemId, entry]) => {
-      const vals = Object.values(entry.quantities || {}).filter((q) => q > 0);
-      if (vals.length > 0) itemQuantities[itemId] = Math.max(...vals);
+  // Saves a list's gear as a kit (`lib/kits.js`); a kit with the same name
+  // is replaced (keeping its place and id).
+  function saveAsKit(project, name) {
+    if (!project || !(name || "").trim()) return;
+    const kit = kitFromProject(project, name);
+    setTemplates((prev) => {
+      const i = prev.findIndex((t) => t.name.trim().toLowerCase() === kit.name.toLowerCase());
+      if (i === -1) return [...prev, kit];
+      const next = [...prev];
+      next[i] = { ...kit, id: prev[i].id };
+      return next;
     });
-    const newTemplate = {
-      id: uid(),
-      name: trimmed,
-      tag: project.tag || "",
-      productionHouse: project.productionHouse || "",
-      producer: project.producer || "",
-      rentalHouse: project.rentalHouse || "",
-      gaffer: project.gaffer || "",
-      itemQuantities,
-    };
-    setTemplates((prev) => [...prev, newTemplate]);
+  }
+
+  // "+ Add kit" in the composer: the kit's gear onto the chosen days, with
+  // an undo.
+  function addKitToList(kit, dayIds, mode) {
+    const before = activeProject;
+    if (!before) return;
+    const { project: next, changes } = applyKit(before, kit, dayIds, mode, catalog);
+    const n = changes.filter((ch) => ch.after.some((v, i) => v !== ch.before[i])).length;
+    const put = (data) => setProjectsState((prev) => prev.map((p) => (p.id === before.id ? { ...p, ...data } : p)));
+    put({ itemData: next.itemData, customItems: next.customItems });
+    setKitWindow(null);
+    showUndo(`Added ${n} item${n === 1 ? "" : "s"} from "${kit.name}"`, () => put({ itemData: before.itemData, customItems: before.customItems }));
   }
 
   function deleteTemplate(id) {
@@ -1747,7 +1752,7 @@ export default function EquipmentManifest({ session }) {
     openEquipmentList: (id) => { openProject(id); window.scrollTo(0, 0); },
     previewEquipmentList: goToPreview,
     // `data` is what the Create New window returns (it includes the
-    // template choice and quantity mode): a new list (version) for Project `id`.
+    // kit choice and quantity mode): a new list (version) for Project `id`.
     createEquipmentList: (id, data) => { addProject(data, { projectId: id }); window.scrollTo(0, 0); },
     // A copy of a list: `target` as in duplicateProject.
     duplicateEquipmentList: (listId, target) => duplicateProject(listId, target),
@@ -1762,7 +1767,6 @@ export default function EquipmentManifest({ session }) {
     // What the shared Create New / Edit window needs.
     recentProjectNames,
     recentProjectLabels,
-    saveAsTemplate: (id, name) => saveAsTemplate(projects.find((p) => p.id === id), name),
     openSettings: () => setShowTagManager(true),
   } : null;
 
@@ -2354,6 +2358,29 @@ export default function EquipmentManifest({ session }) {
                       </div>
                     )}
 
+                    {/* Kits (owner's call): add a kit's gear to this list, or
+                        save this list's gear as a kit. */}
+                    <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+                      {templates.length > 0 && (
+                        <button
+                          className="btn"
+                          onClick={() => setKitWindow("add")}
+                          style={{ flex: 1, height: 40, justifyContent: "center", border: "1px dashed var(--accent)", color: "var(--accent)", background: "none" }}
+                          title="Add a kit's gear to this list"
+                        >
+                          <Plus size={15} /> Add kit
+                        </button>
+                      )}
+                      <button
+                        className="btn btn-ghost"
+                        onClick={() => setKitWindow("save")}
+                        style={{ flex: 1, height: 40, justifyContent: "center" }}
+                        title="Save this list's gear as a kit"
+                      >
+                        <Package size={14} /> Save as kit
+                      </button>
+                    </div>
+
                     {/* The item search and Fold all / Open all share one height,
                         with room between them and the button in the accent
                         colour, so it reads as a control for the whole list
@@ -2690,7 +2717,6 @@ export default function EquipmentManifest({ session }) {
           recentProjectLabels={recentProjectLabels}
           projectTags={projectTags}
           templates={templates}
-          onSaveAsTemplate={(name) => saveAsTemplate(projects.find((p) => p.id === editingProjectId), name)}
           onManageTags={() => setShowTagManager(true)}
           onClose={() => { setShowProjectForm(false); setEditingProjectId(null); setNewListTarget(null); }}
           onSave={(data) => {
@@ -2772,6 +2798,13 @@ export default function EquipmentManifest({ session }) {
             has: (d) => !!d.expansion?.projects,
           }] : null}
         />
+      )}
+
+      {kitWindow === "add" && activeProject && (
+        <AddKitModal kits={templates} project={activeProject} catalog={catalog} departments={departments} onApply={addKitToList} onClose={() => setKitWindow(null)} />
+      )}
+      {kitWindow === "save" && activeProject && (
+        <SaveKitModal project={activeProject} kits={templates} onSave={(name) => { const kitsBefore = templates; saveAsKit(activeProject, name); setKitWindow(null); showUndo(`Saved kit "${name}"`, () => setTemplates(kitsBefore)); }} onClose={() => setKitWindow(null)} />
       )}
 
       {undoState && (

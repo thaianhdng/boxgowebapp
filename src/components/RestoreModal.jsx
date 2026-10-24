@@ -13,7 +13,7 @@ export const RESTORE_SECTIONS = [
   { key: "projectTags", label: "Project tags", detail: (d) => plural((d.projectTags || []).length, "tag"), has: (d) => !!d.projectTags },
   { key: "productionHouses", label: "Production houses", detail: (d) => plural((d.productionHouses || []).length, "house"), has: (d) => !!d.productionHouses },
   { key: "rentalHouses", label: "Rental houses", detail: (d) => plural((d.rentalHouses || []).length, "house"), has: (d) => !!d.rentalHouses },
-  { key: "templates", label: "Templates", detail: (d) => plural((d.templates || []).length, "template"), has: (d) => (d.templates || []).length > 0 },
+  { key: "templates", label: "Kits", detail: (d) => plural((d.templates || []).length, "kit"), has: (d) => (d.templates || []).length > 0 },
   { key: "profile", label: "Your profile", detail: () => "Name, email, phone, and what's shown on the PDF", has: (d) => !!(d.userName || d.userEmail || d.userPhone || typeof d.includeUsernameInPdf === "boolean") },
   { key: "appearance", label: "Appearance", detail: () => "Theme, accent colour and font", has: (d) => !!(d.theme || d.accentId || d.fontId) },
 ];

@@ -181,8 +181,7 @@ Start of each conversation, the owner should say which one it is:
      Rental Houses (A–Z: add, rename, remove), **Event Types**
      (`<Expansion part="settings">`; also recolour and reorder — edited
      only here, not from the calendars). **Data** = Backup & Restore
-     (owner's own backup note), Master Equipment Catalog, Equipment
-     Templates, Test data box (`testData` prop). A clash (red dot) = two projects' shoots / prelights on one
+     (owner's own backup note), Master Equipment Catalog, Kits, Test data box (`testData` prop). A clash (red dot) = two projects' shoots / prelights on one
      day, or overlapping set times (`clashDates`); a full day box shows
      as many names as fit (phone 2, desktop 3) and "+N more". EQUIPMENT is the v1.0 composer untouched, except for the
      owner: its crumb root reads "List Manager" (others:
@@ -297,8 +296,8 @@ Start of each conversation, the owner should say which one it is:
      note, count, current),
      links through `app.registerLinks` (link / attach / unlink). **One Create New / Edit
      window for both modules:** BOXGO's `ProjectFormModal` (owner-only
-     props: `prefill` = new from given values, `noList` = hide template,
-     quantity mode, save as template, and require shoot-day dates), wrapped by `src/expansion/shared/
+     props: `prefill` = new from given values, `noList` = hide "Start from
+     kit" and quantity mode, and require shoot-day dates), wrapped by `src/expansion/shared/
      ProjectForm.jsx`. A project created in Calendar has **no** equipment
      list; it shows greyed in Equipment's project list (`ghost: true`,
      reported via `app.reportGhosts`). Its list is created either from the
@@ -551,6 +550,27 @@ Start of each conversation, the owner should say which one it is:
   its own column back, keeping its numbers; the others stay linked).
   Removing a day keeps the rest of its group linked; the side list notes
   "same as D1, D3".
+- **Kits** (everyone, owner's call; called "Templates" before — the data
+  keeps that name: `app_state.templates`, `templates` in backups, unchanged
+  format): saved bundles of gear, items and quantities only — no days,
+  dates, tag, houses or notes (`src/lib/kits.js`). A row under the list's
+  info box: **+ Add kit** (dashed accent; only when there are kits) and
+  **Save as kit** (`components/KitModal.jsx`). Save as kit keeps each item
+  at its highest number on any day (its MAX) plus the list's typed-in
+  items (`kitFromProject`: `itemQuantities`, `customItems` [{ name,
+  department, qty }]); a kit's name already used replaces that kit (undo
+  restores). Add kit: pick a kit, the days (all, or chosen days; linked
+  days are one choice and stay equal; "All days same" lists have no day
+  choice) and what happens to gear already in the list — **Replace**
+  (kit's number), **Add** (both added) or **Keep higher** (default) —
+  with a preview of every change ("+2", "1 → 2", "already 2"); items only
+  in the list are never touched; typed-in kit items join a typed-in item
+  of the same name and category or are added; undo bar after
+  (`applyKit`, shared by the preview and the change). Create New's "Start
+  from kit" fills in the kit's gear on every day; the tag and houses are
+  the form's (older templates' tag / houses are ignored). Settings lists
+  kits (delete); Restore calls them Kits. The Edit window has no "Save as
+  template" any more.
 - **Renaming by tapping** (everyone, owner's call): categories and
   subcategories (Manage Categories), tags and houses (Settings) are renamed
   by tapping the name; `EditableAttrRow` has no pencil button, and each

@@ -37,7 +37,7 @@ export function AttributesManagerModal({
   //   Preferences — tags, houses and the extra sections (e.g. Event
   //                 Types), each a fold-out, one open at a time
   //   Data        — Backup & Restore, Master Equipment Catalog, Equipment
-  //                 Templates, Test data (`testData`)
+  //                 Kits, Test data (`testData`)
   // Everyone else keeps the v1.0 tabs.
   const owner = !!librarySections;
   const tabs = owner
@@ -290,18 +290,18 @@ export function AttributesManagerModal({
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Templates</div>
+            <div className="stencil" style={{ fontSize: 11, color: "var(--accent)", marginBottom: 6 }}>Kits</div>
             {templates.map((t) => (
               <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ fontSize: 13 }}>{t.name}</span>
-                <button onClick={() => onDeleteTemplate(t.id)} title="Delete template" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
+                <button onClick={() => onDeleteTemplate(t.id)} title="Delete kit" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
                   <Trash2 size={13} />
                 </button>
               </div>
             ))}
             <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
-              {templates.length === 0 && "No templates yet. "}
-              To make one, open a project → Edit project → Save as Template. New projects can then start from it via the "Start from" menu in Create New.
+              {templates.length === 0 && "No kits yet. "}
+              A kit is a saved bundle of gear (items and quantities only). Make one with "Save as kit" in any list, add it to a list with "+ Add kit", or start a new list from it in Create New.
             </div>
           </div>
           </>
@@ -332,18 +332,18 @@ export function AttributesManagerModal({
           </div>
 
           <div style={{ marginBottom: 22 }}>
-            {segmentTitle("Equipment Templates")}
+            {segmentTitle("Kits")}
             {templates.map((t) => (
               <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ fontSize: 13 }}>{t.name}</span>
-                <button onClick={() => onDeleteTemplate(t.id)} title="Delete template" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
+                <button onClick={() => onDeleteTemplate(t.id)} title="Delete kit" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}>
                   <Trash2 size={13} />
                 </button>
               </div>
             ))}
             <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
-              {templates.length === 0 && "No templates yet. "}
-              To make one, open an equipment list → Edit project → Save as Template. New equipment lists can then start from it (the "Start from" menu in Create New).
+              {templates.length === 0 && "No kits yet. "}
+              A kit is a saved bundle of gear (items and quantities only). Make one with "Save as kit" in any list, add it to a list with "+ Add kit", or start a new list from it in Create New.
             </div>
           </div>
 
