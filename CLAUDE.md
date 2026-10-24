@@ -373,10 +373,15 @@ Start of each conversation, the owner should say which one it is:
   don't fit); then Production House and Rental House (house, with the
   Producer / Gaffer on the line below, same bold font; cut with "…"
   when too wide) and Created On (date, time below) at the right; a thin
-  (1.5pt) accent line; the project note has no label. In the list (as in the
+  (1.5pt) accent line; the project note has no label. **Compact layout**
+  (owner's call, option "B"): ~1.3cm margins (36pt), 8pt items, 13pt
+  title, slim 13pt category bars, rows padded 4.4pt; a catalog spec note
+  ("S35") follows the item name on its line when it fits. In the list (as in the
   composer, owner's call): category bars in the accent colour, subcategory
-  labels small, spaced-out and in the accent colour on a light grey bar
-  (none for the wildcard "Others" category, or items without a subcategory),
+  names small, spaced-out and in the accent colour in a left SECTION
+  column beside their first item (repeated when a subcategory runs onto a
+  new page; none for the wildcard "Others" category, or items without a
+  subcategory), a thin line between subcategories,
   item names in regular weight (quantities bold, a 0 in light grey). Every picked item
   prints, the list's typed-in items (Others / Subrent) too, after the
   catalog's in their category (`withCustomItems`; the share page too); the column headings MAX,

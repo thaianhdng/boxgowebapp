@@ -33,43 +33,42 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    // Margins sized closer to a traditional A4 document (~2cm) rather
-    // than the tighter working-draft margins used before.
-    const marginX = 56, marginTop = 54, marginBottom = 46;
+    // Compact layout (owner's call, "B"): ~1.3cm margins, 8pt items,
+    // subcategories in a left column instead of their own bars.
+    const marginX = 36, marginTop = 38, marginBottom = 34;
     const usableWidth = pageWidth - marginX * 2;
     const contentBottom = pageHeight - marginBottom;
 
-    const dayColW = 24;
-    const notesColW = 90;
+    const dayColW = 20;
+    const notesColW = 96;
     // Matches the on-screen manifest: when the project uses one shared
     // quantity for every day ("All days same"), the PDF prints a single
     // QTY column instead of a MAX column plus one column per day.
     const perDayQty = !!project?.perDayQty;
     // Linked days (same equipment) that sit back to back print as one
     // column headed "D1/2/3" on one line, widened to fit its heading
-    // (owner's call); the rest keep a 24pt column each. `x` = centre.
+    // (owner's call); the rest keep a 20pt column each. `x` = centre.
     const dayNo = (d) => d.label.replace("Day ", "");
     doc.setFont(FONT, "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(6.5);
     const cols = (perDayQty ? runColumns(days, project?.dayLinks) : []).map((c) => {
       const head = days.length === 1 ? "QTY" : `D${c.days.map(dayNo).join("/")}`;
-      return { ...c, head, w: Math.max(dayColW, Math.ceil(doc.getTextWidth(head)) + 8) };
+      return { ...c, head, w: Math.max(dayColW, Math.ceil(doc.getTextWidth(head)) + 7) };
     });
-    const singleQtyColW = 24;
-    const maxColW = perDayQty && cols.length > 1 ? 24 : 0;
+    const singleQtyColW = dayColW;
+    const maxColW = perDayQty && cols.length > 1 ? dayColW : 0;
     const dayColsWidth = perDayQty ? cols.reduce((sum, c) => sum + c.w, 0) : singleQtyColW;
-    // Item rows get an extra inset on top of the page margin (matching the
-    // on-screen preview's row padding), so they read as nested under their
-    // subcategory bar instead of running flush to the page edge.
-    const rowInset = 20;
-    const rowX = marginX + rowInset;
-    const rowWidth = usableWidth - rowInset * 2;
+    // Subcategory names sit in a column at the left, beside their first
+    // item (owner's call), instead of taking a row of their own.
+    const subColW = 78;
+    const rowX = marginX + subColW;
+    const rowWidth = usableWidth - subColW;
     const nameColW = rowWidth - maxColW - dayColsWidth - notesColW;
     let colLeft = rowX + nameColW + maxColW;
     cols.forEach((c) => { c.x = colLeft + c.w / 2; colLeft += c.w; });
     const accentRgb = hexToRgb(accentHex);
-    const lh = (size) => size * 1.28;
-    const BAR_H = 17;
+    const lh = (size) => size * 1.25;
+    const BAR_H = 13;
     const barBaseline = (size) => (BAR_H + fontChoice.capHeight * size) / 2;
 
     let y = marginTop;
@@ -84,12 +83,13 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     }
     function drawColumnHeader() {
       doc.setFont(FONT, "bold");
-      doc.setFontSize(8);
+      doc.setFontSize(6.5);
       doc.setTextColor(136, 136, 136);
+      doc.text("SECTION", marginX + 6, y);
       doc.text("ITEM", rowX, y);
       doc.text("NOTES", rowX + nameColW + maxColW + dayColsWidth, y);
       // The quantity headings (MAX, D1, D2…, QTY) in the accent colour
-      // (owner's call); ITEM and NOTES stay grey.
+      // (owner's call); SECTION, ITEM and NOTES stay grey.
       doc.setTextColor(...accentRgb);
       if (maxColW > 0) {
         doc.text("MAX", rowX + nameColW + maxColW / 2, y, { align: "center" });
@@ -99,7 +99,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       } else {
         doc.text("QTY", rowX + nameColW + maxColW + singleQtyColW / 2, y, { align: "center" });
       }
-      y += 12;
+      y += 9;
     }
 
     const visibleGrouped = computeVisibleGrouped(manifestGrouped, itemData);
@@ -119,9 +119,9 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const headerTopY = y;
     const rightX = marginX + usableWidth;
     const rightLines = [
-      preparedBy.name && { text: preparedBy.name, style: "bold", size: 17, color: [0, 0, 0], step: 14 },
-      preparedBy.email && { text: preparedBy.email, style: "normal", size: 9, color: [85, 85, 85], step: 11 },
-      preparedBy.phone && { text: preparedBy.phone, style: "normal", size: 9, color: [85, 85, 85], step: 11 },
+      preparedBy.name && { text: preparedBy.name, style: "bold", size: 12, color: [0, 0, 0], step: 10.5 },
+      preparedBy.email && { text: preparedBy.email, style: "normal", size: 7.5, color: [85, 85, 85], step: 9 },
+      preparedBy.phone && { text: preparedBy.phone, style: "normal", size: 7.5, color: [85, 85, 85], step: 9 },
     ].filter(Boolean);
     let rightW = 0;
     rightLines.forEach((l) => { doc.setFont(FONT, l.style); doc.setFontSize(l.size); rightW = Math.max(rightW, doc.getTextWidth(l.text)); });
@@ -138,19 +138,19 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     let leftX = marginX;
     doc.setFont(FONT, "bold");
     if (project?.tag) {
-      doc.setFontSize(11);
+      doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
       const tagText = project.tag.toUpperCase();
       doc.text(tagText, leftX, y);
-      leftX += doc.getTextWidth(tagText) + 8;
+      leftX += doc.getTextWidth(tagText) + 7;
     }
     const nameWidth = leftWidth - (leftX - marginX);
-    doc.setFontSize(17);
+    doc.setFontSize(13);
     doc.setTextColor(...accentRgb);
     const nameLines = doc.splitTextToSize((project?.name || "Equipment List").toUpperCase(), nameWidth);
     let leftY = y;
     nameLines.forEach((line, i) => {
-      if (i) leftY += lh(17);
+      if (i) leftY += lh(13);
       doc.text(line, leftX, leftY);
     });
     if (shootDateRange) {
@@ -161,12 +161,12 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       if (lastW + 8 + doc.getTextWidth(after) <= nameWidth) {
         doc.text(after, leftX + lastW + 8, leftY);
       } else {
-        leftY += lh(17);
+        leftY += lh(13);
         doc.text(shootDateRange, leftX, leftY);
       }
     }
 
-    y = Math.max(leftY + 10, rightY) + 8;
+    y = Math.max(leftY + 8, rightY) + 6;
 
     // Info strip: Production House and Rental House (the house, with its
     // Producer / Gaffer on the line below) flow left to right, and Created
@@ -174,23 +174,23 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     // for the space are cut off with "…".
     const hasCreatedOn = Boolean(project?.createdAt);
     if (infoPairs.length > 0 || hasCreatedOn) {
-      const gap = 28;
+      const gap = 24;
       const createdD = hasCreatedOn ? new Date(project.createdAt) : null;
       const createdLines = hasCreatedOn ? [formatDMY(fmtDate(createdD)), formatTime24(createdD)] : [];
       const width = (text, style, size) => { doc.setFont(FONT, style); doc.setFontSize(size); return doc.getTextWidth(text); };
-      const createdW = hasCreatedOn ? Math.max(width("CREATED ON", "bold", 8), ...createdLines.map((t) => width(t, "bold", 11))) : 0;
+      const createdW = hasCreatedOn ? Math.max(width("CREATED ON", "bold", 6.5), ...createdLines.map((t) => width(t, "bold", 8.5))) : 0;
       const cols = [
         { label: "Production House", lines: [[project?.productionHouse, "bold"], [project?.producer, "bold"]] },
         { label: "Rental House", lines: [[project?.rentalHouse, "bold"], [project?.gaffer, "bold"]] },
       ].map((c) => ({ ...c, lines: c.lines.filter(([t]) => t) })).filter((c) => c.lines.length);
-      const natural = cols.map((c) => Math.max(width(c.label.toUpperCase(), "bold", 8), ...c.lines.map(([t, st]) => width(t, st, 11))));
+      const natural = cols.map((c) => Math.max(width(c.label.toUpperCase(), "bold", 6.5), ...c.lines.map(([t, st]) => width(t, st, 8.5))));
       const avail = usableWidth - (hasCreatedOn ? createdW + gap : 0);
       const fits = natural.reduce((a, b) => a + b, 0) + gap * Math.max(0, cols.length - 1) <= avail;
       const share = cols.length ? (avail - gap * (cols.length - 1)) / cols.length : 0;
       const cut = (text, style, max) => {
-        if (width(text, style, 11) <= max) return text;
+        if (width(text, style, 8.5) <= max) return text;
         let t = text;
-        while (t.length > 1 && width(`${t}…`, style, 11) > max) t = t.slice(0, -1);
+        while (t.length > 1 && width(`${t}…`, style, 8.5) > max) t = t.slice(0, -1);
         return `${t.trimEnd()}…`;
       };
       let px = marginX;
@@ -198,14 +198,14 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       cols.forEach((c, i) => {
         const colW = fits ? natural[i] : share;
         doc.setFont(FONT, "bold");
-        doc.setFontSize(8);
+        doc.setFontSize(6.5);
         doc.setTextColor(136, 136, 136);
         doc.text(c.label.toUpperCase(), px, y);
         c.lines.forEach(([text, style], k) => {
           doc.setFont(FONT, style);
-          doc.setFontSize(11);
+          doc.setFontSize(8.5);
           doc.setTextColor(0, 0, 0);
-          doc.text(cut(text, style, colW), px, y + 13 * (k + 1));
+          doc.text(cut(text, style, colW), px, y + 10 * (k + 1));
         });
         rows = Math.max(rows, c.lines.length);
         px += colW + gap;
@@ -213,15 +213,15 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
 
       if (hasCreatedOn) {
         doc.setFont(FONT, "bold");
-        doc.setFontSize(8);
+        doc.setFontSize(6.5);
         doc.setTextColor(136, 136, 136);
         doc.text("CREATED ON", rightX, y, { align: "right" });
-        doc.setFontSize(11);
+        doc.setFontSize(8.5);
         doc.setTextColor(0, 0, 0);
-        createdLines.forEach((t, k) => doc.text(t, rightX, y + 13 * (k + 1), { align: "right" }));
+        createdLines.forEach((t, k) => doc.text(t, rightX, y + 10 * (k + 1), { align: "right" }));
       }
 
-      y += 13 * rows + 13;
+      y += 10 * rows + 9;
     }
 
     // Divider
@@ -229,7 +229,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     doc.setLineWidth(1.5);
     doc.line(marginX, y, marginX + usableWidth, y);
     doc.setLineWidth(1);
-    y += 14;
+    y += 11;
 
     // Project note, then the list's own note (owner's lists) in italics
     // under it. The fonts have no italic, so it's slanted.
@@ -237,13 +237,13 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const listNoteText = (project?.listNote || "").trim();
     if (noteText) {
       doc.setFont(FONT, "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(8);
       doc.setTextColor(51, 51, 51);
-      doc.splitTextToSize(noteText, usableWidth).forEach((line) => { doc.text(line, marginX, y); y += lh(10); });
+      doc.splitTextToSize(noteText, usableWidth).forEach((line) => { doc.text(line, marginX, y); y += lh(8); });
     }
     if (listNoteText) {
       doc.setFont(FONT, "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(8);
       doc.setTextColor(85, 85, 85);
       const slant = 0.2;
       doc.splitTextToSize(listNoteText, usableWidth - 4).forEach((line) => {
@@ -251,14 +251,14 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         doc.internal.write(`1 0 ${slant} 1 ${(-slant * (pageHeight - y)).toFixed(3)} 0 cm`);
         doc.text(line, marginX, y);
         doc.restoreGraphicsState();
-        y += lh(10);
+        y += lh(8);
       });
     }
-    if (noteText || listNoteText) y += 8;
+    if (noteText || listNoteText) y += 6;
 
     if (Object.keys(visibleGrouped).length === 0) {
       doc.setFont(FONT, "normal");
-      doc.setFontSize(11);
+      doc.setFontSize(9);
       doc.setTextColor(136, 136, 136);
       doc.text("No quantities entered for this shoot yet.", marginX, y);
     } else {
@@ -266,95 +266,122 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       drawColumnHeader();
     }
 
+    // Row geometry: the same gap above the first line's capitals and below
+    // the last line's baseline, so text sits centred between the dividers
+    // whether or not a row has a spec line or a long note. (Cap-height
+    // from the embedded font; the gap is wider than the deepest descender
+    // of any of the fonts, incl. Vietnamese marks, so those still clear
+    // the divider.)
+    const ITEM = 8, SPEC = 6.8, SUB = 6;
+    const PAD = 4.4;
+    const topPad = PAD + fontChoice.capHeight * ITEM; // first baseline, from the row top
+    const specGap = 8.5;                              // name baseline → spec-line baseline
+
     orderedKeys(visibleGrouped, Object.keys(departments)).forEach((dept) => {
-      // Department and subcategory bars share one height; text is centred
-      // on its capitals.
-      ensureSpace(BAR_H * 2 + 14 + 16);
+      // Category bar; text centred on its capitals.
+      ensureSpace(BAR_H + 30);
       doc.setFillColor(...accentRgb);
       doc.rect(marginX, y, usableWidth, BAR_H, "F");
       doc.setFont(FONT, "bold");
-      doc.setFontSize(11);
+      doc.setFontSize(8.5);
       doc.setTextColor(255, 255, 255);
-      doc.text(dept.toUpperCase(), marginX + 8, y + barBaseline(11));
+      doc.text(dept.toUpperCase(), marginX + 6, y + barBaseline(8.5));
       y += BAR_H;
 
-      orderedKeys(visibleGrouped[dept], departments[dept] || []).forEach((sub) => {
-        // "Others" is the wildcard category (owner's call): its items, and
-        // any item without a subcategory, print without a subcategory bar.
-        if (sub && !/^others?$/i.test(dept.trim())) {
-          ensureSpace(BAR_H + 14 + 16);
-          doc.setFillColor(242, 242, 242);
-          doc.rect(marginX, y, usableWidth, BAR_H, "F");
-          // Like the composer: a small, spaced-out label in the accent colour,
-          // so it reads differently from the item names under it.
-          doc.setFont(FONT, "bold");
-          doc.setFontSize(8);
-          doc.setTextColor(...accentRgb);
-          doc.text(sub.toUpperCase(), marginX + 12, y + barBaseline(8), { charSpace: 1 });
-          y += BAR_H;
+      orderedKeys(visibleGrouped[dept], departments[dept] || []).forEach((sub, subIdx) => {
+        // A thin line between subcategories (the rows inside one have
+        // lighter lines that start at the item column).
+        if (subIdx > 0) {
+          doc.setDrawColor(215, 215, 210);
+          doc.line(marginX, y, marginX + usableWidth, y);
         }
-
-        // Row geometry: the same gap above the first line's capitals and
-        // below the last line's baseline, so text sits centred between the
-        // dividers whether or not a row has a spec line or a long note.
-        // (Cap-height from the embedded font; the gap is wider than the
-        // deepest descender of any of the fonts, incl. Vietnamese marks,
-        // so those still clear the divider.)
-        const PAD = 6;
-        const topPad = PAD + fontChoice.capHeight * 10; // first baseline, from the row top
-        const specGap = 11;                // name baseline → spec-line baseline
+        // The subcategory's name, small, spaced-out and in the accent
+        // colour (like the composer), in the left column beside its first
+        // item, and again if the subcategory carries on over a page.
+        // "Others" is the wildcard category (owner's call): its items,
+        // and any item without a subcategory, have no name there.
+        let subLines = [];
+        if (sub && !/^others?$/i.test(dept.trim())) {
+          doc.setFont(FONT, "bold");
+          doc.setFontSize(SUB);
+          subLines = doc.splitTextToSize(sub.toUpperCase(), subColW - 10);
+        }
         const itemsInSub = visibleGrouped[dept][sub];
         itemsInSub.forEach((c, idx) => {
           const entry = itemData[c.id];
           const projectNote = entry?.noteHidden ? "" : (entry?.notes || "");
           doc.setFont(FONT, "normal");
-          doc.setFontSize(10);
+          doc.setFontSize(ITEM);
           const nameLines = doc.splitTextToSize(c.name, nameColW - 4);
-          doc.setFontSize(8.5);
-          const catNoteLines = c.note ? doc.splitTextToSize(c.note, nameColW - 4) : [];
-          doc.setFontSize(10);
+          // A catalog spec note ("S35") follows the name on its line when
+          // it fits there, else takes the lines below.
+          let inlineSpec = "";
+          let catNoteLines = [];
+          if (c.note) {
+            const flat = c.note.replace(/\s*\n+\s*/g, " · ");
+            const lastW = doc.getTextWidth(nameLines[nameLines.length - 1]);
+            doc.setFontSize(SPEC);
+            if (lastW + 8 + doc.getTextWidth(flat) <= nameColW - 4) inlineSpec = flat;
+            else catNoteLines = doc.splitTextToSize(c.note, nameColW - 4);
+            doc.setFontSize(ITEM);
+          }
           const projectNoteLines = projectNote ? doc.splitTextToSize(projectNote, notesColW - 4) : [];
           // Distance from the first baseline to the last one, per column.
-          const leftDepth = (nameLines.length - 1) * lh(10)
-            + (catNoteLines.length ? specGap + (catNoteLines.length - 1) * lh(8.5) : 0);
-          const rightDepth = Math.max(projectNoteLines.length - 1, 0) * lh(10);
-          const rowHeight = topPad + Math.max(leftDepth, rightDepth) + PAD;
+          const leftDepth = (nameLines.length - 1) * lh(ITEM)
+            + (catNoteLines.length ? specGap + (catNoteLines.length - 1) * lh(SPEC) : 0);
+          const rightDepth = Math.max(projectNoteLines.length - 1, 0) * lh(ITEM);
+          const subDepth = idx === 0 ? Math.max(subLines.length - 1, 0) * lh(SUB) : 0;
+          const rowHeight = topPad + Math.max(leftDepth, rightDepth, subDepth) + PAD;
 
+          const before = y;
           ensureSpace(rowHeight);
           const rowTop = y;
 
+          if (subLines.length && (idx === 0 || rowTop !== before)) {
+            doc.setFont(FONT, "bold");
+            doc.setFontSize(SUB);
+            doc.setTextColor(...accentRgb);
+            let sy = rowTop + topPad;
+            subLines.forEach((line) => { doc.text(line, marginX + 6, sy, { charSpace: 0.5 }); sy += lh(SUB); });
+          }
+
           // Item names in regular weight (quantities stay bold).
           doc.setFont(FONT, "normal");
-          doc.setFontSize(10);
+          doc.setFontSize(ITEM);
           doc.setTextColor(0, 0, 0);
           let ty = rowTop + topPad;
-          nameLines.forEach((line, i) => { if (i) ty += lh(10); doc.text(line, rowX, ty); });
+          nameLines.forEach((line, i) => { if (i) ty += lh(ITEM); doc.text(line, rowX, ty); });
+          if (inlineSpec) {
+            const lastW = doc.getTextWidth(nameLines[nameLines.length - 1]);
+            doc.setFontSize(SPEC);
+            doc.setTextColor(136, 136, 136);
+            doc.text(inlineSpec, rowX + lastW + 8, ty);
+          }
           if (catNoteLines.length) {
             ty += specGap;
-            doc.setFont(FONT, "normal");
-            doc.setFontSize(8.5);
+            doc.setFontSize(SPEC);
             doc.setTextColor(136, 136, 136);
-            catNoteLines.forEach((line, i) => { if (i) ty += lh(8.5); doc.text(line, rowX, ty); });
+            catNoteLines.forEach((line, i) => { if (i) ty += lh(SPEC); doc.text(line, rowX, ty); });
           }
 
           if (maxColW > 0) {
             const qtyValues = days.map((d) => entry?.quantities?.[d.id] || 0).filter((q) => q > 0);
             const peak = qtyValues.length > 0 ? Math.max(...qtyValues) : 0;
             doc.setFont(FONT, "bold");
-            doc.setFontSize(10);
+            doc.setFontSize(ITEM);
             if (peak > 0) doc.setTextColor(...accentRgb); else doc.setTextColor(210, 210, 206);
             doc.text(String(peak), rowX + nameColW + maxColW / 2, rowTop + topPad, { align: "center" });
           }
 
           doc.setFont(FONT, "bold");
-          doc.setFontSize(10);
+          doc.setFontSize(ITEM);
           doc.setTextColor(0, 0, 0);
           if (perDayQty) {
             // A 0 prints grey (owner's call), like MAX's.
-            cols.forEach((c) => {
-              const qty = entry?.quantities?.[c.id] || 0;
+            cols.forEach((col) => {
+              const qty = entry?.quantities?.[col.id] || 0;
               if (qty > 0) doc.setTextColor(0, 0, 0); else doc.setTextColor(210, 210, 206);
-              doc.text(String(qty), c.x, rowTop + topPad, { align: "center" });
+              doc.text(String(qty), col.x, rowTop + topPad, { align: "center" });
             });
           } else {
             // "All days same" mode: every day carries the same value, so
@@ -367,15 +394,15 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
 
           if (projectNoteLines.length) {
             doc.setFont(FONT, "normal");
-            doc.setFontSize(10);
+            doc.setFontSize(ITEM);
             doc.setTextColor(136, 136, 136);
             let ny = rowTop + topPad;
-            projectNoteLines.forEach((line) => { doc.text(line, rowX + nameColW + maxColW + dayColsWidth, ny); ny += lh(10); });
+            projectNoteLines.forEach((line) => { doc.text(line, rowX + nameColW + maxColW + dayColsWidth, ny); ny += lh(ITEM); });
           }
 
           y = rowTop + rowHeight;
           if (idx < itemsInSub.length - 1) {
-            doc.setDrawColor(242, 242, 242);
+            doc.setDrawColor(238, 238, 238);
             doc.line(rowX, y, rowX + rowWidth, y);
           }
         });
@@ -388,11 +415,10 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     for (let p = 1; p <= totalPages; p++) {
       doc.setPage(p);
       doc.setFont(FONT, "bold");
-      doc.setFontSize(7.5);
+      doc.setFontSize(6.5);
       doc.setTextColor(180, 180, 180);
       doc.text("BOXGO · EQUIPMENT LIST COMPOSER", marginX, pageHeight - marginBottom / 2);
       doc.setFont(FONT, "normal");
-      doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
       doc.text(`Page ${p} of ${totalPages}`, pageWidth - marginX, pageHeight - marginBottom / 2, { align: "right" });
     }
