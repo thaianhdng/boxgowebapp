@@ -381,8 +381,9 @@ Start of each conversation, the owner should say which one it is:
   the ~5mm printers can't print); 8pt items, 13pt
   title, slim 13pt category bars, rows padded 4.4pt; the catalog's spec
   note ("S35") sits under the item name (owner's call). MAX, the day
-  columns and a 120pt NOTES column sit at the right edge (owner's call);
-  ITEM takes the rest (narrowest with 7 days). **Single-item
+  columns and NOTES sit at the right edge (owner's call); ITEM takes the
+  rest. NOTES is 120pt, narrowing (down to 80pt) when many separate day
+  columns would leave ITEM under 170pt. **Single-item
   overflow** (owner's call): when only one item row would land on the
   last page, `buildPdf` lays the list out again with tighter rows (pad
   3.6, then 2.8) and keeps the first that saves the page; two or more

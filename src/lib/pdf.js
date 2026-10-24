@@ -82,10 +82,11 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const subColW = 78;
     const rowX = marginX + subColW;
     const rowWidth = usableWidth - subColW;
-    // MAX, the day columns and a 120pt NOTES column sit at the right edge
-    // (owner's call); the item column takes the rest, so it's narrowest
-    // with 7 days and wider when there are fewer.
-    const notesColW = 120;
+    // MAX, the day columns and NOTES sit at the right edge (owner's call);
+    // the item column takes the rest. NOTES is 120pt, narrowing (to 80pt
+    // at most) when many separate day columns would leave the item names
+    // less than 170pt (owner's call).
+    const notesColW = Math.max(80, Math.min(120, rowWidth - maxColW - dayColsWidth - 170));
     const nameColW = rowWidth - maxColW - dayColsWidth - notesColW;
     let colLeft = rowX + nameColW + maxColW;
     cols.forEach((c) => { c.x = colLeft + c.w / 2; colLeft += c.w; });
