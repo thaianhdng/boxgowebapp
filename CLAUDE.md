@@ -446,8 +446,9 @@ Start of each conversation, the owner should say which one it is:
   subcategories (`DepartmentManagerModal`). Event types keep their
   arrows (owner's call). The browser's own drag and drop was removed.
 - **"Others" is the wildcard category** (owner's call): no subcategory
-  headings in the composer (`ManifestDeptSection`) or bars in the PDF;
-  its items list straight under the category bar.
+  headings in the composer (`ManifestDeptSection`) or the Master Catalog
+  (`CatalogDeptSection`; its item window has no Subcategory field), and
+  no bars in the PDF; its items list straight under the category bar.
 - **Composer column headings** (everyone, owner's call): MAX, every day
   heading (D1, D2…, a linked group's stacked one) and QTY in the accent
   colour; ITEM stays grey (`dayHeadStyle`), as in the PDF.

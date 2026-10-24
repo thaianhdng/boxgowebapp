@@ -18,6 +18,8 @@ export function CatalogItemFormModal({ initial, draft, departments, brands, cata
   const [confirmDuplicate, setConfirmDuplicate] = useState(false);
   const modelRef = useRef(null);
   const subs = departments[department] || [];
+  // "Others" is the wildcard category: its items have no subcategory.
+  const wildcard = /^others?$/i.test((department || "").trim());
 
   function findDuplicate(brandU, modelU, noteT) {
     return (catalog || []).find((c) =>
@@ -38,7 +40,7 @@ export function CatalogItemFormModal({ initial, draft, departments, brands, cata
       setConfirmDuplicate(true);
       return;
     }
-    onSave({ name, brand: brandU, model: modelU, department, subcategory: subcategory || "", note: noteT });
+    onSave({ name, brand: brandU, model: modelU, department, subcategory: wildcard ? "" : subcategory || "", note: noteT });
     setConfirmDuplicate(false);
     if (!initial) {
       setJustAdded(true);
@@ -72,12 +74,14 @@ export function CatalogItemFormModal({ initial, draft, departments, brands, cata
               </select>
             )}
           </Field>
-          <Field label="Subcategory" style={{ flex: 1 }}>
-            <select style={{ width: "100%" }} value={subcategory} onChange={(e) => setSubcategory(e.target.value)}>
-              <option value="">— No subcategory —</option>
-              {subs.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </Field>
+          {!wildcard && (
+            <Field label="Subcategory" style={{ flex: 1 }}>
+              <select style={{ width: "100%" }} value={subcategory} onChange={(e) => setSubcategory(e.target.value)}>
+                <option value="">— No subcategory —</option>
+                {subs.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </Field>
+          )}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <Field label="Brand" style={{ flex: 1 }}>

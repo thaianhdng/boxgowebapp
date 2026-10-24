@@ -11,7 +11,11 @@ import { useSortable } from "../lib/sortable.js";
 // an "In card preview" tick on the category bar and on each subcategory.
 // Items are reordered by pressing their grip and moving, with a finger or a
 // mouse (src/lib/sortable.js), inside their own subcategory.
-export function CatalogDeptSection({ dept, color, subcats, data, collapsed, onToggle, onEdit, onDelete, onReorderItem, onAddItem, previewOff, onTogglePreview }) {
+export function CatalogDeptSection({ dept, color, subcats: subcatsProp, data, collapsed, onToggle, onEdit, onDelete, onReorderItem, onAddItem, previewOff, onTogglePreview }) {
+  // "Others" is the wildcard category (owner's call): no subcategory
+  // headings, every item listed straight under its bar (as in the composer
+  // and the PDF).
+  const subcats = /^others?$/i.test((dept || "").trim()) ? [] : subcatsProp;
   // An item moves before / after the one whose place it takes.
   const sort = useSortable((from, to, ids) => onReorderItem(ids[from], ids[to]));
   const deptOn = previewOff ? !previewOff.has(dept) : false;
