@@ -9,11 +9,14 @@ import { Fold, Presence } from "./Motion.jsx";
 
 
 export function ManifestDeptSection({
-  id, dept, color, subcats, data, days, itemData, perDayQty, collapsed, onToggle, onQtyChange, onNoteChange, onNoteHiddenChange,
+  id, dept, color, subcats: subcatsProp, data, days, itemData, perDayQty, collapsed, onToggle, onQtyChange, onNoteChange, onNoteHiddenChange,
   customItems, onAddCustomItem, onRemoveCustomItem, collapsedSubcats, onToggleSubcat, forceExpand, onAddDay, onCopyDay, onUnlinkDay, recentCustomNames,
 }) {
   const total = Object.values(data).reduce((n, arr) => n + arr.length, 0) + (customItems ? customItems.length : 0);
   const [newCustomName, setNewCustomName] = useState("");
+  // "Others" is the wildcard category (owner's call): no subcategory
+  // headings, every item listed straight under its bar (as in the PDF).
+  const subcats = /^others?$/i.test((dept || "").trim()) ? [] : subcatsProp;
   const definedSet = new Set(subcats || []);
   const flatItems = Object.keys(data)
     .filter((k) => k === "" || !definedSet.has(k))
