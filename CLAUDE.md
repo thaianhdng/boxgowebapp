@@ -377,7 +377,9 @@ Start of each conversation, the owner should say which one it is:
   composer, owner's call): category bars in the accent colour, subcategory
   labels small, spaced-out and in the accent colour on a light grey bar
   (none for the wildcard "Others" category, or items without a subcategory),
-  item names in regular weight (quantities bold, a 0 in light grey); the column headings MAX,
+  item names in regular weight (quantities bold, a 0 in light grey). Every picked item
+  prints, the list's typed-in items (Others / Subrent) too, after the
+  catalog's in their category (`withCustomItems`; the share page too); the column headings MAX,
   D1, D2… (and QTY) in the accent colour, ITEM / NOTES grey. Back-to-back linked
   days share one day column (see Linked days). Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;

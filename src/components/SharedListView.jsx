@@ -9,7 +9,7 @@ import { Logo } from "./Logo.jsx";
 import { BreakableName } from "./BreakableName.jsx";
 import {
   computeVisibleGrouped, defaultExportFilename, fmtDate, formatDMY, formatShootDateRange,
-  groupCatalog, orderDepartments, orderedKeys, saveFile, withTimeStamp,
+  groupCatalog, orderDepartments, orderedKeys, saveFile, withCustomItems, withTimeStamp,
 } from "../lib/utils.js";
 
 // Public, read-only page behind /share/:token — no account needed. Serves
@@ -84,7 +84,7 @@ function SharedList({ shared }) {
   const accentHex = (ACCENT_CHOICES.find((a) => a.id === shared.accentId) || ACCENT_CHOICES[0]).light;
   const itemData = project.itemData || {};
   // The same items, in the same order, as the PDF.
-  const grouped = useMemo(() => computeVisibleGrouped(groupCatalog(catalog), itemData), [catalog, itemData]);
+  const grouped = useMemo(() => computeVisibleGrouped(groupCatalog(withCustomItems(catalog, project)), itemData), [catalog, project, itemData]);
   const deptNames = orderedKeys(grouped, Object.keys(departments));
   const days = project.days || [];
   const perDayQty = !!project.perDayQty;

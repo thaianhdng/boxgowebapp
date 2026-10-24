@@ -1,6 +1,6 @@
 import { loadPdfFont, pdfFontFor } from "./font.js";
 import { runColumns } from "./dayLinks.js";
-import { formatShootDateRange, fmtDate, formatDMY, formatTime24, computeVisibleGrouped, orderedKeys, hexToRgb, groupCatalog } from "./utils.js";
+import { formatShootDateRange, fmtDate, formatDMY, formatTime24, computeVisibleGrouped, orderedKeys, hexToRgb, groupCatalog, withCustomItems } from "./utils.js";
 
 // Rasterizes the visible preview screen and slices it into a real
 // multi-page PDF file that downloads directly. This avoids the browser's
@@ -16,7 +16,7 @@ import { formatShootDateRange, fmtDate, formatDMY, formatTime24, computeVisibleG
 export async function buildPdf({ project, catalog, departments, accentHex, preparedBy }) {
   const days = project?.days || [];
   const itemData = project?.itemData || {};
-  const manifestGrouped = groupCatalog(catalog);
+  const manifestGrouped = groupCatalog(withCustomItems(catalog, project));
   const fontChoice = pdfFontFor(project?.pdfFont);
   const [{ jsPDF }, font] = await Promise.all([import("jspdf"), loadPdfFont(fontChoice.id)]);
   const doc = new jsPDF({ unit: "pt", format: "a4" });

@@ -182,6 +182,17 @@ export function defaultExportFilename(project, userName) {
   return parts.join("_");
 }
 
+// The catalog plus a list's own typed-in items (Others / Subrent), so the
+// PDF and the share page show every item in the list. They come after the
+// catalog's items in their category, without a subcategory, as in the
+// composer.
+export function withCustomItems(catalog, project) {
+  const custom = (project?.customItems || []).map((c) => ({
+    ...c, department: c.department || "Others", subcategory: "", brand: "", note: "",
+  }));
+  return custom.length ? [...(catalog || []), ...custom] : catalog || [];
+}
+
 // Groups catalog items by department, then subcategory, preserving the
 // catalog's own order within each group.
 export function groupCatalog(catalog) {
