@@ -82,11 +82,11 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const subColW = 78;
     const rowX = marginX + subColW;
     const rowWidth = usableWidth - subColW;
-    // The item column has one fixed width (owner's call): what's left once
-    // 7 day columns, MAX and a 120pt NOTES column are set aside, so every
-    // list has room for those; fewer days give the spare room to NOTES.
-    const nameColW = rowWidth - dayColW * 8 - 120;
-    const notesColW = rowWidth - nameColW - maxColW - dayColsWidth;
+    // MAX, the day columns and a 120pt NOTES column sit at the right edge
+    // (owner's call); the item column takes the rest, so it's narrowest
+    // with 7 days and wider when there are fewer.
+    const notesColW = 120;
+    const nameColW = rowWidth - maxColW - dayColsWidth - notesColW;
     let colLeft = rowX + nameColW + maxColW;
     cols.forEach((c) => { c.x = colLeft + c.w / 2; colLeft += c.w; });
     const accentRgb = hexToRgb(accentHex);
