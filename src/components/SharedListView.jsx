@@ -145,7 +145,9 @@ function PdfViewer({ blob, onClose, onDownload, building }) {
   }, [blob]);
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--pdf-bg)", display: "flex", flexDirection: "column" }}>
-      <div className="share-viewer-top" style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
+      {/* Close and Download line up with the pages' edges (owner's call);
+          the bar itself still runs the full width. */}
+      <div className="share-viewer-top" style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", paddingInline: "max(12px, calc((100% - 900px) / 2 + 12px))", background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
         <button onClick={onClose} style={{ ...styles.btn, ...styles.btnOutline, padding: "8px 12px" }}><X size={14} /> Close</button>
         <span style={{ flex: 1 }} />
         <button onClick={onDownload} disabled={!!building} style={{ ...styles.btn, padding: "8px 12px", background: "var(--accent)", color: "var(--accent-text)", border: "1px solid var(--accent)", opacity: building ? 0.6 : 1 }}>

@@ -338,7 +338,8 @@ Start of each conversation, the owner should say which one it is:
     quantity (linked days share a stacked "D1/D3" column, as in the
     composer), 720px wide (`ReadOnlyList`, shared with the preview's List
     view). The PDF is built only when asked: **View PDF**
-    (the real PDF page by page, over the list) and **Download PDF** in a
+    (the real PDF page by page, over the list; its Close / Download bar
+    lines up with the 900px pages on wide screens) and **Download PDF** in a
     bar at the bottom. A Light / Dark / Auto switch on top (Auto = the
     device's setting) is remembered per viewer in localStorage; colours
     are the app's, with the owner's accent. Live-link tokens stay random
