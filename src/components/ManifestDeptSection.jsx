@@ -33,6 +33,12 @@ export function ManifestDeptSection({
   const picksOnly = collapsed; // folded: loose and custom items show only when picked
   const bodyOpen = !collapsed || deptPicked || hasSubs;
   const showColumns = !collapsed || deptPicked || peek.size > 0; // the Item / D1… row, when rows show
+  // How many items a fold is hiding (shown on its bar, owner's call: a
+  // folded section should look folded).
+  const hiddenIn = (items) => (items || []).filter((c) => !isPicked(c)).length;
+  const deptHidden = !collapsed ? 0
+    : hiddenIn(flatItems) + hiddenIn(customItems)
+      + (subcats || []).filter((sub) => data[sub]?.length && !peek.has(sub)).reduce((n, sub) => n + hiddenIn(data[sub]), 0);
   // A search opens every category at once (and closing it folds them
   // back): that happens without motion; a tap on a header animates.
   const lastForce = useRef(forceExpand);
@@ -130,14 +136,22 @@ export function ManifestDeptSection({
         <div
           onClick={onToggle}
           style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "10px 14px", background: "var(--accent)", color: "var(--accent-text)", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+            padding: "10px 14px", cursor: "pointer",
+            // Open: a solid accent bar. Folded: an outlined one, with how
+            // many items it's hiding.
+            ...(collapsed
+              ? { background: "var(--surface)", color: "var(--accent)", boxShadow: "inset 0 0 0 1.5px var(--accent)", borderRadius: bodyOpen ? "4px 4px 0 0" : 4 }
+              : { background: "var(--accent)", color: "var(--accent-text)" }),
           }}
         >
           <span className="stencil" style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
             {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
             {dept}
           </span>
+          {deptHidden > 0 && (
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>Folded · {deptHidden} hidden</span>
+          )}
         </div>
         {showColumns && (
           <div
@@ -248,6 +262,9 @@ export function ManifestDeptSection({
                 >
                   {folded ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   {sub}
+                  {folded && hiddenIn(data[sub]) > 0 && (
+                    <span style={{ marginLeft: "auto", color: "var(--muted)", letterSpacing: "0.04em", fontWeight: 600, textTransform: "none", whiteSpace: "nowrap" }}>{hiddenIn(data[sub])} hidden</span>
+                  )}
                 </div>
                 <Fold open={subOpen} still={searchChange}><Presence still={searchChange}>{items.map((c) => (
                   <ManifestItemRow

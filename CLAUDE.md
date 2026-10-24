@@ -454,7 +454,10 @@ Start of each conversation, the owner should say which one it is:
   opened or folded again). The Item / D1… row shows only when rows do. A
   category with no subcategories and nothing picked folds to its bar; a
   search still opens everything (`ManifestDeptSection`: `isPicked`,
-  `peek`). **Fold all / Open all** (owner's call: both places): a
+  `peek`). A folded category's bar is outlined (accent border and text on
+  the page colour) instead of solid, with "Folded · N hidden" at its right;
+  a folded subcategory shows "N hidden" (owner's call: a fold should look
+  folded). **Fold all / Open all** (owner's call: both places): a
   button beside the composer's "Search items…" and the first line of the
   floating category menu (composer only, not the Master Catalog); one
   state, `allDeptsFolded` / `setAllFolded` — folding all sets every
