@@ -2534,13 +2534,16 @@ export default function EquipmentManifest({ session }) {
                   <button
                     onClick={() => { setAllFolded(!allDeptsFolded); setShowCategoryMenu(false); }}
                     style={{
-                      padding: "8px 10px", borderRadius: 6, border: "none", width: "100%",
-                      fontSize: 12, fontWeight: 700, cursor: "pointer", textAlign: "left",
-                      display: "flex", alignItems: "center", gap: 6,
+                      // Matches the Fold all beside the item search: 40px,
+                      // outlined in the accent colour.
+                      height: 40, boxSizing: "border-box", padding: "0 12px", borderRadius: 6,
+                      border: "1px solid var(--accent)", width: "100%", flexShrink: 0,
+                      fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
                       background: "transparent", color: "var(--accent)",
                     }}
                   >
-                    {allDeptsFolded ? <ChevronsUpDown size={14} /> : <ChevronsDownUp size={14} />} {allDeptsFolded ? "Open all" : "Fold all"}
+                    {allDeptsFolded ? <ChevronsUpDown size={16} /> : <ChevronsDownUp size={16} />} {allDeptsFolded ? "Open all" : "Fold all"}
                   </button>
                   <div style={{ height: 1, background: "var(--border)", margin: "2px 4px" }} />
                 </>
