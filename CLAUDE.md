@@ -403,8 +403,9 @@ Start of each conversation, the owner should say which one it is:
   latest; "· on" when it is). Tapping one makes its link, which shows
   inside that choice with Copy (copied at once; `LinkRow`), the live one
   with "Turn off live link"; an on live link shows there straight away.
-  A small accent **Live** button sits before Share only while the list's
-  live link is on, and opens the same window. `shareSnapshot` /
+  A small red **Live** button sits before Share only while the list's
+  live link is on; tapping it asks "Turn off live link?" (Cancel / Turn
+  off; turning it on again later makes a new link). `shareSnapshot` /
   `shareLive` / `stopLiveLink` in `EquipmentManifest` return the link or
   throw a message for the window; there is no separate link window. Downloads go through
   `saveFile()` in `src/lib/utils.js` (iOS: opens the Share menu).

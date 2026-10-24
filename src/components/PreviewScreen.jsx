@@ -23,6 +23,7 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
   const [snapshot, setSnapshot] = useState(null); // { url, reusedFrom } once made
   const [busy, setBusy] = useState(""); // "snapshot" | "live" | "off" while working
   const [shareError, setShareError] = useState("");
+  const [confirmOff, setConfirmOff] = useState(false); // "Turn off live link?" prompt
   // The link last copied; its Copy button reads "Copied" (and pops) for a
   // moment. `n` replays the pop on every copy.
   const [copied, setCopied] = useState(null); // { url, n }
@@ -111,14 +112,14 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
           </label>
         )}
         <div className="pv-actions">
-          {/* Shows only while this list's live link is on; tapping it opens
-              the Share window, where the link is (copy it, or turn it off). */}
+          {/* Shows only while this list's live link is on, in red (owner's
+              call); tapping it asks whether to turn the live link off. */}
           {liveUrl && (
             <button
               className="btn btn-ghost pv-live"
-              onClick={openShare}
-              title="Live link is on: it always shows this list as it currently is. Tap to copy it or turn it off."
-              style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
+              onClick={() => { setShareError(""); setConfirmOff(true); }}
+              title="Live link is on: it always shows this list as it currently is. Tap to turn it off."
+              style={{ borderColor: "var(--danger)", color: "var(--danger)" }}
             >
               <Radio size={14} /> Live
             </button>
@@ -195,6 +196,32 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
             )}
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
               <button className="btn btn-primary" onClick={() => setSharing(false)}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmOff && (
+        <div className="no-print m-overlay" onClick={() => setConfirmOff(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
+          alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
+        }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 380, padding: 22, border: "1px solid var(--border2)" }}>
+            <div className="stencil" style={{ fontSize: 14, marginBottom: 10 }}>Turn off live link?</div>
+            <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5, marginBottom: 16 }}>
+              Anyone you sent it to won't be able to open it any more. Turning it on again later makes a new link.
+            </div>
+            {shareError && <div style={{ fontSize: 12.5, color: "var(--danger)", marginBottom: 10 }}>{shareError}</div>}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button className="btn btn-ghost" onClick={() => setConfirmOff(false)} disabled={busy === "off"}>Cancel</button>
+              <button
+                className="btn"
+                onClick={() => run("off", async () => { await onStopLive(project.id); setConfirmOff(false); })}
+                disabled={busy === "off"}
+                style={{ background: "var(--danger)", borderColor: "var(--danger)", color: "#fff" }}
+              >
+                {busy === "off" ? "Turning off…" : "Turn off"}
+              </button>
             </div>
           </div>
         </div>
