@@ -375,7 +375,9 @@ Start of each conversation, the owner should say which one it is:
   wide the house is cut with "…" first so the person still shows) and
   Created On ("date · time", one line) at the right; a thin
   (1.5pt) accent line; the project note has no label. **Compact layout**
-  (owner's call, option "B"): ~1.3cm margins (36pt), 8pt items, 13pt
+  (owner's call, option "B"): print-safe margins (owner's call, "A"):
+  15mm sides and top, 18mm bottom, footer 10mm from the edge (clear of
+  the ~5mm printers can't print); 8pt items, 13pt
   title, slim 13pt category bars, rows padded 4.4pt; the catalog's spec
   note ("S35") sits under the item name (owner's call). The ITEM column
   has one fixed width: what's left once 7 day columns, MAX and a 120pt

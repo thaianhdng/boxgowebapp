@@ -49,9 +49,13 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    // Compact layout (owner's call, "B"): ~1.3cm margins, 8pt items,
-    // subcategories in a left column instead of their own bars.
-    const marginX = 36, marginTop = 38, marginBottom = 34;
+    // Compact layout (owner's call, "B"): 8pt items, subcategories in a
+    // left column instead of their own bars. Print-safe margins (owner's
+    // call, "A"): 15mm at the sides and top, 18mm at the bottom, with the
+    // footer 10mm from the edge — clear of the ~5mm most printers can't
+    // print.
+    const marginX = 43, marginTop = 43, marginBottom = 51;
+    const footerY = pageHeight - 28;
     const usableWidth = pageWidth - marginX * 2;
     const contentBottom = pageHeight - marginBottom;
 
@@ -439,10 +443,10 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       doc.setFont(FONT, "bold");
       doc.setFontSize(6.5);
       doc.setTextColor(180, 180, 180);
-      doc.text("BOXGO · EQUIPMENT LIST COMPOSER", marginX, pageHeight - marginBottom / 2);
+      doc.text("BOXGO · EQUIPMENT LIST COMPOSER", marginX, footerY);
       doc.setFont(FONT, "normal");
       doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${p} of ${totalPages}`, pageWidth - marginX, pageHeight - marginBottom / 2, { align: "right" });
+      doc.text(`Page ${p} of ${totalPages}`, pageWidth - marginX, footerY, { align: "right" });
     }
 
     return { doc, totalPages, lastPageRows: pageRows };
