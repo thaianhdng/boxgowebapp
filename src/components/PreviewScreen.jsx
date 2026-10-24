@@ -5,15 +5,29 @@ import {
 import { defaultExportFilename, fmtDate, formatDMY } from "../lib/utils.js";
 import { renderPdfPages } from "../lib/pdfPreview.js";
 import { PDF_FONTS, pdfFontFor } from "../lib/font.js";
+import { ReadOnlyList } from "./ReadOnlyList.jsx";
+
+// PDF or List (owner's call): the real PDF pages, or the list as the
+// people it's shared with see it. Remembered per device.
+const MODE_KEY = "boxgo-preview-mode";
+function readMode() {
+  try { return localStorage.getItem(MODE_KEY) === "list" ? "list" : "pdf"; } catch { return "pdf"; }
+}
 
 
 // Renders the preview screen. Builds the actual PDF and draws those exact
 // bytes page by page with pdf.js (see lib/pdfPreview.js) — no separate
 // layout to keep in sync, so the preview and the downloaded file always
 // match, and pdf.js's text layer keeps the text selectable and copyable.
-export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownload, pdfGenerating, onSetPdfFont, onShareSnapshot, onShareLive, onStopLive, liveUrl, shareGenerating }) {
+export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onBack, onDownload, pdfGenerating, onSetPdfFont, onShareSnapshot, onShareLive, onStopLive, liveUrl, shareGenerating }) {
   const [filename, setFilename] = useState(() => defaultExportFilename(project, userName));
   const [status, setStatus] = useState("loading"); // "loading" | "ready" | "error"
+  const [mode, setMode] = useState(readMode);
+  function pickMode(m) {
+    setMode(m);
+    try { localStorage.setItem(MODE_KEY, m); } catch { /* storage blocked — just this visit */ }
+  }
+  const showList = mode === "list" && !!listInputs;
   const pagesRef = useRef(null);
   // The PDF already built for the preview, reused by Download so the file
   // is ready the instant it's tapped (iOS only opens its Share menu then).
@@ -228,18 +242,46 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
       )}
 
       <div style={{ flex: 1, padding: 16 }}>
-        {status === "error" && (
+        {listInputs && (
+          <div role="radiogroup" aria-label="Show" style={{ display: "flex", width: "fit-content", margin: "0 auto 14px", gap: 2, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 4, padding: 2 }}>
+            {[["pdf", "PDF"], ["list", "List"]].map(([id, label]) => (
+              <button
+                key={id}
+                role="radio"
+                aria-checked={mode === id}
+                onClick={() => pickMode(id)}
+                title={id === "list" ? "The list as the people you share it with see it" : "The PDF exactly as it downloads and prints"}
+                style={{
+                  border: "none", borderRadius: 3, padding: "6px 18px", fontSize: 11, fontWeight: 700, cursor: "pointer",
+                  fontFamily: "inherit", letterSpacing: "0.06em", textTransform: "uppercase",
+                  background: mode === id ? "var(--accent)" : "transparent",
+                  color: mode === id ? "var(--accent-text)" : "var(--muted)",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {showList && (
+          <div style={{ maxWidth: 720, margin: "0 auto", fontSize: 13 }}>
+            <ReadOnlyList {...listInputs} />
+          </div>
+        )}
+        {!showList && status === "error" && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "50vh", flexDirection: "column", gap: 8 }}>
             <div className="stencil" style={{ fontSize: 13, color: "var(--muted)" }}>Couldn't generate the preview.</div>
           </div>
         )}
-        {status === "loading" ? (
+        {!showList && status === "loading" ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 10 }}>
             <Loader2 size={18} className="spin" style={{ color: "var(--accent)" }} />
             <span className="stencil" style={{ fontSize: 12, color: "var(--muted)" }}>Generating preview…</span>
           </div>
         ) : null}
-        <div ref={pagesRef} style={{ maxWidth: 900, margin: "0 auto", ...(status === "ready" ? {} : { visibility: "hidden", height: 0, overflow: "hidden" }) }} />
+        {/* Kept in place (measurable) while the List shows, so switching
+            back to PDF is instant. */}
+        <div ref={pagesRef} style={{ maxWidth: 900, margin: "0 auto", ...(status === "ready" && !showList ? {} : { visibility: "hidden", height: 0, overflow: "hidden" }) }} />
       </div>
     </div>
   );

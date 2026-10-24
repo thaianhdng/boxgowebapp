@@ -2602,6 +2602,7 @@ export default function EquipmentManifest({ session }) {
             project={activeProject}
             userName={userName}
             buildPdfBlob={buildPdfBlob}
+            listInputs={pdfInputs(activeProject)}
             onBack={exitPreview}
             onDownload={exportToPdf}
             pdfGenerating={pdfGenerating}

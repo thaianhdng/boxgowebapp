@@ -336,7 +336,8 @@ Start of each conversation, the owner should say which one it is:
     dates, houses, prepared by, project note, list note), then only the
     picked items by category / subcategory with MAX and each day's
     quantity (linked days share a stacked "D1/D3" column, as in the
-    composer), 720px wide. The PDF is built only when asked: **View PDF**
+    composer), 720px wide (`ReadOnlyList`, shared with the preview's List
+    view). The PDF is built only when asked: **View PDF**
     (the real PDF page by page, over the list) and **Download PDF** in a
     bar at the bottom. A Light / Dark / Auto switch on top (Auto = the
     device's setting) is remembered per viewer in localStorage; colours
@@ -398,7 +399,11 @@ Start of each conversation, the owner should say which one it is:
   days share one day column (see Linked days). Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
   default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and the share
-  page's View PDF draw the real PDF with pdf.js (`src/lib/pdfPreview.js`). The preview's
+  page's View PDF draw the real PDF with pdf.js (`src/lib/pdfPreview.js`). The preview
+  has a **PDF | List** switch above the pages (owner's call; remembered per
+  device, `boxgo-preview-mode`): List shows `ReadOnlyList`, exactly what
+  share-link viewers see, in the app's colours; the PDF stays built in
+  the background so switching back is instant. The preview's
   top bar (owner's call): Back, the name and the Font picker on one line,
   then Share and Download PDF on one line (`.pv-actions`; on phones they
   split the width and Download drops "PDF"). **Share** opens one window
