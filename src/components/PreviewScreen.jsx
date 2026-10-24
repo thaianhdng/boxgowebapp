@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Printer, ChevronRight, Loader2, Share2, Radio,
+  Printer, ChevronRight, Loader2, Share2, Radio, Camera,
 } from "lucide-react";
 import { defaultExportFilename } from "../lib/utils.js";
 import { renderPdfPages } from "../lib/pdfPreview.js";
@@ -18,6 +18,7 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
   // The PDF already built for the preview, reused by Download so the file
   // is ready the instant it's tapped (iOS only opens its Share menu then).
   const blobRef = useRef(null);
+  const [choosing, setChoosing] = useState(false); // the Share window
 
   useEffect(() => {
     let cancelled = false;
@@ -70,26 +71,25 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
           </label>
         )}
         <div className="pv-actions">
-          {onShareLive && (
+          {/* Shows only while this list's live link is on; tapping it brings
+              the link back (copy it again, or turn it off). */}
+          {onShareLive && hasLiveLink && (
             <button
-              className="btn btn-ghost"
+              className="btn btn-ghost pv-live"
               onClick={() => onShareLive(project)}
               disabled={shareGenerating}
-              title={hasLiveLink
-                ? "Live link is on: it always shows this list as it currently is, updating as you edit. For crew."
-                : "A link that always shows this list as it currently is — updates as you edit. For crew."}
-              style={hasLiveLink ? { borderColor: "var(--accent)", color: "var(--accent)" } : undefined}
+              title="Live link is on: it always shows this list as it currently is. Tap to copy it or turn it off."
+              style={{ borderColor: "var(--accent)", color: "var(--accent)" }}
             >
-              <Radio size={14} /> Live link
-              {hasLiveLink && <span aria-label="on" style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }} />}
+              <Radio size={14} /> Live
             </button>
           )}
-          {onShareSnapshot && (
+          {(onShareSnapshot || onShareLive) && (
             <button
               className="btn btn-ghost"
-              onClick={() => onShareSnapshot(project)}
+              onClick={() => setChoosing(true)}
               disabled={shareGenerating}
-              title="Share a snapshot: a permanent link to this list exactly as it is now — it won't change when you edit later. For rental houses."
+              title="Share this list as a snapshot or a live link"
             >
               <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Share"}
             </button>
@@ -103,6 +103,39 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
           </button>
         </div>
       </div>
+
+      {choosing && (
+        <div className="no-print m-overlay" onClick={() => setChoosing(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex",
+          alignItems: "center", justifyContent: "center", zIndex: 80, padding: 16,
+        }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 6, width: "100%", maxWidth: 440, padding: 22, border: "1px solid var(--border2)" }}>
+            <div className="stencil" style={{ fontSize: 14, marginBottom: 12 }}>Share this list</div>
+            {onShareSnapshot && (
+              <ShareChoice
+                icon={<Camera size={18} />}
+                title="Snapshot"
+                hint="A copy of the list as it is now. Later edits don't change it. Good for rental houses."
+                onClick={() => { setChoosing(false); onShareSnapshot(project); }}
+              />
+            )}
+            {onShareLive && (
+              <ShareChoice
+                icon={<Radio size={18} />}
+                title={hasLiveLink ? "Live link · on" : "Live link"}
+                accent={hasLiveLink}
+                hint={hasLiveLink
+                  ? "It's on. Tap to copy it again or turn it off."
+                  : "Always shows the latest version: your edits appear on the same link. Stays on until you turn it off."}
+                onClick={() => { setChoosing(false); onShareLive(project); }}
+              />
+            )}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+              <button className="btn btn-ghost" onClick={() => setChoosing(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ flex: 1, padding: 16 }}>
         {status === "error" && (
@@ -119,5 +152,27 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
         <div ref={pagesRef} style={{ maxWidth: 900, margin: "0 auto", ...(status === "ready" ? {} : { visibility: "hidden", height: 0, overflow: "hidden" }) }} />
       </div>
     </div>
+  );
+}
+
+// One choice in the Share window: icon, name and a short explanation.
+function ShareChoice({ icon, title, hint, accent, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="row"
+      style={{
+        display: "flex", gap: 12, alignItems: "flex-start", width: "100%", textAlign: "left",
+        padding: "12px 14px", marginBottom: 10, borderRadius: 4, cursor: "pointer",
+        background: "var(--surface2)", color: "var(--text)", fontFamily: "inherit",
+        border: `1px solid ${accent ? "var(--accent)" : "var(--border2)"}`,
+      }}
+    >
+      <span style={{ color: "var(--accent)", marginTop: 1, flexShrink: 0 }}>{icon}</span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: accent ? "var(--accent)" : "var(--text)" }}>{title}</span>
+        <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 3, lineHeight: 1.45 }}>{hint}</span>
+      </span>
+    </button>
   );
 }

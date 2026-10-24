@@ -1951,14 +1951,15 @@ export default function EquipmentManifest({ session }) {
           .hdr-actions .btn { white-space: nowrap; flex-shrink: 0; padding: 6px 10px; }
           .save-label { display: none; }
         }
-        /* PDF preview: Live link, Snapshot and Download PDF share one row
-           under the name and font (owner's call); on phones the row takes
-           the full width and the three split it evenly. */
+        /* PDF preview: Share and Download PDF (and Live, while a live link
+           is on) share one row under the name and font (owner's call); on
+           phones the row takes the full width and Share / Download split it. */
         .pv-actions { display: flex; gap: 8px; margin-left: auto; }
         .pv-actions .btn { white-space: nowrap; justify-content: center; padding: 6px 12px; font-size: 12px; }
         @media (max-width: 640px) {
           .pv-actions { flex: 1 1 100%; }
           .pv-actions .btn { flex: 1 1 0; min-width: 0; padding: 7px 6px; }
+          .pv-actions .pv-live { flex: 0 0 auto; padding: 7px 12px; }
           .pv-actions .btn svg { flex-shrink: 0; }
           .pv-long { display: none; }
         }
