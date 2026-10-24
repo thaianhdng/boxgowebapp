@@ -87,6 +87,10 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       doc.setFontSize(8);
       doc.setTextColor(136, 136, 136);
       doc.text("ITEM", rowX, y);
+      doc.text("NOTES", rowX + nameColW + maxColW + dayColsWidth, y);
+      // The quantity headings (MAX, D1, D2…, QTY) in the accent colour
+      // (owner's call); ITEM and NOTES stay grey.
+      doc.setTextColor(...accentRgb);
       if (maxColW > 0) {
         doc.text("MAX", rowX + nameColW + maxColW / 2, y, { align: "center" });
       }
@@ -95,7 +99,6 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       } else {
         doc.text("QTY", rowX + nameColW + maxColW + singleQtyColW / 2, y, { align: "center" });
       }
-      doc.text("NOTES", rowX + nameColW + maxColW + dayColsWidth, y);
       y += 12;
     }
 
