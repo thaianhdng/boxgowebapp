@@ -896,21 +896,6 @@ export default function EquipmentManifest({ session }) {
       (subs || []).forEach((s) => { collapsedSubcats[`${d}::${s}`] = true; });
     });
     const newDays = data.days && data.days.length ? data.days : [{ id: "day1", label: "Day 1", date: todayStr(), location: "", projectLabel: "" }];
-    // Starting from a kit (owner's call: gear only) fills in its items on
-    // every day; the tag and houses are what the form says.
-    const kit = data.templateId ? templates.find((t) => t.id === data.templateId) : null;
-    let kitted = { itemData: {}, customItems: [] };
-    if (kit) {
-      kitted = applyKit({ days: newDays, perDayQty: false, itemData: {}, customItems: [] }, kit, [], "replace", catalog).project;
-      // open the categories / subcategories the kit fills, so its items show
-      Object.keys(kit.itemQuantities || {}).forEach((itemId) => {
-        const c = catalog.find((x) => x.id === itemId);
-        if (!c) return;
-        collapsedDepts[c.department] = false;
-        if (c.subcategory) collapsedSubcats[`${c.department}::${c.subcategory}`] = false;
-      });
-      (kit.customItems || []).forEach((c) => { collapsedDepts[c.department || "Others"] = false; });
-    }
     let newProject = {
       id: data.id || newProjectId(),
       name: data.name,
@@ -921,8 +906,8 @@ export default function EquipmentManifest({ session }) {
       gaffer: data.gaffer || "",
       days: newDays,
       perDayQty: data.perDayQty || false,
-      itemData: kitted.itemData,
-      customItems: kitted.customItems,
+      itemData: {},
+      customItems: [],
       note: "",
       collapsedDepts,
       collapsedSubcats,
@@ -1738,7 +1723,6 @@ export default function EquipmentManifest({ session }) {
     projects,
     catalog,
     departments,
-    templates,
     cardPreviewOff: cardPreviewOffSet,
     projectTags,
     productionHouses,
@@ -2697,7 +2681,6 @@ export default function EquipmentManifest({ session }) {
           recentProjectNames={recentProjectNames}
           recentProjectLabels={recentProjectLabels}
           projectTags={projectTags}
-          templates={templates}
           onManageTags={() => setShowTagManager(true)}
           onClose={() => setGhostDraft(null)}
           onSave={(data) => { addProject(data, { projectId: ghostDraft.id }); setGhostDraft(null); }}
@@ -2716,7 +2699,6 @@ export default function EquipmentManifest({ session }) {
           recentProjectNames={recentProjectNames}
           recentProjectLabels={recentProjectLabels}
           projectTags={projectTags}
-          templates={templates}
           onManageTags={() => setShowTagManager(true)}
           onClose={() => { setShowProjectForm(false); setEditingProjectId(null); setNewListTarget(null); }}
           onSave={(data) => {

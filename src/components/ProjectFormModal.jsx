@@ -11,8 +11,8 @@ import { cleanLinks, linkedWith, withoutDay } from "../lib/dayLinks.js";
 // `initial` edits an existing project. Two extras, used only by the
 // owner's Calendar module (src/expansion/): `prefill` starts a *new*
 // project from given values, and `noList` is for a project without an
-// equipment list — it hides the list-only parts (start from a kit, quantity
-// mode) and requires every shoot day to have a date.
+// equipment list — it hides the list-only part (quantity mode) and
+// requires every shoot day to have a date.
 // `heading` / `saveLabel` (owner only) replace "New Project" / "Create
 // project" when the window makes a list for an existing project or a draft.
 // `draft` (owner only): a draft list, in no project — the bare-bone list:
@@ -20,7 +20,7 @@ import { cleanLinks, linkedWith, withoutDay } from "../lib/dayLinks.js";
 // project), and the name, tag and shoot dates are optional.
 // `linkDays`: editing a list with per-day quantities, each
 // shoot day gets "Equipment: Own list / Same as Dn" (lib/dayLinks.js).
-export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, draft, linkDays, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, templates, onManageTags, onClose, onSave }) {
+export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel, draft, linkDays, productionHouses, rentalHouses, recentProjectNames, recentProjectLabels, projectTags, onManageTags, onClose, onSave }) {
   const start = initial || prefill;
   const [name, setName] = useState(start?.name || "");
   // Editing shows the project's real tag, even none ("—") or one since
@@ -38,7 +38,6 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
   const [producer, setProducer] = useState(start?.producer || "");
   const [rentalHouse, setRentalHouse] = useState(start?.rentalHouse || "");
   const [gaffer, setGaffer] = useState(start?.gaffer || "");
-  const [templateId, setTemplateId] = useState("");
   const [missingDate, setMissingDate] = useState(false);
   const [dayCount, setDayCount] = useState(start?.days?.length || 1);
   const [perDayQty, setPerDayQty] = useState(start?.perDayQty || false);
@@ -98,7 +97,7 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
       ? { productionHouse: "", producer: "", rentalHouse: "", gaffer: "" }
       : { productionHouse: productionHouse.trim(), producer: producer.trim(), rentalHouse: rentalHouse.trim(), gaffer: gaffer.trim() };
     onSave({
-      name: name.trim(), tag, ...houses, days, perDayQty, templateId: templateId || undefined,
+      name: name.trim(), tag, ...houses, days, perDayQty,
       // Handed over as chosen; saving tidies them and gives every day in a
       // group the numbers of the day it was linked to (lib/dayLinks.js).
       ...(showLinks || initial?.dayLinks ? { dayLinks } : {}),
@@ -115,19 +114,6 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
           <div className="stencil" style={{ fontSize: 14 }}>{heading || (initial ? "Edit Project" : "New Project")}</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)" }}><X size={18} /></button>
         </div>
-
-        {!initial && !noList && templates.length > 0 && (
-          <div style={{ marginBottom: 12 }}>
-            <select
-              value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
-              style={{ width: "100%", fontSize: 13, fontWeight: 800 }}
-            >
-              <option value="">Start from scratch</option>
-              {templates.map((t) => <option key={t.id} value={t.id}>Start from kit "{t.name}"</option>)}
-            </select>
-          </div>
-        )}
 
         <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
           <select

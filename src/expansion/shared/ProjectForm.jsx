@@ -10,7 +10,6 @@ export function ProjectForm({ app, ...props }) {
       recentProjectNames={app.recentProjectNames || []}
       recentProjectLabels={app.recentProjectLabels || []}
       projectTags={app.projectTags || []}
-      templates={app.templates || []}
       onManageTags={app.openSettings}
       linkDays
       {...props}

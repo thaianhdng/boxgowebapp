@@ -301,7 +301,7 @@ export function AttributesManagerModal({
             ))}
             <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
               {templates.length === 0 && "No kits yet. "}
-              A kit is a saved bundle of gear (items and quantities only). Make one with "Save as kit" in any list, add it to a list with "+ Add kit", or start a new list from it in Create New.
+              A kit is a saved bundle of gear (items and quantities only). Make one with "Save as kit" in any list, and add it to a list with "+ Add kit".
             </div>
           </div>
           </>
@@ -343,7 +343,7 @@ export function AttributesManagerModal({
             ))}
             <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
               {templates.length === 0 && "No kits yet. "}
-              A kit is a saved bundle of gear (items and quantities only). Make one with "Save as kit" in any list, add it to a list with "+ Add kit", or start a new list from it in Create New.
+              A kit is a saved bundle of gear (items and quantities only). Make one with "Save as kit" in any list, and add it to a list with "+ Add kit".
             </div>
           </div>
 
