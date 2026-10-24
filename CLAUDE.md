@@ -376,8 +376,10 @@ Start of each conversation, the owner should say which one it is:
   Created On ("date · time", one line) at the right; a thin
   (1.5pt) accent line; the project note has no label. **Compact layout**
   (owner's call, option "B"): ~1.3cm margins (36pt), 8pt items, 13pt
-  title, slim 13pt category bars, rows padded 4.4pt; a catalog spec note
-  ("S35") follows the item name on its line when it fits. **Single-item
+  title, slim 13pt category bars, rows padded 4.4pt; the catalog's spec
+  note ("S35") sits under the item name (owner's call). The ITEM column
+  has one fixed width: what's left once 7 day columns, MAX and a 120pt
+  NOTES column are set aside, so fewer days widen NOTES instead. **Single-item
   overflow** (owner's call): when only one item row would land on the
   last page, `buildPdf` lays the list out again with tighter rows (pad
   3.6, then 2.8) and keeps the first that saves the page; two or more

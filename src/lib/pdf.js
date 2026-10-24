@@ -56,7 +56,6 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const contentBottom = pageHeight - marginBottom;
 
     const dayColW = 20;
-    const notesColW = 96;
     // Matches the on-screen manifest: when the project uses one shared
     // quantity for every day ("All days same"), the PDF prints a single
     // QTY column instead of a MAX column plus one column per day.
@@ -79,7 +78,11 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const subColW = 78;
     const rowX = marginX + subColW;
     const rowWidth = usableWidth - subColW;
-    const nameColW = rowWidth - maxColW - dayColsWidth - notesColW;
+    // The item column has one fixed width (owner's call): what's left once
+    // 7 day columns, MAX and a 120pt NOTES column are set aside, so every
+    // list has room for those; fewer days give the spare room to NOTES.
+    const nameColW = rowWidth - dayColW * 8 - 120;
+    const notesColW = rowWidth - nameColW - maxColW - dayColsWidth;
     let colLeft = rowX + nameColW + maxColW;
     cols.forEach((c) => { c.x = colLeft + c.w / 2; colLeft += c.w; });
     const accentRgb = hexToRgb(accentHex);
@@ -345,18 +348,10 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           doc.setFont(FONT, "normal");
           doc.setFontSize(ITEM);
           const nameLines = doc.splitTextToSize(c.name, nameColW - 4);
-          // A catalog spec note ("S35") follows the name on its line when
-          // it fits there, else takes the lines below.
-          let inlineSpec = "";
-          let catNoteLines = [];
-          if (c.note) {
-            const flat = c.note.replace(/\s*\n+\s*/g, " · ");
-            const lastW = doc.getTextWidth(nameLines[nameLines.length - 1]);
-            doc.setFontSize(SPEC);
-            if (lastW + 8 + doc.getTextWidth(flat) <= nameColW - 4) inlineSpec = flat;
-            else catNoteLines = doc.splitTextToSize(c.note, nameColW - 4);
-            doc.setFontSize(ITEM);
-          }
+          // The catalog's spec note ("S35") sits under the name (owner's call).
+          doc.setFontSize(SPEC);
+          const catNoteLines = c.note ? doc.splitTextToSize(c.note, nameColW - 4) : [];
+          doc.setFontSize(ITEM);
           const projectNoteLines = projectNote ? doc.splitTextToSize(projectNote, notesColW - 4) : [];
           // Distance from the first baseline to the last one, per column.
           const leftDepth = (nameLines.length - 1) * lh(ITEM)
@@ -383,12 +378,6 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           doc.setTextColor(0, 0, 0);
           let ty = rowTop + topPad;
           nameLines.forEach((line, i) => { if (i) ty += lh(ITEM); doc.text(line, rowX, ty); });
-          if (inlineSpec) {
-            const lastW = doc.getTextWidth(nameLines[nameLines.length - 1]);
-            doc.setFontSize(SPEC);
-            doc.setTextColor(136, 136, 136);
-            doc.text(inlineSpec, rowX + lastW + 8, ty);
-          }
           if (catNoteLines.length) {
             ty += specGap;
             doc.setFontSize(SPEC);
