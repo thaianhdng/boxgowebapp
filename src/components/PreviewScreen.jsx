@@ -89,9 +89,9 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
               className="btn btn-ghost"
               onClick={() => onShareSnapshot(project)}
               disabled={shareGenerating}
-              title="Send a snapshot: a permanent link to this list exactly as it is now — it won't change when you edit later. For rental houses."
+              title="Share a snapshot: a permanent link to this list exactly as it is now — it won't change when you edit later. For rental houses."
             >
-              <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Snapshot"}
+              <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Share"}
             </button>
           )}
           <button

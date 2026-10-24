@@ -20,12 +20,12 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
   const fontChoice = pdfFontFor(project?.pdfFont);
   const [{ jsPDF }, font] = await Promise.all([import("jspdf"), loadPdfFont(fontChoice.id)]);
 
-  // Fit to fewer pages (owner's call): when the last page would hold only
-  // a few rows, the rows are drawn a little tighter (and, last, a touch
-  // smaller) if that saves the page. Otherwise the normal size is kept.
-  const FITS = [{ pad: 4.4, item: 8 }, { pad: 3.6, item: 8 }, { pad: 2.8, item: 8 }, { pad: 2.6, item: 7.5 }];
+  // A single item spilling onto a page of its own (owner's call): the
+  // list is drawn again with slightly tighter rows if that brings it back.
+  // Two or more items on the last page keep their own page.
+  const FITS = [{ pad: 4.4, item: 8 }, { pad: 3.6, item: 8 }, { pad: 2.8, item: 8 }];
   let out = draw(FITS[0]);
-  if (out.totalPages > 1 && out.lastFill < 0.3) {
+  if (out.totalPages > 1 && out.lastPageRows <= 1) {
     for (const fit of FITS.slice(1)) {
       const tighter = draw(fit);
       if (tighter.totalPages < out.totalPages) { out = tighter; break; }
@@ -88,10 +88,12 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     const barBaseline = (size) => (BAR_H + fontChoice.capHeight * size) / 2;
 
     let y = marginTop;
+    let pageRows = 0; // item rows on the current page
 
     function newPage() {
       doc.addPage();
       y = marginTop;
+      pageRows = 0;
       drawColumnHeader();
     }
     function ensureSpace(h) {
@@ -417,6 +419,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           }
 
           y = rowTop + rowHeight;
+          pageRows += 1;
           if (idx < itemsInSub.length - 1) {
             doc.setDrawColor(238, 238, 238);
             doc.line(rowX, y, rowX + rowWidth, y);
@@ -424,9 +427,6 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         });
       });
     });
-
-    // How full the last page is (0–1), so a nearly empty one can be saved.
-    const lastFill = (y - marginTop) / (contentBottom - marginTop);
 
     // Footer: brand/tagline on the left, page numbers on the right — one
     // clean line, keeping the header itself free for per-document info.
@@ -442,6 +442,6 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       doc.text(`Page ${p} of ${totalPages}`, pageWidth - marginX, pageHeight - marginBottom / 2, { align: "right" });
     }
 
-    return { doc, totalPages, lastFill };
+    return { doc, totalPages, lastPageRows: pageRows };
   }
 }
