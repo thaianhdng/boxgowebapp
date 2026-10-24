@@ -19,7 +19,23 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
   const manifestGrouped = groupCatalog(withCustomItems(catalog, project));
   const fontChoice = pdfFontFor(project?.pdfFont);
   const [{ jsPDF }, font] = await Promise.all([import("jspdf"), loadPdfFont(fontChoice.id)]);
-  const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+  // Fit to fewer pages (owner's call): when the last page would hold only
+  // a few rows, the rows are drawn a little tighter (and, last, a touch
+  // smaller) if that saves the page. Otherwise the normal size is kept.
+  const FITS = [{ pad: 4.4, item: 8 }, { pad: 3.6, item: 8 }, { pad: 2.8, item: 8 }, { pad: 2.6, item: 7.5 }];
+  let out = draw(FITS[0]);
+  if (out.totalPages > 1 && out.lastFill < 0.3) {
+    for (const fit of FITS.slice(1)) {
+      const tighter = draw(fit);
+      if (tighter.totalPages < out.totalPages) { out = tighter; break; }
+    }
+  }
+  return { blob: out.doc.output("blob"), totalPages: out.totalPages };
+
+  // One full layout of the document with the given row padding / item size.
+  function draw(fit) {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
 
     // Embed the project's chosen font directly (regular + bold) so
     // Vietnamese diacritics render as real, selectable text rather than a
@@ -272,8 +288,8 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     // from the embedded font; the gap is wider than the deepest descender
     // of any of the fonts, incl. Vietnamese marks, so those still clear
     // the divider.)
-    const ITEM = 8, SPEC = 6.8, SUB = 6;
-    const PAD = 4.4;
+    const ITEM = fit.item, SPEC = 6.8, SUB = 6;
+    const PAD = fit.pad;
     const topPad = PAD + fontChoice.capHeight * ITEM; // first baseline, from the row top
     const specGap = 8.5;                              // name baseline → spec-line baseline
 
@@ -409,6 +425,9 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       });
     });
 
+    // How full the last page is (0–1), so a nearly empty one can be saved.
+    const lastFill = (y - marginTop) / (contentBottom - marginTop);
+
     // Footer: brand/tagline on the left, page numbers on the right — one
     // clean line, keeping the header itself free for per-document info.
     const totalPages = doc.internal.getNumberOfPages();
@@ -423,6 +442,6 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       doc.text(`Page ${p} of ${totalPages}`, pageWidth - marginX, pageHeight - marginBottom / 2, { align: "right" });
     }
 
-    const blob = doc.output("blob");
-    return { blob, totalPages };
+    return { doc, totalPages, lastFill };
   }
+}

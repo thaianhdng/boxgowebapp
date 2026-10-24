@@ -49,34 +49,39 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
         <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px" }}>
           <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Back
         </button>
-        <div style={{ flex: 1, minWidth: 80 }}>
+        <div style={{ flex: "1 1 60px", minWidth: 0 }}>
           <div className="stencil" style={{ fontSize: 13, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {project.name || "Equipment List"}
           </div>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 10 }}>
-          {onSetPdfFont && (
+        {onSetPdfFont && (
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--muted)", flexShrink: 0 }} title="Font for this project's PDF and share links">
+            Font
             <select
               value={pdfFontFor(project.pdfFont).id}
               onChange={(e) => onSetPdfFont(e.target.value)}
-              title="Font for this project's PDF and share links"
               aria-label="PDF font"
               style={{ fontSize: 12, padding: "6px 8px", width: "auto" }}
             >
               {PDF_FONTS.map((f) => (
-                <option key={f.id} value={f.id}>Font: {f.name}</option>
+                <option key={f.id} value={f.id}>{f.name}</option>
               ))}
             </select>
-          )}
+          </label>
+        )}
+        <div className="pv-actions">
           {onShareLive && (
             <button
               className="btn btn-ghost"
               onClick={() => onShareLive(project)}
               disabled={shareGenerating}
-              title="A link that always shows this list as it currently is — updates as you edit. For crew."
-              style={{ padding: "6px 12px", fontSize: 12 }}
+              title={hasLiveLink
+                ? "Live link is on: it always shows this list as it currently is, updating as you edit. For crew."
+                : "A link that always shows this list as it currently is — updates as you edit. For crew."}
+              style={hasLiveLink ? { borderColor: "var(--accent)", color: "var(--accent)" } : undefined}
             >
-              <Radio size={14} /> {hasLiveLink ? "Live link (on)" : "Live link"}
+              <Radio size={14} /> Live link
+              {hasLiveLink && <span aria-label="on" style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", flexShrink: 0 }} />}
             </button>
           )}
           {onShareSnapshot && (
@@ -84,19 +89,17 @@ export function PreviewScreen({ project, userName, buildPdfBlob, onBack, onDownl
               className="btn btn-ghost"
               onClick={() => onShareSnapshot(project)}
               disabled={shareGenerating}
-              title="A permanent link to this list exactly as it is now — it won't change when you edit later. For rental houses."
-              style={{ padding: "6px 12px", fontSize: 12 }}
+              title="Send a snapshot: a permanent link to this list exactly as it is now — it won't change when you edit later. For rental houses."
             >
-              <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Send snapshot"}
+              <Share2 size={14} /> {shareGenerating ? "Preparing…" : "Snapshot"}
             </button>
           )}
           <button
             className="btn btn-primary"
             onClick={() => onDownload(filename, blobRef.current)}
             disabled={pdfGenerating}
-            style={{ padding: "6px 12px", fontSize: 12 }}
           >
-            <Printer size={14} /> Download PDF
+            <Printer size={14} /> <span>Download<span className="pv-long"> PDF</span></span>
           </button>
         </div>
       </div>

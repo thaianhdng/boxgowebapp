@@ -376,7 +376,11 @@ Start of each conversation, the owner should say which one it is:
   (1.5pt) accent line; the project note has no label. **Compact layout**
   (owner's call, option "B"): ~1.3cm margins (36pt), 8pt items, 13pt
   title, slim 13pt category bars, rows padded 4.4pt; a catalog spec note
-  ("S35") follows the item name on its line when it fits. In the list (as in the
+  ("S35") follows the item name on its line when it fits. **Fit to fewer
+  pages** (owner's call): when the last page would be under 30% full,
+  `buildPdf` lays the list out again with tighter rows (pad 3.6, then
+  2.8, then 2.6 with 7.5pt items) and keeps the first that saves a page;
+  otherwise the normal size. In the list (as in the
   composer, owner's call): category bars in the accent colour, subcategory
   names small, spaced-out and in the accent colour in a left SECTION
   column beside their first item (repeated when a subcategory runs onto a
@@ -389,7 +393,11 @@ Start of each conversation, the owner should say which one it is:
   days share one day column (see Linked days). Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
   default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and the share
-  page's View PDF draw the real PDF with pdf.js (`src/lib/pdfPreview.js`). Downloads go through
+  page's View PDF draw the real PDF with pdf.js (`src/lib/pdfPreview.js`). The preview's
+  top bar (owner's call): Back, the name and the Font picker on one line,
+  then Live link (accent with a dot when on) · Snapshot · Download PDF
+  on one line (`.pv-actions`; on phones the three split the width evenly
+  and Download drops "PDF"). Downloads go through
   `saveFile()` in `src/lib/utils.js` (iOS: opens the Share menu).
 - **Page width** (everyone, owner's call): on big screens the site stops
   at 1280px, centred (`PAGE_MAX` in `EquipmentManifest.jsx`; the same
