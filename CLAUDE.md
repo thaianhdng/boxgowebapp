@@ -404,7 +404,8 @@ Start of each conversation, the owner should say which one it is:
   device, `boxgo-preview-mode`): List shows `ReadOnlyList`, exactly what
   share-link viewers see, in the app's colours; the PDF stays built in
   the background so switching back is instant. The preview's
-  top bar (owner's call): Back, the name and the Font picker on one line,
+  top bar (owner's call): Back, the name and the Font picker on one line
+  (phones drop the "Font" word),
   then Share and Download PDF on one line (`.pv-actions`; on phones they
   split the width and Download drops "PDF"). **Share** opens one window
   (owner's call: no second window) with two choices, each with a short
@@ -412,7 +413,7 @@ Start of each conversation, the owner should say which one it is:
   latest; "· on" when it is). Tapping one makes its link, which shows
   inside that choice with Copy (copied at once; `LinkRow`), the live one
   with "Turn off live link"; an on live link shows there straight away.
-  A small red **Live** button sits before Share only while the list's
+  A small red live icon sits beside the list's name only while its
   live link is on; tapping it asks "Turn off live link?" (Cancel / Turn
   off; turning it on again later makes a new link). `shareSnapshot` /
   `shareLive` / `stopLiveLink` in `EquipmentManifest` return the link or

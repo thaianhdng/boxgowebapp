@@ -105,14 +105,30 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
         <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px" }}>
           <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Back
         </button>
-        <div style={{ flex: "1 1 60px", minWidth: 0 }}>
-          <div className="stencil" style={{ fontSize: 13, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ flex: "1 1 60px", minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
+          <div className="stencil" style={{ fontSize: 13, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
             {project.name || "Equipment List"}
           </div>
+          {/* Beside the name only while this list's live link is on, in red
+              (owner's call); tapping it asks whether to turn the link off. */}
+          {liveUrl && (
+            <button
+              onClick={() => { setShareError(""); setConfirmOff(true); }}
+              title="Live link is on: it always shows this list as it currently is. Tap to turn it off."
+              aria-label="Live link is on — turn it off"
+              style={{
+                flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28,
+                padding: 0, borderRadius: 4, cursor: "pointer", background: "none",
+                border: "1px solid var(--danger)", color: "var(--danger)",
+              }}
+            >
+              <Radio size={15} />
+            </button>
+          )}
         </div>
         {onSetPdfFont && (
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--muted)", flexShrink: 0 }} title="Font for this project's PDF and share links">
-            Font
+            <span className="pv-long">Font</span>
             <select
               value={pdfFontFor(project.pdfFont).id}
               onChange={(e) => onSetPdfFont(e.target.value)}
@@ -126,18 +142,6 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
           </label>
         )}
         <div className="pv-actions">
-          {/* Shows only while this list's live link is on, in red (owner's
-              call); tapping it asks whether to turn the live link off. */}
-          {liveUrl && (
-            <button
-              className="btn btn-ghost pv-live"
-              onClick={() => { setShareError(""); setConfirmOff(true); }}
-              title="Live link is on: it always shows this list as it currently is. Tap to turn it off."
-              style={{ borderColor: "var(--danger)", color: "var(--danger)" }}
-            >
-              <Radio size={14} /> Live
-            </button>
-          )}
           {(onShareSnapshot || onShareLive) && (
             <button className="btn btn-ghost" onClick={openShare} title="Share this list as a snapshot or a live link">
               <Share2 size={14} /> Share
