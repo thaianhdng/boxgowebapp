@@ -44,6 +44,11 @@ owned by a Director of Photography with **no coding knowledge**.
   `SearchBox` (`src/components/SearchBox.jsx`): magnifier at the left and,
   once something is typed, an X at the right of the box that clears it and
   keeps the cursor there. New search bars use it too — never a bare input.
+- **Buttons in one row share the same height** (owner's rule): buttons
+  (and button-like controls: search boxes, pickers, toggles) sitting side
+  by side on one line are all the same height — set one height for the
+  row (e.g. 40px, as Search items + Fold all) rather than letting text
+  size or padding decide each one's.
 
 ## Two streams of work
 

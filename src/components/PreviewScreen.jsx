@@ -105,11 +105,13 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
         padding: "12px 16px", paddingInline: "max(16px, calc((100% - 1280px) / 2 + 20px))",
         display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
       }}>
-        {/* Back, name and Font share one line; when a phone is too narrow
-            for the name and the full font picker, the picker moves down a
-            line (owner's call) rather than either being squeezed. */}
+        {/* Every control on this bar is 32px tall (design rule: buttons in
+            one row share one height). Back, name and Font share one line;
+            when a phone is too narrow for the name and the full font
+            picker, the picker moves down a line (owner's call) rather than
+            either being squeezed. */}
         <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-        <button className="btn btn-ghost" onClick={onBack} style={{ padding: "6px 10px", flexShrink: 0 }}>
+        <button className="btn btn-ghost" onClick={onBack} style={{ padding: "0 10px", height: 32, flexShrink: 0 }}>
           <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Back
         </button>
         {/* The name (accent colour, owner's call) keeps room for about ten
@@ -142,7 +144,7 @@ export function PreviewScreen({ project, userName, buildPdfBlob, listInputs, onB
               value={pdfFontFor(project.pdfFont).id}
               onChange={(e) => onSetPdfFont(e.target.value)}
               aria-label="PDF font"
-              style={{ fontSize: 12, padding: "6px 8px", width: "auto" }}
+              style={{ fontSize: 12, padding: "0 8px", height: 32, width: "auto" }}
             >
               {PDF_FONTS.map((f) => (
                 <option key={f.id} value={f.id}>{f.name}</option>

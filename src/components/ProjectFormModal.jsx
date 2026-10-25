@@ -228,8 +228,9 @@ export function ProjectFormModal({ initial, prefill, noList, heading, saveLabel,
         <Field label={dayRows.length > 1 ? "Shoot days" : "Shoot day"}>
           {dayRows.map((d, i) => (
             <div key={d.id} style={{ marginBottom: 8 }}>
-              <div style={{ display: "flex", gap: 6, marginBottom: 4, alignItems: "center" }}>
-                <span style={{ fontSize: 11, fontWeight: 800, color: "var(--muted)", width: 20, flexShrink: 0 }}>D{i + 1}</span>
+              {/* Date and shoot type stretch to one height (design rule). */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 4, alignItems: "stretch" }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: "var(--muted)", width: 20, flexShrink: 0, alignSelf: "center" }}>D{i + 1}</span>
                 {/* An empty date reads "Select date" (no date is fine for a draft). */}
                 <span style={{ position: "relative", width: 118, flexShrink: 0, display: "flex" }}>
                   <input
