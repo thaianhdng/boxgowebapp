@@ -38,6 +38,13 @@ owned by a Director of Photography with **no coding knowledge**.
   tabs, moved features or changed behaviour often leave a hint that's no
   longer true; fix those in the same change.
 
+## Design rules
+
+- **Search bars** (owner's rule): every search bar is the shared
+  `SearchBox` (`src/components/SearchBox.jsx`): magnifier at the left and,
+  once something is typed, an X at the right of the box that clears it and
+  keeps the cursor there. New search bars use it too — never a bare input.
+
 ## Two streams of work
 
 Start of each conversation, the owner should say which one it is:

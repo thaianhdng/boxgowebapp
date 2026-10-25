@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import {
-  Plus, Trash2, Pencil, Search, Printer, Copy, MoreVertical, FolderInput, FolderMinus,
+  Plus, Trash2, Pencil, Printer, Copy, MoreVertical, FolderInput, FolderMinus,
 } from "lucide-react";
 import { formatShootDateRange, inCardPreview } from "../lib/utils.js";
+import { SearchBox } from "./SearchBox.jsx";
 
 
 // A project with `ghost: true` (owner only: a Calendar project that has no
@@ -74,15 +75,7 @@ export function ProjectListView({ projects, catalog, isFiltered, onOpen, onEdit,
     // Same width as the owner's Projects page (1280 less its margins), so
     // the cards are the same size on wide screens too.
     <div style={{ maxWidth: 1236, margin: "0 auto" }}>
-    <div style={{ position: "relative", marginBottom: 14 }}>
-      <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
-      <input
-        value={projSearch}
-        onChange={(e) => setProjSearch(e.target.value)}
-        placeholder="Search projects…"
-        style={{ width: "100%", paddingLeft: 30, fontSize: 13 }}
-      />
-    </div>
+    <SearchBox value={projSearch} onChange={setProjSearch} placeholder="Search projects…" style={{ marginBottom: 14 }} />
     <button className="new-project-row-btn btn btn-primary" onClick={onCreateNew} style={{ width: "100%", justifyContent: "center", marginBottom: 12 }}>
       <Plus size={14} /> Create New
     </button>

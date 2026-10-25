@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
 import { todayStr, wdm } from "../shared/dates.js";
 import { formatShootDateRange } from "../../lib/utils.js";
 import { Modal } from "../shared/ui.jsx";
@@ -7,6 +6,7 @@ import { EventModal, newEvent } from "../schedule/EventModal.jsx";
 import { shootDates, statusInfo, statusOf } from "../projects/status.js";
 import { StatusChip } from "../projects/ProjectsHome.jsx";
 import { CalendarPanel } from "./CalendarPanel.jsx";
+import { SearchBox } from "../../components/SearchBox.jsx";
 
 const matches = (p, query) => !query ||
   [p.name, p.tag, p.productionHouse, p.rentalHouse, ...(p.people || []).map((x) => x.name)]
@@ -68,10 +68,7 @@ export function CalendarHome({ app, projects, types, actions }) {
 
   return (
     <div>
-      <div style={{ position: "relative", marginBottom: 14 }}>
-        <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects…" style={{ width: "100%", paddingLeft: 30, fontSize: 13 }} />
-      </div>
+      <SearchBox value={q} onChange={setQ} placeholder="Search projects…" style={{ marginBottom: 14 }} />
       <CalendarPanel app={app} projects={shown} types={types} onAddEvent={(date) => setAdding({ date })} />
 
       {adding && !adding.projectId && (

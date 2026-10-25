@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, lazy, Suspense } from "react";
 import {
-  Plus, Pencil, Search, FileSpreadsheet, X, Copy, Package, ChevronUp, ChevronDown, ChevronsDownUp, ChevronsUpDown, ArrowRight, CalendarDays, ListFilter, Loader2, Check, Settings,
+  Plus, Pencil, FileSpreadsheet, X, Copy, Package, ChevronUp, ChevronDown, ChevronsDownUp, ChevronsUpDown, ArrowRight, CalendarDays, ListFilter, Loader2, Check, Settings,
 } from "lucide-react";
 import { supabase } from "./lib/supabaseClient.js";
 import { AttributesManagerModal } from "./components/AttributesManagerModal.jsx";
@@ -25,6 +25,7 @@ import { applyKit, kitFromProject } from "./lib/kits.js";
 import { AddKitModal, SaveKitModal } from "./components/KitModal.jsx";
 import { uid, newProjectId, relabelDays, todayStr, addOneDay, cascadeDates, formatDM, slug, exportDateStr, withTimeStamp, defaultExportFilename, orderDepartments, saveFile } from "./lib/utils.js";
 import { dayColumns, linkedWith, withLinkedQuantities, withoutDay } from "./lib/dayLinks.js";
+import { SearchBox } from "./components/SearchBox.jsx";
 
 
 // Gives every day an explicit number for every item that has any. A day
@@ -2376,15 +2377,7 @@ export default function EquipmentManifest({ session }) {
                         colour, so it reads as a control for the whole list
                         rather than part of the search (owner's call). */}
                     <div style={{ display: "flex", gap: 14, alignItems: "stretch", marginBottom: 14 }}>
-                      <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
-                        <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--muted)" }} />
-                        <input
-                          value={manifestSearch}
-                          onChange={(e) => setManifestSearch(e.target.value)}
-                          placeholder="Search items…"
-                          style={{ width: "100%", height: 40, boxSizing: "border-box", paddingLeft: 32, fontSize: 13 }}
-                        />
-                      </div>
+                      <SearchBox value={manifestSearch} onChange={setManifestSearch} placeholder="Search items…" height={40} style={{ flex: 1, minWidth: 0 }} />
                       <button
                         className="btn btn-ghost"
                         onClick={() => setAllFolded(!allDeptsFolded)}
@@ -2444,15 +2437,7 @@ export default function EquipmentManifest({ session }) {
               })()}
               {view === "catalog" && (
                 <>
-                  <div style={{ position: "relative", marginBottom: 12 }}>
-                    <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
-                    <input
-                      placeholder="Search catalog…"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      style={{ paddingLeft: 30, width: "100%", fontSize: 13 }}
-                    />
-                  </div>
+                  <SearchBox value={search} onChange={setSearch} placeholder="Search catalog…" style={{ marginBottom: 12 }} />
                   <button
                     className="btn btn-primary"
                     onClick={() => { setEditingCatalogId(null); setShowCatalogForm(true); }}

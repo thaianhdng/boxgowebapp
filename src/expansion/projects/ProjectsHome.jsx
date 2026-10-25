@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, FileSpreadsheet, Paperclip, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, FileSpreadsheet, Paperclip, Plus } from "lucide-react";
 import { todayStr, wdm } from "../shared/dates.js";
 import { formatShootDateRange } from "../../lib/utils.js";
 import { typeOf, shootTypeId } from "../schedule/eventTypes.js";
@@ -7,6 +7,7 @@ import { sortEvents } from "../schedule/events.js";
 import { ProjectForm } from "../shared/ProjectForm.jsx";
 import { STATUSES, shootDates, staleSoftLock, statusInfo, statusOf } from "./status.js";
 import { Fold } from "../../components/Motion.jsx";
+import { SearchBox } from "../../components/SearchBox.jsx";
 
 function nextEvent(project, today, types) {
   return sortEvents(project.events, types).find((s) => s.start && (s.end || s.start) >= today);
@@ -235,10 +236,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
   return (
     <div>
       {/* Same search bar and Create New as the equipment list's project list. */}
-      <div style={{ position: "relative", marginBottom: 14 }}>
-        <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects…" style={{ width: "100%", paddingLeft: 30, fontSize: 13 }} />
-      </div>
+      <SearchBox value={q} onChange={setQ} placeholder="Search projects…" style={{ marginBottom: 14 }} />
       <button className="new-project-row-btn btn btn-primary" onClick={() => setCreating(true)} style={{ width: "100%", justifyContent: "center", marginBottom: 14 }}>
         <Plus size={14} /> Create New
       </button>

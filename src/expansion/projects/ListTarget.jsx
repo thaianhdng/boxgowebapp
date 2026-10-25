@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
 import { Modal } from "../shared/ui.jsx";
 import { todayStr } from "../shared/dates.js";
 import { formatShootDateRange } from "../../lib/utils.js";
 import { shootDates, statusInfo, statusOf } from "./status.js";
 import { MAX_VERSIONS, listLike } from "./sync.js";
+import { SearchBox } from "../../components/SearchBox.jsx";
 
 // Where an equipment list goes: this list's own project (as its next
 // version), another project, a new project, or no project (a draft).
@@ -102,10 +102,7 @@ export function ListTarget({ mode, listId, projects, types, actions, onPick, onC
       </div>
       {choice === "other" && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ position: "relative", marginBottom: 8 }}>
-            <Search size={14} style={{ position: "absolute", left: 9, top: 9, color: "var(--muted)" }} />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search projects…" style={{ width: "100%", paddingLeft: 30, fontSize: 13 }} />
-          </div>
+          <SearchBox value={q} onChange={setQ} placeholder="Search projects…" style={{ marginBottom: 8 }} />
           <div style={{ maxHeight: 260, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 4 }}>
             {rows.length === 0 && <div style={{ padding: 12, fontSize: 12, color: "var(--muted)" }}>No projects match.</div>}
             {rows.map(({ pid, p, status, dates }) => {
