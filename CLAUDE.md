@@ -178,8 +178,7 @@ Start of each conversation, the owner should say which one it is:
      of card a house and its person (Producer / Gaffer) stay on one line,
      cut off with "…". The small boxed labels
      (tag, Cancelled) use the `.tag-box` class: `text-box: trim-both cap
-     alphabetic` keeps the letters centred in the border in every app
-     font. The Edit window shows a project's real tag ("—" when it has
+     alphabetic` keeps the letters centred in the border. The Edit window shows a project's real tag ("—" when it has
      none, or one since removed from the tag list), not the first tag.
      The Projects home keeps the list's 22px page margins on a phone
      (Calendar / Project pages: 14px, class `x-tight`). The Budget feature
@@ -411,7 +410,13 @@ Start of each conversation, the owner should say which one it is:
   D1, D2… (and QTY) in the accent colour, ITEM / NOTES grey. Back-to-back linked
   days share one day column (see Linked days). Font is per project (`project.pdfFont`,
   picked on the preview page; list + trimmed TTFs in `src/lib/font.js`;
-  default JetBrains Mono; `settings.pdfFontId` = last pick, for new projects). Preview and the share
+  default Barlow — Barlow Semi Condensed with Barlow (normal width) for the
+  title, category bars and subcategory names, as in the app — then
+  JetBrains Mono, Inter, IBM Plex Sans; `settings.pdfFontId` = last pick,
+  for new projects). The ids from before Barlow ("jetbrains", "inter",
+  "plex") are left out on purpose, so every older list prints in Barlow
+  (owner's call); later picks use "jetbrains-mono" / "inter-sans" /
+  "plex-sans". Preview and the share
   page's View PDF draw the real PDF with pdf.js (`src/lib/pdfPreview.js`). The preview
   has a **PDF | List** switch above the pages (owner's call; remembered per
   device, `boxgo-preview-mode`): List shows `ReadOnlyList`, exactly what
@@ -437,6 +442,14 @@ Start of each conversation, the owner should say which one it is:
   `shareLive` / `stopLiveLink` in `EquipmentManifest` return the link or
   throw a message for the window; there is no separate link window. Downloads go through
   `saveFile()` in `src/lib/utils.js` (iOS: opens the Share menu).
+- **App font** (everyone, owner's call): one font pair, no font menu
+  (`APP_FONT` in `src/constants.js`): Barlow Semi Condensed for everything
+  you read, Barlow (normal width) for headings — `.stencil`, and the
+  `.head-font` class (card names, subcategory names, the share page's
+  name / category / subcategory bars) through `--head-font`; new headings
+  use them too. Buttons take the app font too. The share page uses the
+  same pair. `settings.fontId` (the old font menu's pick) is kept in
+  settings and backups but unused.
 - **Page width** (everyone, owner's call): on big screens the site stops
   at 1280px, centred (`PAGE_MAX` in `EquipmentManifest.jsx`; the same
   width as the Projects page), so item names and their quantity boxes

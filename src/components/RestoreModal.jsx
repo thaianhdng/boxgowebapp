@@ -15,7 +15,7 @@ export const RESTORE_SECTIONS = [
   { key: "rentalHouses", label: "Rental houses", detail: (d) => plural((d.rentalHouses || []).length, "house"), has: (d) => !!d.rentalHouses },
   { key: "templates", label: "Kits", detail: (d) => plural((d.templates || []).length, "kit"), has: (d) => (d.templates || []).length > 0 },
   { key: "profile", label: "Your profile", detail: () => "Name, email, phone, and what's shown on the PDF", has: (d) => !!(d.userName || d.userEmail || d.userPhone || typeof d.includeUsernameInPdf === "boolean") },
-  { key: "appearance", label: "Appearance", detail: () => "Theme, accent colour and font", has: (d) => !!(d.theme || d.accentId || d.fontId) },
+  { key: "appearance", label: "Appearance", detail: () => "Theme and accent colour", has: (d) => !!(d.theme || d.accentId || d.fontId) },
 ];
 
 

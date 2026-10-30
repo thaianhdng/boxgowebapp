@@ -38,7 +38,7 @@ Run → open BOXGO again.
   English and Vietnamese, and custom Others / Subrent items.
 - A full-catalog list ("EVERYTHING") whose PDF runs to 7 pages, with long
   house / producer names.
-- All three PDF fonts, Vietnamese names, a very long project name, no-tag
+- All four PDF fonts, Vietnamese names, a very long project name, no-tag
   and no-house projects.
 - In the Projects & Calendar details: every status (Shooting, Confirmed, Soft lock, Done,
   Cancelled, plus a stale Soft lock), every event type, timed and all-day

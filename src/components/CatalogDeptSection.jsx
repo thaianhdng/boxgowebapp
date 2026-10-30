@@ -100,7 +100,7 @@ export function CatalogDeptSection({ dept, color, subcats: subcatsProp, data, co
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "8px 14px", background: "var(--surface2)",
               }}>
-                <span style={{
+                <span className="head-font" style={{
                   fontSize: 12, fontWeight: 800, color: "var(--text)",
                   textTransform: "uppercase", letterSpacing: "0.06em",
                 }}>

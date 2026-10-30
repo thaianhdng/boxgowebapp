@@ -92,7 +92,7 @@ function list(n, o) {
     customItems,
     note: o.note || "",
     ...(o.collapsed ? { collapsedDepts: o.collapsed } : {}),
-    pdfFont: o.font || "jetbrains",
+    pdfFont: o.font || "barlow",
     createdAt: Date.UTC(2025, 0, 1) + n * 86400000 * 7,
   };
 }
@@ -105,12 +105,12 @@ const LONG_NOTE = "Call time 05:30 at the studio gate. Camera truck parks on the
 const L = [
   // ---- past jobs, 2025
   list(1, { name: "Honda Winner R – Đường Dài", ph: "Ogilvy Films", producer: "Linh Trần", rh: "Cinerent Saigon", gaffer: "Tuấn Lê",
-    days: [["2025-03-10", "Đèo Hải Vân", "Exterior Day"], ["2025-03-11", "Đà Nẵng – Sơn Trà", "Car rig"]], items: kit("midTVC"), font: "jetbrains" }),
+    days: [["2025-03-10", "Đèo Hải Vân", "Exterior Day"], ["2025-03-11", "Đà Nẵng – Sơn Trà", "Car rig"]], items: kit("midTVC"), font: "jetbrains-mono" }),
   list(2, { name: "Vinamilk Tết 2026", ph: "See Productions", producer: "Mai Phạm", rh: "Lumière Rental", gaffer: "Hùng Nguyễn",
     days: [["2025-12-02", "Studio Kỳ Hòa – Q.10", "Studio"], ["2025-12-03", "Studio Kỳ Hòa – Q.10", "Studio"], ["2025-12-04", "Củ Chi farm", "Exterior Day"]],
-    perDayQty: true, vary, items: kit("bigTVC"), font: "inter" }),
+    perDayQty: true, vary, items: kit("bigTVC"), font: "inter-sans" }),
   list(3, { name: "Sơn Tùng M-TP — Lạc Trôi 2", tag: "MV", ph: "M-TP Entertainment", producer: "Khánh Võ", rh: "Cinerent Saigon", gaffer: "Phát Đỗ",
-    days: [["2025-08-20", "Hội An old town", "Night Ext"]], items: kit("mv"), font: "plex" }),
+    days: [["2025-08-20", "Hội An old town", "Night Ext"]], items: kit("mv"), font: "plex-sans" }),
   list(4, { name: "Biti's Hunter Street", ph: "FMN", producer: "An Đặng", rh: "VTS Rental", gaffer: "Tuấn Lê",
     days: [["2025-06-14", "Q.1 rooftops", "Exterior Day"], ["2025-06-16", "Skatepark Q.7", "Exterior Day"]], items: kit("mv", 1.5) }),
   list(5, { name: "Grab Food Mùa Mưa", tag: "Short", ph: "Blue Pictures", producer: "Linh Trần", rh: "Lumière Rental", gaffer: "",
@@ -121,7 +121,7 @@ const L = [
   // ---- past jobs, 2026
   list(7, { name: "Heineken Countdown", ph: "Ogilvy Films", producer: "Linh Trần", rh: "VTS Rental", gaffer: "Phát Đỗ",
     days: [["2026-01-20", "Nhà Văn hóa Thanh niên", "Concert"], ["2026-01-21", "Nhà Văn hóa Thanh niên", "Concert"], ["2026-01-22", "Studio Kỳ Hòa – Q.10", "Pack shot"]],
-    perDayQty: true, vary, items: kit("bigTVC"), font: "plex" }),
+    perDayQty: true, vary, items: kit("bigTVC"), font: "plex-sans" }),
   list(8, { name: "Highlands Coffee – Phin Sữa Đá", ph: "See Productions", producer: "Mai Phạm", rh: "Lumière Rental", gaffer: "Tuấn Lê",
     days: [["2026-03-05", "Highlands Landmark 81", "Interior"]], items: kit("midTVC", 0.5),
     notes: [["SONY VENICE 2", "Rialto extension kit + 2x CFExpress 1TB"]] }),
@@ -133,7 +133,7 @@ const L = [
     days: [["2026-09-12", "Kitchen set – Studio B", "Food"]], items: kit("midTVC", 0.5) }),
   list(12, { name: "Omo Matic – Documentary Cut", tag: "Doc", ph: "Blue Pictures", producer: "Mai Phạm", rh: "", gaffer: "",
     days: [["2026-08-02", "Mekong Delta – Bến Tre", "Run & gun"], ["2026-08-03", "Mekong Delta – Bến Tre", "Run & gun"], ["2026-08-04", "Cần Thơ market", "Dawn"], ["2026-08-05", "Cần Thơ market", "Interviews"], ["2026-08-06", "Cần Thơ", "B-roll"]],
-    items: kit("doc"), font: "inter" }),
+    items: kit("doc"), font: "inter-sans" }),
   // ---- now and upcoming
   list(13, { name: "Cicaplast Baume B5+", ph: "See Productions", producer: "Mai Phạm", rh: "Cinerent Saigon", gaffer: "Hùng Nguyễn",
     days: [["2026-10-04", "Studio Kỳ Hòa – Q.10", "Studio"], ["2026-10-05", "Studio Kỳ Hòa – Q.10", "Pack shot"], ["2026-10-06", "https://maps.app.goo.gl/test-location", "Exterior Day"]],
@@ -143,12 +143,12 @@ const L = [
     days: [["2026-10-09", "Vietcombank Tower – Q.1", "Interior"], ["2026-10-10", "Thủ Thiêm bridge", "Night Ext"]], items: kit("bigTVC", 0.6) }),
   list(15, { name: "Samsung Galaxy S27 Ultra — Night Mode", ph: "Mango Films", producer: "Quân Hồ", rh: "Cinerent Saigon", gaffer: "Phát Đỗ",
     days: [["2026-10-09", "Bùi Viện walking street", "Night Ext"], ["2026-10-12", "Studio Phú Mỹ Hưng", "Pack shot"]],
-    perDayQty: true, vary, items: kit("anamorphic"), font: "inter" }),
+    perDayQty: true, vary, items: kit("anamorphic"), font: "inter-sans" }),
   list(16, { name: "Nestlé Milo Năng Động", ph: "FMN", producer: "An Đặng", rh: "Lumière Rental", gaffer: "Hùng Nguyễn",
     days: [["2026-10-15", "Sân vận động Thống Nhất", "Sports"]], items: kit("midTVC") }),
   list(17, { name: "Đen Vâu – MV “Đi Về Nhà 2”", tag: "MV", ph: "Đen Vâu Team", producer: "Khánh Võ", rh: "Cinerent Saigon", gaffer: "Phát Đỗ",
     days: [["2026-10-21", "Đà Lạt – Langbiang", "Exterior Day"], ["2026-10-22", "Đà Lạt – Langbiang", "Magic hour"], ["2026-10-23", "Đà Lạt – night market", "Night Ext"]],
-    perDayQty: true, vary, items: kit("mv", 1.5), font: "plex",
+    perDayQty: true, vary, items: kit("mv", 1.5), font: "plex-sans",
     note: "Song tempo 92 BPM — playback speaker needed every day.\nArtist only available 14:00–22:00.",
     custom: [["Teradek Bolt 6 XT 750", "Subrent", [1, 1, 2]], ["Fog machine Look Unique 2.1", "Others", [0, 1, 2]], ["DJI Ronin 4D (crash cam)", "Others", 1]] }),
   list(18, { name: "Pepsi Tết 2027 — Big Family Table", ph: "Ogilvy Films", producer: "Linh Trần", rh: "VTS Rental", gaffer: "Hùng Nguyễn",
@@ -174,7 +174,7 @@ const L = [
     days: [["2026-11-20", "Studio A", "Day one"], ["2026-11-21", "Studio B", "Day two"], ["2026-11-22", "Studio C", "Day three"]],
     perDayQty: true, vary: (i, id) => ((id.charCodeAt(2) + i) % 5) - 1,
     items: Object.fromEntries(DEFAULT_CATALOG.map((c, k) => [c.id, 1 + (k % 6) + (k % 17 === 0 ? 90 : 0)])),
-    note: LONG_NOTE + "\n" + LONG_NOTE, font: "inter",
+    note: LONG_NOTE + "\n" + LONG_NOTE, font: "inter-sans",
     notes: [["ARRI 35", "A very long item note to check wrapping in the list and in the PDF: two bodies, one on the Technocrane and one handheld with the Easyrig; both need LPL and PL mounts plus the wireless focus kit."]],
     custom: [["Custom item in Others", "Others", [1, 2, 3]], ["Subrent item one", "Subrent", [2, 0, 2]], ["Subrent item two with a long name to wrap across the column", "Subrent", 1]] }),
   list(24, { name: "Pitch — No Dates Yet", tag: "TVC", ph: "Ogilvy Films", producer: "", rh: "", gaffer: "",
@@ -189,13 +189,13 @@ const L = [
 // ---- later versions of some jobs' lists (the project's V2, V3…)
 const again = (n, of, o) => list(n, { note: L[of - 1].note, ...o, of, name: L[of - 1].name, tag: L[of - 1].tag, ph: L[of - 1].productionHouse, producer: L[of - 1].producer, rh: L[of - 1].rentalHouse, gaffer: L[of - 1].gaffer, days: L[of - 1].days.map((d) => [d.date, d.location, d.projectLabel]) });
 L.push(
-  again(28, 15, { perDayQty: true, vary, items: { ...kit("anamorphic"), [item("CRANE")]: 2, [item("JIB ARM")]: 1 }, font: "inter" }),
+  again(28, 15, { perDayQty: true, vary, items: { ...kit("anamorphic"), [item("CRANE")]: 2, [item("JIB ARM")]: 1 }, font: "inter-sans" }),
   again(29, 18, { perDayQty: true, vary, items: kit("bigTVC", 0.8) }),
   again(30, 18, { perDayQty: true, vary, items: { ...kit("bigTVC", 0.7), ...kit("anamorphic", 0.3) } }),
-  again(31, 17, { perDayQty: true, vary, items: kit("mv", 1.2), font: "plex" }),
-  again(32, 17, { perDayQty: true, vary, items: kit("mv", 1.8), font: "plex" }),
-  again(33, 17, { perDayQty: true, vary, items: { ...kit("mv", 1.5), [item("SONY FX6")]: 1 }, font: "plex" }),
-  again(34, 17, { perDayQty: true, vary, items: kit("mv", 1.5), font: "plex" }),
+  again(31, 17, { perDayQty: true, vary, items: kit("mv", 1.2), font: "plex-sans" }),
+  again(32, 17, { perDayQty: true, vary, items: kit("mv", 1.8), font: "plex-sans" }),
+  again(33, 17, { perDayQty: true, vary, items: { ...kit("mv", 1.5), [item("SONY FX6")]: 1 }, font: "plex-sans" }),
+  again(34, 17, { perDayQty: true, vary, items: kit("mv", 1.5), font: "plex-sans" }),
   // A draft: in no project.
   { ...list(35, { name: "Draft — Spec Rig Ideas", tag: "", days: [["", "", "Handheld"], ["", "", "Car rig"], ["", "", ""]], items: kit("doc", 0.5) }), listNote: "Not for a job yet: a rig to pitch." },
 );

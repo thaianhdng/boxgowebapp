@@ -249,6 +249,7 @@ export function ManifestDeptSection({
             return (
               <div key={sub} style={{ minWidth: "fit-content" }}>
                 <div
+                  className="head-font"
                   onClick={() => (collapsed ? togglePeek(sub) : onToggleSubcat(sub))}
                   style={{
                     // A small, spaced-out label in the accent colour, so it reads
