@@ -4,19 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
-      // iPhone/iPad Safari zooms in when tapping any text box with text under
-      // 16px. maximum-scale=1 stops that; iOS still allows pinch-zoom with it,
-      // but Android wouldn't, so it's only applied on iOS (iPads report as Mac).
-      if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
-        document.querySelector('meta[name="viewport"]').setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1");
-        document.documentElement.classList.add("ios");
-      }
+      (function () {
+        var viewport = "width=device-width, initial-scale=1.0";
+        // iPhone/iPad Safari zooms in when tapping any text box with text under
+        // 16px. maximum-scale=1 stops that; iOS still allows pinch-zoom with it,
+        // but Android wouldn't, so it's only applied on iOS (iPads report as Mac).
+        if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+          viewport += ", maximum-scale=1";
+          document.documentElement.classList.add("ios");
+        }
+        // Opened from the home screen: full screen, so the page also runs
+        // under the status bar (viewport-fit=cover) and keeps clear of it
+        // itself (.standalone in EquipmentManifest.jsx).
+        if (navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches)) {
+          viewport += ", viewport-fit=cover";
+          document.documentElement.classList.add("standalone");
+        }
+        document.querySelector('meta[name="viewport"]').setAttribute("content", viewport);
+      })();
     </script>
     <title>BOXGO</title>
     <!-- Browser tab: black & white logo. Home screen: gold logo. -->
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="BOXGO" />
+    <!-- From the home screen BOXGO opens full screen (manifest "standalone"),
+         its own background showing behind the status bar. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <style>html, body { margin: 0; background: #111; }</style>
   </head>
