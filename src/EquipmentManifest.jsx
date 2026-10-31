@@ -17,7 +17,7 @@ import { PreviewScreen } from "./components/PreviewScreen.jsx";
 import { ProjectFormModal } from "./components/ProjectFormModal.jsx";
 import { ProjectListView } from "./components/ProjectListView.jsx";
 import { SideItem } from "./components/SideItem.jsx";
-import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, APP_FONT, UI_SIZES } from "./constants.js";
+import { DEFAULT_DEPARTMENTS, DEFAULT_BRANDS, DEFAULT_CATALOG, DEFAULT_PROJECT_TAGS, ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "./constants.js";
 import { buildPdf } from "./lib/pdf.js";
 import { DEFAULT_PDF_FONT, pdfFontFor } from "./lib/font.js";
 import { createSnapshot, enableLiveLink, disableLiveLink, shareUrlFor } from "./lib/share.js";
@@ -169,8 +169,6 @@ export default function EquipmentManifest({ session }) {
     meta.content = bg;
   }, [resolvedTheme]);
   const [accentId, setAccentId] = useState("amber");
-  // The font picked before the app had one font (APP_FONT); unused, but
-  // kept in settings and backups so their format doesn't change.
   const [fontId, setFontId] = useState("jetbrains");
   // PDF font is per project (project.pdfFont); this is the last one picked,
   // which new projects start with.
@@ -1666,6 +1664,7 @@ export default function EquipmentManifest({ session }) {
   }
 
   const selectedAccent = ACCENT_CHOICES.find((a) => a.id === accentId) || ACCENT_CHOICES[0];
+  const selectedFont = FONT_CHOICES.find((f) => f.id === fontId) || FONT_CHOICES[0];
   const uiZoom = (UI_SIZES.find((sz) => sz.id === uiSize) || UI_SIZES[1]).zoom;
   // On the narrowest phones the header's button row scrolls sideways; start it
   // scrolled all the way right so Settings is always where it usually is.
@@ -1792,9 +1791,7 @@ export default function EquipmentManifest({ session }) {
 
   return (
     <div data-theme={resolvedTheme} className="app-root" style={{
-      fontFamily: APP_FONT.stack,
-      fontSizeAdjust: APP_FONT.sizeAdjust,
-      "--head-font": APP_FONT.headStack,
+      fontFamily: selectedFont.stack,
       background: "var(--bg)",
       color: "var(--text)",
       // CSS zoom scales everything inside, including 100vh, so divide it back.
@@ -1814,7 +1811,7 @@ export default function EquipmentManifest({ session }) {
         </Suspense>
       )}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?${APP_FONT.googleFamilies}&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=${selectedFont.googleFamily}&display=swap');
         [data-theme="dark"] {
           --bg: #0D0D0D; --surface: #161615; --surface2: #1C1C1A;
           --text: #EDEDED; --muted: #9A9A96; --muted2: #6A6A66; --faint: #4A4A47;
@@ -1864,10 +1861,8 @@ export default function EquipmentManifest({ session }) {
         .btn-primary:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-text); opacity: 0.85; }
         .btn-ghost { border-color: var(--border2); color: var(--text); }
         .btn-ghost:hover { background: var(--text); color: var(--bg); }
-        /* Buttons too take the app's font (browsers give them their own). */
-        button { font-family: inherit; font-size-adjust: inherit; }
         input, select, textarea {
-          font-family: inherit; font-size-adjust: inherit; font-size: 14px; padding: 8px 10px;
+          font-family: inherit; font-size: 14px; padding: 8px 10px;
           border: 1px solid var(--border2); border-radius: 3px; background: var(--surface); color: var(--text);
           outline: none;
         }
@@ -1888,10 +1883,7 @@ export default function EquipmentManifest({ session }) {
         }
         .stencil {
           text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800;
-          font-family: var(--head-font);
         }
-        /* Other headings in Barlow (APP_FONT): card names, subcategories. */
-        .head-font { font-family: var(--head-font); }
         /* The small boxed labels on project cards (tag, Cancelled). Trimmed
            to the capital letters so they sit centred in the border whatever
            the font; older browsers keep the plain box. */
@@ -2754,6 +2746,8 @@ export default function EquipmentManifest({ session }) {
           onSetTheme={setTheme}
           accentId={accentId}
           onSetAccentId={setAccentId}
+          fontId={fontId}
+          onSetFontId={setFontId}
           uiSize={uiSize}
           onSetUiSize={setUiSize}
           onOpenCatalog={() => { setShowTagManager(false); setView("catalog"); }}

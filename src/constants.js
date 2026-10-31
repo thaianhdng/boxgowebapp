@@ -212,15 +212,10 @@ export const UI_SIZES = [
   { id: "large", name: "Large", zoom: 1.15 },
 ];
 
-// The app's one font (owner's call; no font menu): Barlow Semi Condensed
-// for everything you read, Barlow (normal width) for headings — `.stencil`
-// and `.head-font`, through the `--head-font` variable. The share page too.
-export const APP_FONT = {
-  stack: "'Barlow Semi Condensed', ui-sans-serif, system-ui, sans-serif",
-  headStack: "'Barlow', 'Barlow Semi Condensed', ui-sans-serif, system-ui, sans-serif",
-  googleFamilies: "family=Barlow+Semi+Condensed:wght@400;500;600;700;800&family=Barlow:wght@500;600;700;800",
-  // Barlow's small letters are shorter than JetBrains Mono's (the font
-  // before), so at the same size it read small (owner's call): every size
-  // is drawn with JetBrains Mono's x-height (0.55), about 9% larger.
-  sizeAdjust: "0.55",
-};
+export const FONT_CHOICES = [
+  { id: "jetbrains", name: "JetBrains Mono", stack: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace", googleFamily: "JetBrains+Mono:wght@400;500;600;700" },
+  { id: "plex", name: "IBM Plex Mono", stack: "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace", googleFamily: "IBM+Plex+Mono:wght@400;500;600;700" },
+  { id: "roboto", name: "Roboto Mono", stack: "'Roboto Mono', ui-monospace, 'SF Mono', Menlo, monospace", googleFamily: "Roboto+Mono:wght@400;500;600;700" },
+  { id: "source", name: "Source Code Pro", stack: "'Source Code Pro', ui-monospace, 'SF Mono', Menlo, monospace", googleFamily: "Source+Code+Pro:wght@400;500;600;700" },
+  { id: "inter", name: "Inter", stack: "'Inter', ui-sans-serif, system-ui, sans-serif", googleFamily: "Inter:wght@400;500;600;700" },
+];

@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { EditableAttrSection } from "./EditableAttrSection.jsx";
 import { Logo } from "./Logo.jsx";
-import { ACCENT_CHOICES, UI_SIZES } from "../constants.js";
+import { ACCENT_CHOICES, FONT_CHOICES, UI_SIZES } from "../constants.js";
 import { Fold } from "./Motion.jsx";
 import { fadeIn, motionOn } from "../lib/motion.js";
 
@@ -27,7 +27,7 @@ export function AttributesManagerModal({
   templates, onDeleteTemplate,
   userName, onSetUserName, userEmail, onSetUserEmail, userPhone, onSetUserPhone,
   includeUsernameInPdf, onSetIncludeUsernameInPdf, includeEmailInPdf, onSetIncludeEmailInPdf, includePhoneInPdf, onSetIncludePhoneInPdf,
-  theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, uiSize, onSetUiSize,
+  theme, resolvedTheme, onSetTheme, accentId, onSetAccentId, fontId, onSetFontId, uiSize, onSetUiSize,
   onOpenCatalog, onExportBackup, onRestoreFileSelect, backupError, onClose, onSignOut,
   librarySections, testData, backupNote,
 }) {
@@ -204,6 +204,16 @@ export function AttributesManagerModal({
                 />
               ))}
             </div>
+
+            <select
+              value={fontId}
+              onChange={(e) => onSetFontId(e.target.value)}
+              style={{ width: "100%", marginTop: 12, fontSize: 13 }}
+            >
+              {FONT_CHOICES.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
 
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               {UI_SIZES.map((sz) => (

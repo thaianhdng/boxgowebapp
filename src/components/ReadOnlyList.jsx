@@ -33,7 +33,7 @@ export function ReadOnlyList({ project, catalog = [], departments = {}, prepared
     <>
       <div style={styles.infoBox}>
         {project.tag && <span className="tag-box" style={{ float: "right", marginLeft: 10, marginTop: 3, fontWeight: 800, letterSpacing: 0.5, color: "var(--muted)" }}>{project.tag}</span>}
-        <div className="head-font" style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.3, textTransform: "uppercase", letterSpacing: "0.02em" }}>
+        <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.3, textTransform: "uppercase", letterSpacing: "0.02em" }}>
           <span style={{ color: "var(--accent)" }}>{project.name || "Equipment List"}</span>
           {dates && <span style={{ fontWeight: 700 }}> · {dates}</span>}
         </div>
@@ -117,8 +117,8 @@ export function ReadOnlyList({ project, catalog = [], departments = {}, prepared
 const styles = {
   infoBox: { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 4, padding: "12px 14px", marginBottom: 18 },
   label: { fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted2)", marginBottom: 2 },
-  deptBar: { fontFamily: "var(--head-font)", background: "var(--accent)", color: "var(--accent-text)", padding: "8px 10px", fontWeight: 800, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: "3px 3px 0 0" },
-  subBar: { fontFamily: "var(--head-font)", background: "var(--surface2)", color: "var(--accent)", padding: "6px 10px", fontSize: 10.5, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", borderTop: "1px solid var(--border)" },
+  deptBar: { background: "var(--accent)", color: "var(--accent-text)", padding: "8px 10px", fontWeight: 800, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: "3px 3px 0 0" },
+  subBar: { background: "var(--surface2)", color: "var(--accent)", padding: "6px 10px", fontSize: 10.5, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", borderTop: "1px solid var(--border)" },
   row: { display: "flex", alignItems: "center", padding: "6px 10px", borderTop: "1px solid var(--border)" },
   nameCol: { flex: 1, minWidth: 0, overflowWrap: "anywhere", paddingRight: 6 },
   colHead: { fontSize: 10.5, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", textAlign: "center" },

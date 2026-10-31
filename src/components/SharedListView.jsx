@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Printer, FileText, X } from "lucide-react";
-import { ACCENT_CHOICES, APP_FONT } from "../constants.js";
+import { ACCENT_CHOICES } from "../constants.js";
 import { buildPdf } from "../lib/pdf.js";
 import { fetchSharedList } from "../lib/share.js";
 import { renderPdfPages } from "../lib/pdfPreview.js";
@@ -235,12 +235,10 @@ function Shell({ dark, accent, children }) {
     "--accent-text": c.accentText, "--pdf-bg": c.pdfBg,
   };
   return (
-    <div style={{ ...vars, minHeight: "100vh", background: "var(--bg)", color: "var(--text)", fontFamily: APP_FONT.stack, fontSizeAdjust: APP_FONT.sizeAdjust, "--head-font": APP_FONT.headStack, fontSize: 13 }}>
+    <div style={{ ...vars, minHeight: "100vh", background: "var(--bg)", color: "var(--text)", fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace", fontSize: 13 }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?${APP_FONT.googleFamilies}&display=swap');
-        .head-font { font-family: var(--head-font); }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
-        button, input, select, textarea { font-size-adjust: inherit; }
         @keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 1s linear infinite; }
         .tag-box { display: inline-block; font-size: 9px; line-height: 11px; padding: 1px 4px; border: 1px solid currentColor; border-radius: 2px; text-transform: uppercase; }
         @supports (text-box: trim-both cap alphabetic) { .tag-box { text-box: trim-both cap alphabetic; padding: 3px 4px; } }

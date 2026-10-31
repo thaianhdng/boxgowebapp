@@ -45,14 +45,6 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
     doc.addFont(`${fontChoice.id}-Regular.ttf`, FONT, "normal");
     doc.addFileToVFS(`${fontChoice.id}-Bold.ttf`, font.bold);
     doc.addFont(`${fontChoice.id}-Bold.ttf`, FONT, "bold");
-    // Headings (title, category bars, subcategory names) in the font's
-    // heading face when it has one (Barlow), else in the font itself.
-    let HEAD = FONT;
-    if (font.head) {
-      HEAD = "PdfHead";
-      doc.addFileToVFS(`${fontChoice.id}-Head.ttf`, font.head);
-      doc.addFont(`${fontChoice.id}-Head.ttf`, HEAD, "bold");
-    }
     doc.setFont(FONT, "normal");
 
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -170,7 +162,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
 
     const leftWidth = usableWidth - (rightW ? rightW + 18 : 0);
     let leftX = marginX;
-    doc.setFont(HEAD, "bold");
+    doc.setFont(FONT, "bold");
     if (project?.tag) {
       doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
@@ -333,7 +325,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
       ensureSpace(BAR_H + 30);
       doc.setFillColor(...accentRgb);
       doc.rect(marginX, y, usableWidth, BAR_H, "F");
-      doc.setFont(HEAD, "bold");
+      doc.setFont(FONT, "bold");
       doc.setFontSize(8.5);
       doc.setTextColor(255, 255, 255);
       doc.text(dept.toUpperCase(), marginX + 6, y + barBaseline(8.5));
@@ -353,7 +345,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
         // and any item without a subcategory, have no name there.
         let subLines = [];
         if (sub && !/^others?$/i.test(dept.trim())) {
-          doc.setFont(HEAD, "bold");
+          doc.setFont(FONT, "bold");
           doc.setFontSize(SUB);
           subLines = doc.splitTextToSize(sub.toUpperCase(), subColW - 10);
         }
@@ -381,7 +373,7 @@ export async function buildPdf({ project, catalog, departments, accentHex, prepa
           const rowTop = y;
 
           if (subLines.length && (idx === 0 || rowTop !== before)) {
-            doc.setFont(HEAD, "bold");
+            doc.setFont(FONT, "bold");
             doc.setFontSize(SUB);
             doc.setTextColor(...accentRgb);
             let sy = rowTop + topPad;
