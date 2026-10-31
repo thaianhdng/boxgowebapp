@@ -447,8 +447,11 @@ Start of each conversation, the owner should say which one it is:
   you read, Barlow (normal width) for headings — `.stencil`, and the
   `.head-font` class (card names, subcategory names, the share page's
   name / category / subcategory bars) through `--head-font`; new headings
-  use them too. Buttons take the app font too. The share page uses the
-  same pair. `settings.fontId` (the old font menu's pick) is kept in
+  use them too. Buttons take the app font too. Text is drawn at the old
+  JetBrains Mono's letter height (`font-size-adjust` 0.55,
+  `APP_FONT.sizeAdjust`; owner: Barlow read too small), about 9% larger
+  than the sizes in the code; inputs and buttons inherit it. The share page
+  uses the same pair and size. `settings.fontId` (the old font menu's pick) is kept in
   settings and backups but unused.
 - **Page width** (everyone, owner's call): on big screens the site stops
   at 1280px, centred (`PAGE_MAX` in `EquipmentManifest.jsx`; the same

@@ -1793,6 +1793,7 @@ export default function EquipmentManifest({ session }) {
   return (
     <div data-theme={resolvedTheme} className="app-root" style={{
       fontFamily: APP_FONT.stack,
+      fontSizeAdjust: APP_FONT.sizeAdjust,
       "--head-font": APP_FONT.headStack,
       background: "var(--bg)",
       color: "var(--text)",
@@ -1864,9 +1865,9 @@ export default function EquipmentManifest({ session }) {
         .btn-ghost { border-color: var(--border2); color: var(--text); }
         .btn-ghost:hover { background: var(--text); color: var(--bg); }
         /* Buttons too take the app's font (browsers give them their own). */
-        button { font-family: inherit; }
+        button { font-family: inherit; font-size-adjust: inherit; }
         input, select, textarea {
-          font-family: inherit; font-size: 14px; padding: 8px 10px;
+          font-family: inherit; font-size-adjust: inherit; font-size: 14px; padding: 8px 10px;
           border: 1px solid var(--border2); border-radius: 3px; background: var(--surface); color: var(--text);
           outline: none;
         }
