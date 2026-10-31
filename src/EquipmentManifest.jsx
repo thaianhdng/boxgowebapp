@@ -1793,6 +1793,7 @@ export default function EquipmentManifest({ session }) {
     <div data-theme={resolvedTheme} className="app-root" style={{
       fontFamily: selectedFont.stack,
       "--head-font": selectedFont.headStack || selectedFont.stack,
+      fontSizeAdjust: selectedFont.sizeAdjust || "none",
       background: "var(--bg)",
       color: "var(--text)",
       // CSS zoom scales everything inside, including 100vh, so divide it back.
@@ -1862,8 +1863,9 @@ export default function EquipmentManifest({ session }) {
         .btn-primary:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-text); opacity: 0.85; }
         .btn-ghost { border-color: var(--border2); color: var(--text); }
         .btn-ghost:hover { background: var(--text); color: var(--bg); }
+        button { font-size-adjust: inherit; } /* a font's sizeAdjust */
         input, select, textarea {
-          font-family: inherit; font-size: 14px; padding: 8px 10px;
+          font-family: inherit; font-size-adjust: inherit; font-size: 14px; padding: 8px 10px;
           border: 1px solid var(--border2); border-radius: 3px; background: var(--surface); color: var(--text);
           outline: none;
         }

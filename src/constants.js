@@ -221,4 +221,8 @@ export const FONT_CHOICES = [
   // Barlow Semi Condensed, with Barlow (normal width) for the headings
   // (`.stencil`, through --head-font): the pair the owner wanted to try.
   { id: "barlow", name: "Barlow", stack: "'Barlow Semi Condensed', ui-sans-serif, system-ui, sans-serif", headStack: "'Barlow', 'Barlow Semi Condensed', ui-sans-serif, system-ui, sans-serif", googleFamily: "Barlow+Semi+Condensed:wght@400;500;600;700;800&family=Barlow:wght@500;600;700;800" },
+  // Regular-width Barlow, drawn larger (owner: Semi Condensed read too
+  // small, most of all on desktop): sizeAdjust draws every size with this
+  // x-height (Barlow's own is 0.506), about 17% larger.
+  { id: "barlow-wide", name: "Barlow (wide)", stack: "'Barlow', ui-sans-serif, system-ui, sans-serif", sizeAdjust: "0.59", googleFamily: "Barlow:wght@400;500;600;700;800" },
 ];

@@ -442,10 +442,14 @@ Start of each conversation, the owner should say which one it is:
   `saveFile()` in `src/lib/utils.js` (iOS: opens the Share menu).
 - **App font menu** (Settings → Appearance, everyone; `FONT_CHOICES` in
   `src/constants.js`): JetBrains Mono (default), IBM Plex Mono, Roboto
-  Mono, Source Code Pro, Inter and Barlow (owner's call, to try it out:
-  Barlow Semi Condensed with Barlow for the `.stencil` headings; a choice's
-  optional `headStack` sets `--head-font`). `.stencil` buttons don't set
-  `fontFamily: "inherit"`, so they take the heading font.
+  Mono, Source Code Pro, Inter, Barlow (owner's call, to try it out:
+  Barlow Semi Condensed with Barlow for the `.stencil` headings) and
+  Barlow (wide) (regular-width Barlow drawn about 17% larger; owner: the
+  Semi Condensed one read too small, most of all on desktop). A choice's
+  optional `headStack` sets `--head-font` and `sizeAdjust` the
+  `font-size-adjust` of the app (buttons and inputs inherit it).
+  `.stencil` buttons don't set `fontFamily: "inherit"`, so they take the
+  heading font.
 - **Page width** (everyone, owner's call): on big screens the site stops
   at 1280px, centred (`PAGE_MAX` in `EquipmentManifest.jsx`; the same
   width as the Projects page), so item names and their quantity boxes
