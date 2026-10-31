@@ -1792,6 +1792,7 @@ export default function EquipmentManifest({ session }) {
   return (
     <div data-theme={resolvedTheme} className="app-root" style={{
       fontFamily: selectedFont.stack,
+      "--head-font": selectedFont.headStack || selectedFont.stack,
       background: "var(--bg)",
       color: "var(--text)",
       // CSS zoom scales everything inside, including 100vh, so divide it back.
@@ -1883,6 +1884,7 @@ export default function EquipmentManifest({ session }) {
         }
         .stencil {
           text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800;
+          font-family: var(--head-font); /* the font's heading face, if it has one */
         }
         /* The small boxed labels on project cards (tag, Cancelled). Trimmed
            to the capital letters so they sit centred in the border whatever
@@ -1970,7 +1972,7 @@ export default function EquipmentManifest({ session }) {
                     className="stencil"
                     onClick={() => goX({ screen: "projects" })}
                     title="Projects"
-                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 17, letterSpacing: "0.08em", color: view === "x" && xModule === "projects" ? "var(--accent)" : "var(--text)" }}
+                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 17, letterSpacing: "0.08em", color: view === "x" && xModule === "projects" ? "var(--accent)" : "var(--text)" }}
                   >
                     BOXGO
                   </button>
@@ -1999,7 +2001,7 @@ export default function EquipmentManifest({ session }) {
                         <button
                           className="stencil"
                           onClick={go}
-                          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 10, letterSpacing: "0.04em", color: on ? "var(--accent)" : "var(--muted)" }}
+                          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 10, letterSpacing: "0.04em", color: on ? "var(--accent)" : "var(--muted)" }}
                         >
                           {label}
                         </button>

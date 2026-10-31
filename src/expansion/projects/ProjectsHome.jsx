@@ -269,7 +269,7 @@ export function ProjectsHome({ app, projects, types, actions }) {
               type="button"
               className="stencil"
               onClick={() => toggleFold(s.id)}
-              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 10 }}
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 13, fontWeight: 800, color: "var(--text)", marginBottom: 10 }}
             >
               {closed ? <ChevronRight size={15} strokeWidth={2.5} /> : <ChevronDown size={15} strokeWidth={2.5} />}
               <span style={{ width: 9, height: 9, borderRadius: 2, background: s.color }} />
